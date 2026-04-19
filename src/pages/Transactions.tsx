@@ -157,7 +157,7 @@ export const Transactions = () => {
             <ChevronDown className="w-4 h-4" />
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button 
             variant="default" 
             className="bg-purple-600 hover:bg-purple-700 text-white rounded-full h-9 px-4"
@@ -176,20 +176,20 @@ export const Transactions = () => {
             initialType={newTransactionType}
             transactionId={editingTransactionId}
           />
-          <div className="relative flex-1 md:w-64">
+          <div className="relative flex-1 md:w-64 shrink-0">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
             <Input
-              placeholder={t('searchTransaction')}
+              placeholder="Buscar"
               className="pl-9 rounded-full bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-full border border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-full border border-zinc-200 dark:border-zinc-800 overflow-x-auto max-w-full no-scrollbar shrink-0">
             <Button 
               variant={typeFilter === 'all' ? 'secondary' : 'ghost'} 
               size="sm" 
-              className="rounded-full h-8 px-3 text-xs"
+              className="rounded-full h-8 px-3 text-xs shrink-0"
               onClick={() => setTypeFilter('all')}
             >
               {t('all')}
@@ -197,7 +197,7 @@ export const Transactions = () => {
             <Button 
               variant={typeFilter === 'income' ? 'secondary' : 'ghost'} 
               size="sm" 
-              className="rounded-full h-8 px-3 text-xs"
+              className="rounded-full h-8 px-3 text-xs shrink-0"
               onClick={() => setTypeFilter('income')}
             >
               {t('incomes')}
@@ -205,13 +205,13 @@ export const Transactions = () => {
             <Button 
               variant={typeFilter === 'expense' ? 'secondary' : 'ghost'} 
               size="sm" 
-              className="rounded-full h-8 px-3 text-xs"
+              className="rounded-full h-8 px-3 text-xs shrink-0"
               onClick={() => setTypeFilter('expense')}
             >
               {t('expenses')}
             </Button>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             <Button 
               variant="outline" 
               size="icon" 
