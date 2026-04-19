@@ -152,10 +152,30 @@ export const Transactions = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">{t('transactions')}</h1>
-          <div className="flex items-center gap-2 cursor-pointer text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors" onClick={() => setIsMonthPickerOpen(true)}>
-            <span className="text-sm font-bold capitalize">{format(selectedDate, 'MMMM yyyy', { locale: userSettings.language === 'en' ? enUS : userSettings.language === 'es' ? es : ptBR })}</span>
-            <ChevronDown className="w-4 h-4" />
+        <div className="flex items-center gap-2">
+          <button onClick={() => {
+            const prev = new Date(selectedDate);
+            prev.setMonth(prev.getMonth() - 1);
+            setSelectedDate(prev);
+          }} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors">
+            <ChevronLeft className="w-5 h-5 text-zinc-500" />
+          </button>
+          
+          <div 
+            className="text-zinc-900 dark:text-white font-semibold text-lg min-w-[120px] text-center cursor-pointer select-none hover:text-[#8B5CF6] transition-colors"
+            onClick={() => setIsMonthPickerOpen(true)}
+          >
+            {format(selectedDate, 'MMMM yyyy', { locale: userSettings.language === 'en' ? enUS : userSettings.language === 'es' ? es : ptBR })}
           </div>
+
+          <button onClick={() => {
+            const next = new Date(selectedDate);
+            next.setMonth(next.getMonth() + 1);
+            setSelectedDate(next);
+          }} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors">
+            <ChevronRight className="w-5 h-5 text-zinc-500" />
+          </button>
+        </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button 
