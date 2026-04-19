@@ -11,7 +11,7 @@ interface ImportCsvDialogProps {
 }
 
 export const ImportCsvDialog = ({ open, onOpenChange }: ImportCsvDialogProps) => {
-  const { bulkUpsertTransactions, categories } = useAppStore();
+  const { bulkUpsertTransactions, categories, transactions } = useAppStore();
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -52,7 +52,7 @@ export const ImportCsvDialog = ({ open, onOpenChange }: ImportCsvDialogProps) =>
 
       const defaultCategory = categories[0]?.id || '';
       
-      const transactions = lines.slice(1).map((line, index) => {
+      const newTransactions = lines.slice(1).map((line, index) => {
         const columns = line.split(delimiter).map(c => c.trim().replace(/"/g, ''));
         if (columns.length < 2) return null;
 
@@ -105,8 +105,27 @@ export const ImportCsvDialog = ({ open, onOpenChange }: ImportCsvDialogProps) =>
         };
       }).filter(Boolean) as any[];
 
-      await bulkUpsertTransactions(transactions);
-      toast.success(`${transactions.length} transações importadas com sucesso!`);
+      // Filtrar duplicados
+      const uniqueTransactions = newTransactions.filter(newTrans => {
+        return !transactions.some(existingTrans => {
+          // Normalizar datas para comparação (apenas dia/mês/ano)
+          const newDate = new Date(newTrans.date).toDateString();
+          const existDate = new Date(existingTrans.date).toDateString();
+          
+          return (
+            newDate === existDate &&
+            newTrans.description.toLowerCase() === existingTrans.description.toLowerCase() &&
+            Math.abs(newTrans.amount - existingTrans.amount) < 0.01 // Diferença pequena aceitável (precisão float)
+          );
+        });
+      });
+
+      if (uniqueTransactions.length === 0) {
+        toast.info('Todas as transações do arquivo já foram importadas anteriormente.');
+      } else {
+        await bulkUpsertTransactions(uniqueTransactions);
+        toast.success(`${uniqueTransactions.length} novas transações importadas com sucesso!`);
+      }
       onOpenChange(false);
       
     } catch (e: any) {
