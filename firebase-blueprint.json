@@ -1,0 +1,156 @@
+{
+  "entities": {
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A financial transaction (income, expense, or transfer)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["income", "expense", "transfer"] },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "description": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "accountId": { "type": "string" },
+        "status": { "type": "string", "enum": ["paid", "pending"] },
+        "isFixed": { "type": "boolean" },
+        "groupId": { "type": "string" },
+        "sortOrder": { "type": "number" }
+      },
+      "required": ["id", "type", "amount", "date", "description", "categoryId", "status"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "A category for transactions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["income", "expense", "transfer"] },
+        "color": { "type": "string" },
+        "icon": { "type": "string" }
+      },
+      "required": ["id", "name", "type", "color", "icon"]
+    },
+    "Tag": {
+      "title": "Tag",
+      "description": "A tag for transactions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "color": { "type": "string" }
+      },
+      "required": ["id", "name", "color"]
+    },
+    "Goal": {
+      "title": "Goal",
+      "description": "A financial goal",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "targetAmount": { "type": "number" },
+        "currentAmount": { "type": "number" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "color": { "type": "string" },
+        "icon": { "type": "string" }
+      },
+      "required": ["id", "name", "targetAmount", "currentAmount", "deadline", "color", "icon"]
+    },
+    "UserData": {
+      "title": "UserData",
+      "description": "User specific data like monthly plan and piggy bank",
+      "type": "object",
+      "properties": {
+        "userSettings": {
+          "type": "object",
+          "properties": {
+            "currency": { "type": "string" },
+            "language": { "type": "string" },
+            "theme": { "type": "string", "enum": ["light", "dark"] },
+            "showValues": { "type": "boolean" },
+            "showTips": { "type": "boolean" }
+          }
+        },
+        "monthlyPlan": {
+          "type": "object",
+          "properties": {
+            "income": { "type": "number" },
+            "savingsPercentage": { "type": "number" },
+            "budgets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "categoryId": { "type": "string" },
+                  "limit": { "type": "number" }
+                }
+              }
+            }
+          }
+        },
+        "piggyBank": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "bank": { "type": "string" },
+              "balance": { "type": "number" }
+            }
+          }
+        },
+        "piggyBankHistory": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": { "type": "string", "format": "date-time" },
+              "amount": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Public user profile and approval status",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserData" },
+      "description": "User specific data like monthly plan and piggy bank"
+    },
+    "/users_profiles/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Public user profile and approval status"
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/Transaction" },
+      "description": "User's transactions"
+    },
+    "/users/{userId}/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/Category" },
+      "description": "User's categories"
+    },
+    "/users/{userId}/goals/{goalId}": {
+      "schema": { "$ref": "#/entities/Goal" },
+      "description": "User's goals"
+    },
+    "/users/{userId}/tags/{tagId}": {
+      "schema": { "$ref": "#/entities/Tag" },
+      "description": "User's tags"
+    }
+  }
+}

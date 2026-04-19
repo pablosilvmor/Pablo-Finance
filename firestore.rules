@@ -1,0 +1,194 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - monthlyPlan: map (optional)
+    //   - piggyBank: list (optional)
+    //   - piggyBankHistory: list (optional)
+    //
+    // Collection: users/{userId}/transactions
+    // Document ID: {transactionId}
+    // Fields:
+    //   - id: string (required)
+    //   - type: string (required, 'income' | 'expense' | 'transfer')
+    //   - amount: number (required)
+    //   - date: string (required)
+    //   - description: string (required)
+    //   - categoryId: string (required)
+    //   - accountId: string (optional)
+    //   - status: string (required, 'paid' | 'pending')
+    //   - isFixed: boolean (optional)
+    //   - groupId: string (optional)
+    //   - sortOrder: number (optional)
+    //
+    // Collection: users/{userId}/categories
+    // Document ID: {categoryId}
+    // Fields:
+    //   - id: string (required)
+    //   - name: string (required)
+    //   - type: string (required, 'income' | 'expense' | 'transfer')
+    //   - color: string (required)
+    //   - icon: string (required)
+    //
+    // Collection: users/{userId}/goals
+    // Document ID: {goalId}
+    // Fields:
+    //   - id: string (required)
+    //   - name: string (required)
+    //   - targetAmount: number (required)
+    //   - currentAmount: number (required)
+    //   - deadline: string (required)
+    //   - color: string (required)
+    //   - icon: string (required)
+    //
+    // ===============================================================
+
+    // Collection: users/{userId}/tags
+    // Document ID: {tagId}
+    // Fields:
+    //   - id: string (required)
+    //   - name: string (required)
+    //   - color: string (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+             (request.auth.token.email == "pablo.silvmor@gmail.com" && request.auth.token.email_verified == true);
+    }
+
+    function isValidString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    function isValidOptionalString(val, minLen, maxLen) {
+      return val == null || (val is string && val.size() >= minLen && val.size() <= maxLen);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['id', 'type', 'amount', 'date', 'description', 'categoryId', 'status']) &&
+             isValidString(data.id, 1, 100) &&
+             data.type in ['income', 'expense', 'transfer'] &&
+             data.amount is number &&
+             isValidString(data.date, 1, 50) &&
+             isValidString(data.description, 1, 300) &&
+             isValidString(data.categoryId, 1, 100) &&
+             data.status in ['paid', 'pending'] &&
+             (!('accountId' in data) || isValidOptionalString(data.accountId, 1, 100)) &&
+             (!('isFixed' in data) || data.isFixed is bool) &&
+             (!('groupId' in data) || isValidOptionalString(data.groupId, 1, 100)) &&
+             (!('sortOrder' in data) || data.sortOrder is number);
+    }
+
+    function isValidCategory(data) {
+      return data.keys().hasAll(['id', 'name', 'type', 'color', 'icon']) &&
+             isValidString(data.id, 1, 100) &&
+             isValidString(data.name, 1, 100) &&
+             data.type in ['income', 'expense', 'transfer'] &&
+             isValidString(data.color, 1, 50) &&
+             isValidString(data.icon, 1, 50);
+    }
+
+    function isValidTag(data) {
+      return data.keys().hasAll(['id', 'name', 'color']) &&
+             isValidString(data.id, 1, 100) &&
+             isValidString(data.name, 1, 100) &&
+             isValidString(data.color, 1, 50);
+    }
+
+    function isValidGoal(data) {
+      return data.keys().hasAll(['id', 'name', 'targetAmount', 'currentAmount', 'deadline', 'color', 'icon']) &&
+             isValidString(data.id, 1, 100) &&
+             isValidString(data.name, 1, 100) &&
+             data.targetAmount is number &&
+             data.currentAmount is number &&
+             isValidString(data.deadline, 1, 50) &&
+             isValidString(data.color, 1, 50) &&
+             isValidString(data.icon, 1, 50);
+    }
+
+    function isValidUserData(data) {
+      return (!('monthlyPlan' in data) || data.monthlyPlan is map) &&
+             (!('piggyBank' in data) || data.piggyBank is list) &&
+             (!('piggyBankHistory' in data) || data.piggyBankHistory is list) &&
+             (!('userSettings' in data) || data.userSettings is map);
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'email', 'status', 'createdAt']) &&
+             isValidString(data.uid, 1, 100) &&
+             isValidString(data.email, 1, 200) &&
+             data.status in ['pending', 'approved', 'rejected'] &&
+             isValidString(data.createdAt, 1, 100);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users_profiles/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && isValidUserProfile(request.resource.data) && 
+                    (request.resource.data.status == 'pending' || (request.resource.data.status == 'approved' && isAdmin()));
+      allow update: if isAdmin() && isValidUserProfile(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUserData(request.resource.data);
+      allow update: if isOwner(userId) && isValidUserData(request.resource.data);
+      allow delete: if isOwner(userId);
+
+      match /transactions/{transactionId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidTransaction(request.resource.data);
+        allow update: if isOwner(userId) && isValidTransaction(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /categories/{categoryId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidCategory(request.resource.data);
+        allow update: if isOwner(userId) && isValidCategory(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /tags/{tagId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidTag(request.resource.data);
+        allow update: if isOwner(userId) && isValidTag(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /goals/{goalId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidGoal(request.resource.data);
+        allow update: if isOwner(userId) && isValidGoal(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}
