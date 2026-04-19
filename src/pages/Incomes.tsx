@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAppStore } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { ArrowUpRight, Filter, Search, MoreVertical, CheckCircle2, Circle, TrendingUp, Calendar, ArrowLeft, ChevronLeft, ChevronRight, Edit2, Trash2, AlertTriangle } from 'lucide-react';
+import { ArrowUpRight, Filter, Search, MoreVertical, CheckCircle2, Circle, TrendingUp, Calendar, ArrowLeft, ChevronLeft, ChevronRight, Edit2, Trash2, AlertTriangle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format, parseISO, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
@@ -322,10 +322,18 @@ export const Incomes = () => {
             <input
               type="text"
               placeholder="Buscar receita..."
-              className="h-9 pl-9 pr-4 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 w-64"
+              className="h-9 pl-9 pr-9 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 w-64"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-2.5"
+              >
+                <X className="h-4 w-4 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100" />
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-full">
             <Button 

@@ -200,10 +200,18 @@ export const Transactions = () => {
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
             <Input
               placeholder="Buscar"
-              className="pl-9 rounded-full bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+              className="pl-9 pr-9 rounded-full bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-2.5"
+              >
+                <X className="h-4 w-4 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100" />
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-full border border-zinc-200 dark:border-zinc-800 overflow-x-auto max-w-full no-scrollbar shrink-0">
             <Button 
