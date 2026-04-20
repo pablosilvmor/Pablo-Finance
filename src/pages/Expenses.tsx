@@ -173,18 +173,13 @@ export const Expenses = () => {
     isSameMonth(parseISO(t.date), currentDate)
   );
 
-  const totalSalary = monthlyIncomes
-    .filter(t => {
-      const cat = categories.find(c => c.id === t.categoryId);
-      return cat?.name.toLowerCase().includes('salário');
-    })
-    .reduce((acc, curr) => acc + curr.amount, 0);
+  const totalIncome = monthlyIncomes.reduce((acc, curr) => acc + curr.amount, 0);
 
   const totalExpense = monthlyExpenses.reduce((acc, curr) => acc + curr.amount, 0);
   const totalPaid = monthlyExpenses.filter(t => t.status === 'paid').reduce((acc, curr) => acc + curr.amount, 0);
   const totalPending = monthlyExpenses.filter(t => t.status === 'pending').reduce((acc, curr) => acc + curr.amount, 0);
   
-  const monthlyBalance = totalSalary - totalExpense;
+  const monthlyBalance = totalIncome - totalExpense;
 
   const filteredExpenses = monthlyExpenses.filter(t => {
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -410,9 +405,9 @@ export const Expenses = () => {
           <CardHeader className="pb-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50">
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">Salário do mês</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">Receitas do mês</p>
                 <h2 className="text-lg font-bold text-zinc-900 dark:text-white">
-                  {formatCurrency(totalSalary)}
+                  {formatCurrency(totalIncome)}
                 </h2>
               </div>
               <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-900/10">

@@ -1,14 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppStore } from '../lib/store';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, MoreVertical, Search, Filter, ArrowUpRight, ArrowDownRight, CheckCircle2, Circle, X, Trash2, ChevronDown, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { Plus, MoreVertical, Search, Filter, ArrowUpRight, ArrowDownRight, CheckCircle2, Circle, X, Trash2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { format, parseISO, isSameMonth } from 'date-fns';
+import { format, parseISO, isSameMonth, endOfMonth } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
 import { useNavigate, useLocation } from 'react-router';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
 import { NewTransactionDialog } from '@/components/NewTransactionDialog';
 import { MonthPicker } from '@/components/MonthPicker';
 import { TransactionMenuOverlay } from '@/components/TransactionMenuOverlay';
@@ -20,6 +25,29 @@ export const Transactions = () => {
   const { t } = useTranslation(userSettings.language);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
+  
+  // Sorting State
+  const [sortBy, setSortBy] = useState<'date' | 'description' | 'amount' | 'category' | 'type' | 'status'>(() => {
+    return (localStorage.getItem('transactions-sort') as any) || 'date';
+  });
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(() => {
+    return (localStorage.getItem('transactions-sort-order') as any) || 'desc';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('transactions-sort', sortBy);
+    localStorage.setItem('transactions-sort-order', sortOrder);
+  }, [sortBy, sortOrder]);
+
+  const handleSort = (field: 'date' | 'description' | 'amount' | 'category' | 'type' | 'status') => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder(field === 'date' || field === 'amount' ? 'desc' : 'asc');
+    }
+  };
+
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [transactionToDelete, setTransactionToDelete] = useState<any>(null);
   const [isImportCsvOpen, setIsImportCsvOpen] = useState(false);
@@ -55,11 +83,58 @@ export const Transactions = () => {
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = typeFilter === 'all' || t.type === typeFilter;
     return matchesSearch && matchesType;
+  }).sort((a, b) => {
+    let comparison = 0;
+    switch (sortBy) {
+      case 'date':
+        comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+        break;
+      case 'description':
+        comparison = a.description.localeCompare(b.description);
+        break;
+      case 'amount':
+        comparison = a.amount - b.amount;
+        break;
+      case 'category':
+        const catA = getCategory(a.categoryId)?.name || '';
+        const catB = getCategory(b.categoryId)?.name || '';
+        comparison = catA.localeCompare(catB);
+        break;
+      case 'type':
+        comparison = a.type.localeCompare(b.type);
+        break;
+      case 'status':
+        comparison = a.status.localeCompare(b.status);
+        break;
+    }
+    return sortOrder === 'asc' ? comparison : -comparison;
   });
 
   const totalIncome = currentMonthTransactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
   const totalExpense = currentMonthTransactions.filter(t => t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
   const balance = totalIncome - totalExpense;
+
+  const expensesData = useMemo(() => {
+    const expenses = currentMonthTransactions.filter(t => t.type === 'expense' && t.status === 'paid');
+    const data = expenses.reduce((acc, curr) => {
+      const cat = categories.find(c => c.id === curr.categoryId);
+      const name = cat?.name || 'Sem categoria';
+      const color = cat?.color || '#cbd5e1';
+      const existing = acc.find((item: any) => item.name === name);
+      if (existing) {
+        existing.value += curr.amount;
+      } else {
+        acc.push({ name, value: curr.amount, color });
+      }
+      return acc;
+    }, [] as any[]);
+    return data.sort((a: any, b: any) => b.value - a.value);
+  }, [currentMonthTransactions, categories]);
+
+  const currencyFormatter = useMemo(() => new Intl.NumberFormat(userSettings.language, { 
+    style: 'currency', 
+    currency: userSettings.currency 
+  }), [userSettings]);
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -97,6 +172,211 @@ export const Transactions = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleExportPDF = async () => {
+    let logoBase64: string | null = null;
+    let logoWidth = 0;
+    let logoHeight = 0;
+    
+    try {
+      const response = await fetch('https://i.imgur.com/6n9cYhs.png');
+      const blob = await response.blob();
+      logoBase64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+
+      const imgProps = await new Promise<{w: number, h: number}>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+        img.onerror = reject;
+        img.src = logoBase64!;
+      });
+
+      // Maintain perfect aspect ratio: we target a width of ~40mm
+      const targetWidth = 40;
+      logoWidth = targetWidth;
+      logoHeight = targetWidth * (imgProps.h / imgProps.w);
+    } catch (e) {
+      console.warn('Não foi possível carregar a imagem do logo.', e);
+    }
+
+    const doc = new jsPDF();
+    const headers = [['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor', 'Status']];
+    
+    const currencyFormatter = new Intl.NumberFormat(userSettings.language, { 
+      style: 'currency', 
+      currency: userSettings.currency 
+    });
+
+    const cumulativeIncome = transactions.filter(t => t.type === 'income' && t.status === 'paid' && new Date(t.date) <= endOfMonth(selectedDate)).reduce((acc, curr) => acc + curr.amount, 0);
+    const cumulativeExpense = transactions.filter(t => t.type === 'expense' && t.status === 'paid' && new Date(t.date) <= endOfMonth(selectedDate)).reduce((acc, curr) => acc + curr.amount, 0);
+    const saldoDoMes = cumulativeIncome - cumulativeExpense;
+
+    const rows = filteredTransactions.map(t => {
+      const cat = getCategory(t.categoryId);
+      const type = t.type === 'income' ? 'Receita' : (t.type === 'expense' ? 'Despesa' : 'Transferência');
+      const status = t.status === 'paid' ? 'Pago' : 'Pendente';
+      
+      return [
+        format(parseISO(t.date), 'dd/MM/yyyy'),
+        t.description,
+        cat?.name || '',
+        type,
+        currencyFormatter.format(t.amount),
+        status
+      ];
+    });
+
+    const currentMonthLabel = format(selectedDate, 'MMMM yyyy', { locale: userSettings.language === 'en' ? enUS : userSettings.language === 'es' ? es : ptBR });
+    const generatedAt = format(new Date(), 'dd/MM/yyyy HH:mm');
+
+    const totalPagesExp = '{total_pages_count_string}';
+
+    autoTable(doc, {
+      head: headers,
+      body: rows,
+      startY: 75,
+      margin: { top: 48 }, // Increased from 42 to avoid overlap with headers naturally on page 2+
+      theme: 'grid',
+      styles: {
+        fontSize: 9,
+        cellPadding: 4,
+        overflow: 'linebreak',
+        fontStyle: 'normal',
+      },
+      headStyles: {
+        fillColor: [139, 92, 246], // Purple color from the brand
+        textColor: 255,
+        fontStyle: 'bold',
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252], // Zebrado (slate-50)
+      },
+      didDrawPage: (data) => {
+        // Logo / Title - Header
+        if (logoBase64 && logoWidth > 0 && logoHeight > 0) {
+          doc.addImage(logoBase64, 'PNG', data.settings.margin.left, 10, logoWidth, logoHeight);
+        } else {
+          doc.setFontSize(22);
+          doc.setTextColor(139, 92, 246); // Purple
+          doc.setFont('helvetica', 'bold');
+          doc.text('DINDIN', data.settings.margin.left, 20);
+        }
+        
+        doc.setFontSize(14);
+        doc.setTextColor(50, 50, 50);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Relatório de Transações - ${currentMonthLabel.charAt(0).toUpperCase() + currentMonthLabel.slice(1)}`, data.settings.margin.left, 34);
+
+        if (data.pageNumber === 1) {
+           doc.setDrawColor(226, 232, 240); // zinc-200
+           doc.setFillColor(248, 250, 252); // slate-50
+           const w = doc.internal.pageSize.getWidth() - data.settings.margin.left - data.settings.margin.right;
+           doc.roundedRect(data.settings.margin.left, 42, w, 20, 2, 2, 'FD');
+           
+           const totalsY = 49;
+           const valY = 56;
+           
+           doc.setFontSize(8);
+           doc.setTextColor(100, 116, 139); // slate-500
+           doc.text('SALDO DO MÊS', data.settings.margin.left + 5, totalsY);
+           doc.text('RECEITAS', data.settings.margin.left + w * 0.25 + 5, totalsY);
+           doc.text('DESPESAS', data.settings.margin.left + w * 0.5 + 5, totalsY);
+           doc.text('BALANÇO MENSAL', data.settings.margin.left + w * 0.75 + 5, totalsY);
+           
+           doc.setFontSize(10);
+           doc.setFont('helvetica', 'bold');
+           doc.setTextColor(15, 23, 42); // slate-900
+           doc.text(currencyFormatter.format(saldoDoMes), data.settings.margin.left + 5, valY);
+           
+           doc.setTextColor(34, 197, 94); // green-500
+           doc.text(currencyFormatter.format(totalIncome), data.settings.margin.left + w * 0.25 + 5, valY);
+           
+           doc.setTextColor(239, 68, 68); // red-500
+           doc.text(currencyFormatter.format(totalExpense), data.settings.margin.left + w * 0.5 + 5, valY);
+           
+           doc.setTextColor(balance >= 0 ? 34 : 239, balance >= 0 ? 197 : 68, balance >= 0 ? 94 : 68);
+           doc.text(currencyFormatter.format(balance), data.settings.margin.left + w * 0.75 + 5, valY);
+           
+           doc.setFont('helvetica', 'normal');
+        }
+      }
+    });
+
+    const element = document.getElementById('pdf-report-charts');
+    let chartsImgData: string | null = null;
+    let chartsImgWidth = 0;
+    let chartsImgHeight = 0;
+    
+    if (element && expensesData.length > 0) {
+      const toastId = toast.loading('Calculando gráficos para o relatório...');
+      try {
+        await new Promise(resolve => setTimeout(resolve, 800)); // Aguarda Recharts montar
+        
+        const canvas = await html2canvas(element, { 
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#f8fafc',
+          logging: false
+        });
+        
+        chartsImgData = canvas.toDataURL('image/png', 1.0);
+        chartsImgWidth = canvas.width;
+        chartsImgHeight = canvas.height;
+
+        toast.dismiss(toastId);
+      } catch (err) {
+        console.warn("Could not render charts", err);
+        toast.dismiss(toastId);
+      }
+    }
+
+    if (chartsImgData && chartsImgWidth > 0 && chartsImgHeight > 0) {
+      doc.addPage();
+      const margin = 14;
+      const pdfWidth = doc.internal.pageSize.getWidth() - (margin * 2);
+      const pdfHeight = (chartsImgHeight * pdfWidth) / chartsImgWidth;
+      
+      // If charts are bigger than page, scale them down
+      const maxPdfHeight = doc.internal.pageSize.getHeight() - margin - 40;
+      let finalW = pdfWidth;
+      let finalH = pdfHeight;
+      if (pdfHeight > maxPdfHeight) {
+         finalH = maxPdfHeight;
+         finalW = (chartsImgWidth * maxPdfHeight) / chartsImgHeight;
+      }
+      
+      // Re-draw header on charts page
+      if (logoBase64 && logoWidth > 0 && logoHeight > 0) {
+        doc.addImage(logoBase64, 'PNG', margin, 10, logoWidth, logoHeight);
+      }
+      doc.setFontSize(14);
+      doc.setTextColor(50, 50, 50);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Gráficos do Relatório - ${currentMonthLabel.charAt(0).toUpperCase() + currentMonthLabel.slice(1)}`, margin, 34);
+
+      doc.addImage(chartsImgData, 'PNG', margin + (pdfWidth - finalW)/2, 45, finalW, finalH);
+    }
+
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        const str = `Página ${i} de ${pageCount}`;
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.setFont('helvetica', 'normal');
+        const pageSize = doc.internal.pageSize;
+        const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
+        const margin = 14; 
+        
+        doc.text(str, margin, pageHeight - 10);
+        doc.text(`Gerado em: ${generatedAt}`, pageSize.width - margin - 40, pageHeight - 10);
+    }
+
+    doc.save(`relatorio_dindin_${format(selectedDate, 'yyyy_MM')}.pdf`);
   };
 
   const confirmDelete = async (type: 'single' | 'future' | 'all') => {
@@ -249,15 +529,24 @@ export const Transactions = () => {
             >
               <ArrowUpRight className="w-4 h-4" />
             </Button>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="rounded-full"
-              onClick={handleExportCSV}
-              title="Exportar CSV"
-            >
-              <Download className="w-4 h-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="inline-flex shrink-0 items-center justify-center rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400 h-9 w-9"
+                title="Exportar"
+              >
+                <Download className="w-4 h-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportCSV}>
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Exportar formato CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportPDF}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Exportar relatório PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
@@ -342,11 +631,51 @@ export const Transactions = () => {
           <table className="w-full text-sm text-left">
             <thead className="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800">
               <tr>
-                <th className="px-6 py-4 font-medium">{t('status')}</th>
-                <th className="px-6 py-4 font-medium">{t('date')}</th>
-                <th className="px-6 py-4 font-medium">{t('description')}</th>
-                <th className="px-6 py-4 font-medium">{t('category')}</th>
-                <th className="px-6 py-4 font-medium text-right">{t('value')}</th>
+                <th 
+                  className="px-6 py-4 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+                  onClick={() => handleSort('status')}
+                >
+                  <div className="flex items-center gap-1">
+                    {t('status')}
+                    {sortBy === 'status' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-4 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+                  onClick={() => handleSort('date')}
+                >
+                  <div className="flex items-center gap-1">
+                    {t('date')}
+                    {sortBy === 'date' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-4 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+                  onClick={() => handleSort('description')}
+                >
+                  <div className="flex items-center gap-1">
+                    {t('description')}
+                    {sortBy === 'description' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-4 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+                  onClick={() => handleSort('category')}
+                >
+                  <div className="flex items-center gap-1">
+                    {t('category')}
+                    {sortBy === 'category' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-4 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors text-right"
+                  onClick={() => handleSort('amount')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    {sortBy === 'amount' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                    {t('value')}
+                  </div>
+                </th>
                 <th className="px-6 py-4 font-medium text-center">{t('actions')}</th>
               </tr>
             </thead>
@@ -556,6 +885,184 @@ export const Transactions = () => {
         onSelect={handleMenuSelect} 
       />
       <ImportCsvDialog open={isImportCsvOpen} onOpenChange={setIsImportCsvOpen} />
+
+      {/* Container Oculto para exportação PDF */}
+      <div 
+        id="pdf-report-root"
+        style={{ 
+          position: 'absolute',
+          top: '-15000px',
+          left: '0px',
+          width: '1100px', 
+          zIndex: -9999
+        }}
+      >
+        <div 
+          id="pdf-report-charts" 
+          style={{ 
+            width: '1100px',
+            backgroundColor: '#f8fafc',
+            color: '#18181b',
+            position: 'relative',
+            padding: '40px'
+          }}
+        >
+          <div className="space-y-12">
+            {expensesData.length > 0 ? (
+              <>
+                {/* 1. ROW: Pie Chart */}
+                <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '16px', display: 'flex', gap: '48px', alignItems: 'center' }}>
+                  <div style={{ width: '400px', height: '400px', position: 'relative' }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#18181b' }}>{currencyFormatter.format(totalExpense)}</span>
+                        <span style={{ fontSize: '14px', color: '#71717a' }}>Total</span>
+                    </div>
+                    <PieChart width={400} height={400}>
+                      <Pie
+                        data={expensesData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={110}
+                        outerRadius={160}
+                        paddingAngle={2}
+                        dataKey="value"
+                        stroke="none"
+                        isAnimationActive={false}
+                      >
+                        {expensesData.map((entry: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </div>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#18181b', marginBottom: '8px' }}>Despesas Por Categorias</h3>
+                    {expensesData.map((item: any, i: number) => {
+                       const percentage = totalExpense > 0 ? ((item.value / totalExpense) * 100).toFixed(2) : '0';
+                       return (
+                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold', fontSize: '16px' }}>
+                                    {item.name.charAt(0)}
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontWeight: '600', fontSize: '15px', color: '#18181b' }}>{item.name}</span>
+                                    <span style={{ fontSize: '13px', color: '#71717a' }}>Porcentagem</span>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                <span style={{ fontWeight: '600', fontSize: '15px', color: '#ef4444' }}>{currencyFormatter.format(item.value)}</span>
+                                <span style={{ fontSize: '13px', color: '#71717a' }}>{percentage}%</span>
+                            </div>
+                         </div>
+                       );
+                    })}
+                  </div>
+                </div>
+
+                {/* 2. ROW: Line Chart */}
+                <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '16px', display: 'flex', gap: '48px', alignItems: 'center' }}>
+                  <div style={{ width: '400px', height: '400px' }}>
+                    <LineChart width={400} height={400} data={expensesData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" vertical={false} />
+                      <XAxis dataKey="name" stroke="#52525b" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis 
+                        stroke="#52525b" 
+                        fontSize={11} 
+                        tickLine={false} 
+                        axisLine={false} 
+                        tickFormatter={(value) => currencyFormatter.format(value)} 
+                        width={80}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke="#8b5cf6" 
+                        strokeWidth={3} 
+                        dot={{ r: 6, fill: '#8b5cf6', strokeWidth: 0 }}
+                        isAnimationActive={false}
+                      />
+                    </LineChart>
+                  </div>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#18181b', marginBottom: '8px' }}>Despesas Por Categorias</h3>
+                    {expensesData.map((item: any, i: number) => {
+                       const percentage = totalExpense > 0 ? ((item.value / totalExpense) * 100).toFixed(2) : '0';
+                       return (
+                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold', fontSize: '16px' }}>
+                                    {item.name.charAt(0)}
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontWeight: '600', fontSize: '15px', color: '#18181b' }}>{item.name}</span>
+                                    <span style={{ fontSize: '13px', color: '#71717a' }}>Porcentagem</span>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                <span style={{ fontWeight: '600', fontSize: '15px', color: '#ef4444' }}>{currencyFormatter.format(item.value)}</span>
+                                <span style={{ fontSize: '13px', color: '#71717a' }}>{percentage}%</span>
+                            </div>
+                         </div>
+                       );
+                    })}
+                  </div>
+                </div>
+
+                {/* 3. ROW: Bar Chart */}
+                <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '16px', display: 'flex', gap: '48px', alignItems: 'center' }}>
+                  <div style={{ width: '400px', height: '400px' }}>
+                    <BarChart width={400} height={400} data={expensesData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" vertical={false} />
+                      <XAxis dataKey="name" stroke="#52525b" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis 
+                        stroke="#52525b" 
+                        fontSize={11} 
+                        tickLine={false} 
+                        axisLine={false} 
+                        tickFormatter={(value) => currencyFormatter.format(value)} 
+                        width={80}
+                      />
+                      <Bar dataKey="value" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+                        {expensesData.map((entry: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </div>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#18181b', marginBottom: '8px' }}>Despesas Por Categorias</h3>
+                    {expensesData.map((item: any, i: number) => {
+                       const percentage = totalExpense > 0 ? ((item.value / totalExpense) * 100).toFixed(2) : '0';
+                       return (
+                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold', fontSize: '16px' }}>
+                                    {item.name.charAt(0)}
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontWeight: '600', fontSize: '15px', color: '#18181b' }}>{item.name}</span>
+                                    <span style={{ fontSize: '13px', color: '#71717a' }}>Porcentagem</span>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                <span style={{ fontWeight: '600', fontSize: '15px', color: '#ef4444' }}>{currencyFormatter.format(item.value)}</span>
+                                <span style={{ fontSize: '13px', color: '#71717a' }}>{percentage}%</span>
+                            </div>
+                         </div>
+                       );
+                    })}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="w-full text-center text-zinc-500 py-20 text-xl font-medium">
+                Sem dados suficientes no mês para gerar gráficos.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
