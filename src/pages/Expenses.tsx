@@ -9,7 +9,7 @@ import { format, parseISO, addMonths, subMonths, isSameMonth, startOfMonth, endO
 import { ptBR, enUS, es } from 'date-fns/locale';
 import { useNavigate } from 'react-router';
 import { cn } from '@/lib/utils';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { NewTransactionDialog } from '@/components/NewTransactionDialog';
@@ -114,7 +114,7 @@ const SortableRow = ({
         {formatCurrency(transaction.amount)}
       </td>
       <td className="px-4 py-4 text-center">
-        <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center justify-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => onEdit(transaction.id, e)}>
             <Edit2 className="w-4 h-4 text-zinc-400" />
           </Button>
@@ -296,15 +296,26 @@ export const Expenses = () => {
   };
 
   // Group by category for the chart
-  const categoryData = categories
-    .filter(c => c.type === 'expense')
-    .map(c => {
-      const amount = monthlyExpenses
-        .filter(t => t.categoryId === c.id)
-        .reduce((acc, t) => acc + t.amount, 0);
-      return { name: c.name, value: amount, color: c.color };
-    })
-    .filter(d => d.value > 0);
+  const categoryData = React.useMemo(() => {
+    const categoryTotals = monthlyExpenses.reduce((acc, curr) => {
+      acc[curr.categoryId] = (acc[curr.categoryId] || 0) + curr.amount;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(categoryTotals)
+      .map(([categoryId, amount]) => {
+        const category = categories.find(c => c.id === categoryId);
+        return {
+          name: category?.name || 'Desconhecido',
+          value: amount,
+          color: category?.color || '#ccc',
+        };
+      })
+      .filter(d => d.value > 0)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [monthlyExpenses, categories]);
+
+  const ChartComponent = categoryData.length > 5 ? BarChart : PieChart;
 
   return (
     <motion.div 
@@ -502,37 +513,77 @@ export const Expenses = () => {
             </CardHeader>
             <CardContent>
               <div className="h-[250px] w-full min-w-0 min-h-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(value: number, name: string) => {
-                        const total = categoryData.reduce((acc, cur) => acc + cur.value, 0);
-                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
-                        return [`${formatCurrency(value)} (${percentage}%)`, name];
-                      }}
-                      contentStyle={{ 
-                        backgroundColor: 'rgba(0, 0, 0, 0.9)', 
-                        borderRadius: '12px', 
-                        border: '1px solid #333',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                      }}
-                      itemStyle={{ fontWeight: '500' }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+                  {categoryData.length > 5 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={categoryData} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
+                        <XAxis type="number" hide />
+                        <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
+                        <Tooltip 
+                          cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              const value = payload[0].value as number;
+                              const total = categoryData.reduce((acc, cur) => acc + cur.value, 0);
+                              const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                              return (
+                                <div style={{ 
+                                  backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                                  borderRadius: '12px', 
+                                  border: '1px solid #333',
+                                  boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                  padding: '12px'
+                                }}>
+                                  <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
+                                  <p style={{ color: data.color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
+                                    Valor: {formatCurrency(value)} ({percentage}%)
+                                  </p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                          {categoryData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={categoryData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {categoryData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value: number, name: string) => {
+                            const total = categoryData.reduce((acc, cur) => acc + cur.value, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                            return [`${formatCurrency(value)} (${percentage}%)`, name];
+                          }}
+                          contentStyle={{ 
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                            borderRadius: '12px', 
+                            border: '1px solid #333',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                          }}
+                          itemStyle={{ fontWeight: '500' }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
               </div>
               <div className="space-y-2 mt-4">
                 {categoryData.map((item, index) => (

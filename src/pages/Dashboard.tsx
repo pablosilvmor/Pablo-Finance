@@ -113,27 +113,49 @@ export const Dashboard = () => {
     return { name: month, income, expense, balance: income - expense };
   });
 
-  // Data for Pie Chart (Expenses)
-  const pieDataExpenses = categories
-    .filter(c => c.type === 'expense')
-    .map(c => {
-      const amount = monthlyTransactions
-        .filter(t => t.categoryId === c.id)
-        .reduce((acc, t) => acc + t.amount, 0);
-      return { name: c.name, value: amount, color: c.color };
-    })
-    .filter(d => d.value > 0);
+  // Data for Chart (Expenses)
+  const pieDataExpenses = React.useMemo(() => {
+    const categoryTotals = monthlyTransactions
+      .filter(t => t.type === 'expense')
+      .reduce((acc, curr) => {
+        acc[curr.categoryId] = (acc[curr.categoryId] || 0) + curr.amount;
+        return acc;
+      }, {} as Record<string, number>);
 
-  // Data for Pie Chart (Incomes)
-  const pieDataIncomes = categories
-    .filter(c => c.type === 'income')
-    .map(c => {
-      const amount = monthlyTransactions
-        .filter(t => t.categoryId === c.id)
-        .reduce((acc, t) => acc + t.amount, 0);
-      return { name: c.name, value: amount, color: c.color };
-    })
-    .filter(d => d.value > 0);
+    return Object.entries(categoryTotals)
+      .map(([categoryId, amount]) => {
+        const category = categories.find(c => c.id === categoryId);
+        return {
+          name: category?.name || 'Desconhecido',
+          value: amount,
+          color: category?.color || '#ccc',
+        };
+      })
+      .filter(d => d.value > 0)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [monthlyTransactions, categories]);
+
+  // Data for Chart (Incomes)
+  const pieDataIncomes = React.useMemo(() => {
+    const categoryTotals = monthlyTransactions
+      .filter(t => t.type === 'income')
+      .reduce((acc, curr) => {
+        acc[curr.categoryId] = (acc[curr.categoryId] || 0) + curr.amount;
+        return acc;
+      }, {} as Record<string, number>);
+
+    return Object.entries(categoryTotals)
+      .map(([categoryId, amount]) => {
+        const category = categories.find(c => c.id === categoryId);
+        return {
+          name: category?.name || 'Desconhecido',
+          value: amount,
+          color: category?.color || '#ccc',
+        };
+      })
+      .filter(d => d.value > 0)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [monthlyTransactions, categories]);
 
   const handleGenerateInsights = async () => {
     if (insights) return;
@@ -161,7 +183,45 @@ export const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="h-64 w-full min-h-[256px] min-w-0">
-                {pieDataExpenses.length > 0 ? (
+                {pieDataExpenses.length > 5 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={pieDataExpenses} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
+                      <XAxis type="number" hide />
+                      <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
+                      <Tooltip 
+                        cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            const value = payload[0].value as number;
+                            const total = pieDataExpenses.reduce((acc, cur) => acc + cur.value, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                            return (
+                              <div style={{ 
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                                borderRadius: '12px', 
+                                border: '1px solid #333',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                padding: '12px'
+                              }}>
+                                <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
+                                <p style={{ color: data.color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
+                                  {formatCurrency(value)} ({percentage}%)
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                        {pieDataExpenses.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : pieDataExpenses.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -216,7 +276,45 @@ export const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="h-64 w-full min-h-[256px] min-w-0">
-                {pieDataIncomes.length > 0 ? (
+                {pieDataIncomes.length > 5 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={pieDataIncomes} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
+                      <XAxis type="number" hide />
+                      <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
+                      <Tooltip 
+                        cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            const value = payload[0].value as number;
+                            const total = pieDataIncomes.reduce((acc, cur) => acc + cur.value, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                            return (
+                              <div style={{ 
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                                borderRadius: '12px', 
+                                border: '1px solid #333',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                padding: '12px'
+                              }}>
+                                <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
+                                <p style={{ color: data.color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
+                                  {formatCurrency(value)} ({percentage}%)
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                        {pieDataIncomes.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : pieDataIncomes.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppStore } from '../lib/store';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, MoreVertical, Search, Filter, ArrowUpRight, ArrowDownRight, CheckCircle2, Circle, X, Trash2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, MoreVertical, Search, Filter, ArrowUpRight, ArrowDownRight, CheckCircle2, Circle, X, Trash2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format, parseISO, isSameMonth, endOfMonth } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
@@ -719,19 +719,35 @@ export const Transactions = () => {
                       {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); }}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger onClick={(e) => e.stopPropagation()} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none hover:bg-muted hover:text-foreground">
                           <MoreVertical className="w-4 h-4 text-zinc-400" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                          onClick={(e) => handleDelete(t.id, e)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingTransactionId(t.id);
+                            setIsNewDialogOpen(true);
+                          }} className="flex items-center gap-2 cursor-pointer">
+                            <Edit2 className="w-4 h-4 text-zinc-500" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleStatus(t.id, t.status, e as any);
+                          }} className="flex items-center gap-2 cursor-pointer">
+                            {t.status === 'paid' ? <Circle className="w-4 h-4 text-zinc-500" /> : <CheckCircle2 className="w-4 h-4 text-[#01bfa5]" />}
+                            Marcar como {t.status === 'paid' ? 'Pendente' : 'Pago'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-red-600 flex items-center gap-2 cursor-pointer" onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(t.id, e as any);
+                          }}>
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 );
