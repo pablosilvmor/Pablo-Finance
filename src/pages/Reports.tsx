@@ -13,8 +13,8 @@ export const Reports = () => {
   const { transactions, categories, tags, userSettings } = useAppStore();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [reportType, setReportType] = useState('expenses');
-  const [chartType, setChartType] = useState<'pie' | 'line' | 'bar'>(() => {
-    return (localStorage.getItem('preferredChartType') as 'pie' | 'line' | 'bar') || 'pie';
+  const [chartType, setChartType] = useState<'distribution' | 'line' | 'bar' | 'pie'>(() => {
+    return (localStorage.getItem('preferredChartType') as 'distribution' | 'line' | 'bar' | 'pie') || 'distribution';
   });
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
 
@@ -100,16 +100,6 @@ export const Reports = () => {
     }
   }, [transactions, categories, tags, currentDate, reportType]);
 
-  useEffect(() => {
-    if (chartType !== 'line') {
-      if (filteredData.length > 5 && chartType === 'pie') {
-        setChartType('bar');
-      } else if (filteredData.length <= 5 && chartType === 'bar') {
-        setChartType('pie');
-      }
-    }
-  }, [filteredData.length, chartType]);
-
   const totalAmount = filteredData.reduce((sum, item) => sum + item.value, 0);
 
   const handleExportCSV = () => {
@@ -144,41 +134,105 @@ export const Reports = () => {
     }
 
     switch (chartType) {
-      case 'pie':
+      case 'distribution':
+        if (filteredData.length > 5) {
+          return (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={filteredData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" vertical={false} />
+                <XAxis dataKey="name" stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis 
+                  stroke="#a1a1aa" 
+                  fontSize={12} 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickFormatter={(value) => userSettings.showValues ? new Intl.NumberFormat(userSettings.language, { style: 'currency', currency: userSettings.currency, maximumFractionDigits: 0 }).format(value) : '•••••'} 
+                />
+                <Tooltip 
+                  cursor={{ fill: 'hsl(var(--secondary))', opacity: 0.4 }}
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      const value = payload[0].value as number;
+                      const total = filteredData.reduce((acc, cur) => acc + cur.value, 0);
+                      const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                      return (
+                        <div style={{ 
+                          backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                          borderRadius: '12px', 
+                          border: '1px solid #333',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                          padding: '12px'
+                        }}>
+                          <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
+                          <p style={{ color: data.color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
+                            {formatCurrency(value)} ({percentage}%)
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {filteredData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          );
+        } else {
+          return (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={filteredData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={80}
+                  outerRadius={120}
+                  paddingAngle={2}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  {filteredData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      const value = payload[0].value as number;
+                      const total = filteredData.reduce((acc, cur) => acc + cur.value, 0);
+                      const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                      return (
+                        <div style={{ 
+                          backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                          borderRadius: '12px', 
+                          border: '1px solid #333',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                          padding: '12px'
+                        }}>
+                          <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
+                          <p style={{ color: data.color || (payload[0] as any).color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
+                            {formatCurrency(value)} ({percentage}%)
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          );
+        }
+      case 'line':
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={filteredData}
-                cx="50%"
-                cy="50%"
-                innerRadius={80}
-                outerRadius={120}
-                paddingAngle={2}
-                dataKey="value"
-                stroke="none"
-              >
-                {filteredData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip 
-                formatter={(value: number) => [formatCurrency(value), 'Valor']}
-                contentStyle={{ 
-                  backgroundColor: 'rgba(0, 0, 0, 0.9)', 
-                  borderRadius: '12px', 
-                  border: '1px solid #333',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                }}
-                itemStyle={{ fontWeight: '500' }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        );
-      case 'bar':
-        return (
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={filteredData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <LineChart data={filteredData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" vertical={false} />
               <XAxis dataKey="name" stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} />
               <YAxis 
@@ -189,7 +243,6 @@ export const Reports = () => {
                 tickFormatter={(value) => userSettings.showValues ? new Intl.NumberFormat(userSettings.language, { style: 'currency', currency: userSettings.currency, maximumFractionDigits: 0 }).format(value) : '•••••'} 
               />
               <Tooltip 
-                cursor={{ fill: 'hsl(var(--secondary))', opacity: 0.4 }}
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     const data = payload[0].payload;
@@ -205,7 +258,7 @@ export const Reports = () => {
                         padding: '12px'
                       }}>
                         <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
-                        <p style={{ color: data.color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
+                        <p style={{ color: data.color || '#8b5cf6', fontWeight: '500', margin: 0, fontSize: '14px' }}>
                           {formatCurrency(value)} ({percentage}%)
                         </p>
                       </div>
@@ -213,37 +266,6 @@ export const Reports = () => {
                   }
                   return null;
                 }}
-              />
-              <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                {filteredData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        );
-      case 'line':
-        return (
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={filteredData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" vertical={false} />
-              <XAxis dataKey="name" stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} />
-              <YAxis 
-                stroke="#a1a1aa" 
-                fontSize={12} 
-                tickLine={false} 
-                axisLine={false} 
-                tickFormatter={(value) => userSettings.showValues ? new Intl.NumberFormat(userSettings.language, { style: 'currency', currency: userSettings.currency, maximumFractionDigits: 0 }).format(value) : '•••••'} 
-              />
-              <Tooltip 
-                formatter={(value: number) => [formatCurrency(value), 'Valor']}
-                contentStyle={{ 
-                  backgroundColor: 'rgba(0, 0, 0, 0.9)', 
-                  borderRadius: '12px', 
-                  border: '1px solid #333',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                }}
-                itemStyle={{ fontWeight: '500' }}
               />
               <Line type="monotone" dataKey="value" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4, fill: '#8b5cf6' }} activeDot={{ r: 6 }} />
             </LineChart>
@@ -262,10 +284,10 @@ export const Reports = () => {
         <div className="flex items-center bg-secondary rounded-full p-1">
           <Button 
             variant="ghost" 
-            className={`rounded-full px-6 ${chartType === 'pie' ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            onClick={() => setChartType('pie')}
+            className={`rounded-full px-6 ${chartType === 'distribution' ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            onClick={() => setChartType('distribution')}
           >
-            <PieChartIcon className="w-4 h-4" />
+            {filteredData.length > 5 ? <BarChart3 className="w-4 h-4" /> : <PieChartIcon className="w-4 h-4" />}
           </Button>
           <Button 
             variant="ghost" 
@@ -273,13 +295,6 @@ export const Reports = () => {
             onClick={() => setChartType('line')}
           >
             <Activity className="w-4 h-4" />
-          </Button>
-          <Button 
-            variant="ghost" 
-            className={`rounded-full px-6 ${chartType === 'bar' ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            onClick={() => setChartType('bar')}
-          >
-            <BarChart3 className="w-4 h-4" />
           </Button>
         </div>
 

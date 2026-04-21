@@ -361,7 +361,7 @@ export const Transactions = () => {
       doc.addImage(chartsImgData, 'PNG', margin + (pdfWidth - finalW)/2, 45, finalW, finalH);
     }
 
-    const pageCount = doc.internal.getNumberOfPages();
+    const pageCount = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
         const str = `Página ${i} de ${pageCount}`;

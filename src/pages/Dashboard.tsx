@@ -238,23 +238,28 @@ export const Dashboard = () => {
                         ))}
                       </Pie>
                       <Tooltip 
-                        labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: '4px' }}
-                        contentStyle={{ 
-                          backgroundColor: 'rgba(0, 0, 0, 0.9)', 
-                          borderRadius: '12px', 
-                          border: '1px solid #333',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                          padding: '12px'
-                        }}
-                        itemStyle={{ fontWeight: '600' }}
-                        formatter={(value: number, name: string, props: any) => {
-                          const total = pieDataExpenses.reduce((acc, cur) => acc + cur.value, 0);
-                          const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
-                          const color = props.payload?.color || props.color;
-                          return [
-                            <span style={{ color }}>{`${formatCurrency(value)} (${percentage}%)`}</span>,
-                            <span style={{ color }}>{name}</span>
-                          ];
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            const value = payload[0].value as number;
+                            const total = pieDataExpenses.reduce((acc, cur) => acc + cur.value, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                            return (
+                              <div style={{ 
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                                borderRadius: '12px', 
+                                border: '1px solid #333',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                padding: '12px'
+                              }}>
+                                <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
+                                <p style={{ color: data.color || (payload[0] as any).color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
+                                  {formatCurrency(value)} ({percentage}%)
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
                         }}
                       />
                     </PieChart>
@@ -331,23 +336,28 @@ export const Dashboard = () => {
                         ))}
                       </Pie>
                       <Tooltip 
-                        labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: '4px' }}
-                        contentStyle={{ 
-                          backgroundColor: 'rgba(0, 0, 0, 0.9)', 
-                          borderRadius: '12px', 
-                          border: '1px solid #333',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                          padding: '12px'
-                        }}
-                        itemStyle={{ fontWeight: '600' }}
-                        formatter={(value: number, name: string, props: any) => {
-                          const total = pieDataIncomes.reduce((acc, cur) => acc + cur.value, 0);
-                          const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
-                          const color = props.payload?.color || props.color;
-                          return [
-                            <span style={{ color }}>{`${formatCurrency(value)} (${percentage}%)`}</span>,
-                            <span style={{ color }}>{name}</span>
-                          ];
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            const value = payload[0].value as number;
+                            const total = pieDataIncomes.reduce((acc, cur) => acc + cur.value, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                            return (
+                              <div style={{ 
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                                borderRadius: '12px', 
+                                border: '1px solid #333',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                padding: '12px'
+                              }}>
+                                <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
+                                <p style={{ color: data.color || (payload[0] as any).color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
+                                  {formatCurrency(value)} ({percentage}%)
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
                         }}
                       />
                     </PieChart>

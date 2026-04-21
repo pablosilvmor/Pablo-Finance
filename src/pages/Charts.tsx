@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { PieChart as PieChartIcon, Activity, BarChart2, ChevronLeft, ChevronRight, ChevronDown, Filter, Calendar as CalendarIcon } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
-import { format, parseISO, isSameMonth, isSameYear, startOfWeek, endOfWeek, eachDayOfInterval, startOfMonth, endOfMonth, eachMonthOfInterval, startOfYear, endOfYear, getDay, addMonths, subMonths, addYears, subYears } from 'date-fns';
+import { format, parseISO, isSameMonth, isSameYear, startOfWeek, endOfWeek, eachDayOfInterval, startOfMonth, endOfMonth, eachMonthOfInterval, startOfYear, endOfYear, getDay, addMonths, subMonths, addYears, subYears, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, ComposedChart, Line } from 'recharts';
 import { MonthPicker } from '@/components/MonthPicker';
@@ -69,7 +69,7 @@ export const Charts = () => {
       const days = eachDayOfInterval({ start: startOfMonth(selectedDate), end: endOfMonth(selectedDate) });
       let total = 0;
       const data = days.map(day => {
-        const dayTransactions = transactions.filter(t => t.type === 'expense' && t.date === format(day, 'yyyy-MM-dd'));
+        const dayTransactions = transactions.filter(t => t.type === 'expense' && isSameDay(parseISO(t.date), day));
         const amount = dayTransactions.reduce((acc, t) => acc + t.amount, 0);
         total += amount;
         return {
@@ -222,17 +222,43 @@ export const Charts = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={pieData.data.length > 0 ? pieData.data : [{ value: 1, color: '#e4e4e7' }]}
+                    data={pieData.data.length > 0 ? pieData.data : [{ name: 'Sem dados', value: 1, color: '#e4e4e7' }]}
                     innerRadius={80}
                     outerRadius={110}
                     paddingAngle={0}
                     dataKey="value"
                     stroke="none"
                   >
-                    {(pieData.data.length > 0 ? pieData.data : [{ value: 1, color: '#e4e4e7' }]).map((entry, index) => (
+                    {(pieData.data.length > 0 ? pieData.data : [{ name: 'Sem dados', value: 1, color: '#e4e4e7' }]).map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
+                  {pieData.data.length > 0 && (
+                    <Tooltip 
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          const value = payload[0].value as number;
+                          const percentage = pieData.total > 0 ? ((value / pieData.total) * 100).toFixed(1) : '0.0';
+                          return (
+                            <div style={{ 
+                              backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                              borderRadius: '12px', 
+                              border: '1px solid #333',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                              padding: '12px'
+                            }}>
+                              <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
+                              <p style={{ color: data.color || (payload[0] as any).color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
+                                Valor: {userSettings.showValues ? new Intl.NumberFormat(userSettings.language || 'pt-BR', { style: 'currency', currency: userSettings.currency || 'BRL' }).format(value) : '•••••'} ({percentage}%)
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                  )}
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -287,16 +313,27 @@ export const Charts = () => {
                   <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#888' }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#888' }} tickFormatter={(val) => userSettings.showValues ? `R$${val}` : 'R$••'} />
                   <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(0, 0, 0, 0.9)', 
-                      borderRadius: '12px', 
-                      border: '1px solid #333',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                    }}
-                    itemStyle={{ fontWeight: '500' }}
-                    formatter={(value: number) => {
-                      const percentage = lineData.total > 0 ? ((value / lineData.total) * 100).toFixed(1) : '0.0';
-                      return userSettings.showValues ? [`${value.toLocaleString('pt-BR', { style: 'currency', currency: userSettings.currency })} (${percentage}%)`, 'Quantia'] : 'R$ •••••';
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        const value = payload[0].value as number;
+                        const percentage = lineData.total > 0 ? ((value / lineData.total) * 100).toFixed(1) : '0.0';
+                        return (
+                          <div style={{ 
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                            borderRadius: '12px', 
+                            border: '1px solid #333',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                            padding: '12px'
+                          }}>
+                            <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.date}</p>
+                            <p style={{ color: '#00b4d8', fontWeight: '500', margin: 0, fontSize: '14px' }}>
+                              Quantia: {userSettings.showValues ? new Intl.NumberFormat(userSettings.language || 'pt-BR', { style: 'currency', currency: userSettings.currency || 'BRL' }).format(value) : '•••••'} ({percentage}%)
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
                     }}
                   />
                   <Area type="monotone" dataKey="amount" stroke="#00b4d8" fillOpacity={1} fill="url(#colorAmount)" strokeWidth={2} />
