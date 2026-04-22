@@ -175,6 +175,7 @@ export const Performance = () => {
                   tickFormatter={(value) => userSettings.showValues ? new Intl.NumberFormat(userSettings.language, { style: 'currency', currency: userSettings.currency, maximumFractionDigits: 0 }).format(value) : '•••••'}
                 />
                 <Tooltip 
+                  trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
                   labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: '4px' }}
                   contentStyle={{ 
                     backgroundColor: 'rgba(0, 0, 0, 0.9)', 

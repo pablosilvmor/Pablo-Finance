@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { ArrowUpRight, Filter, Search, MoreVertical, CheckCircle2, Circle, TrendingUp, Calendar, ArrowLeft, ChevronLeft, ChevronRight, Edit2, Trash2, AlertTriangle, X } from 'lucide-react';
+import { ArrowUpRight, Filter, Search, MoreVertical, CheckCircle2, Circle, TrendingUp, Calendar, ArrowLeft, ChevronLeft, ChevronRight, Edit2, Trash2, AlertTriangle, X, ArrowUp, ArrowDown, ArrowUpDown, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format, parseISO, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
@@ -131,7 +131,26 @@ export const Incomes = () => {
   const { transactions, deleteTransaction, bulkDeleteTransactions, bulkUpdateTransactions, updateTransaction, categories, userSettings, setTransactions } = useAppStore();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'date' | 'description' | 'amount' | 'manual'>('date');
+  const [sortBy, setSortBy] = useState<'date' | 'description' | 'amount' | 'manual' | 'status' | 'category'>(() => {
+    return (localStorage.getItem('incomes-sort') as any) || 'date';
+  });
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(() => {
+    return (localStorage.getItem('incomes-sort-order') as any) || 'desc';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('incomes-sort', sortBy);
+    localStorage.setItem('incomes-sort-order', sortOrder);
+  }, [sortBy, sortOrder]);
+
+  const handleSort = (field: 'date' | 'description' | 'amount' | 'manual' | 'status' | 'category') => {
+    if (sortBy === field && field !== 'manual') {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder(field === 'date' || field === 'amount' ? 'desc' : 'asc');
+    }
+  };
   const [currentDate, setCurrentDate] = useState(new Date());
   const [editingTransactionId, setEditingTransactionId] = useState<string | undefined>(undefined);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -174,12 +193,44 @@ export const Incomes = () => {
   const filteredIncomes = monthlyIncomes.filter(t => 
     t.description.toLowerCase().includes(searchTerm.toLowerCase())
   ).sort((a, b) => {
-    if (sortBy === 'date') return new Date(a.date).getTime() - new Date(b.date).getTime();
-    if (sortBy === 'description') return a.description.localeCompare(b.description);
-    if (sortBy === 'amount') return b.amount - a.amount;
-    if (sortBy === 'manual') return (a.sortOrder || 0) - (b.sortOrder || 0);
-    return 0;
+    let comparison = 0;
+    if (sortBy === 'date') comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+    else if (sortBy === 'description') comparison = a.description.localeCompare(b.description);
+    else if (sortBy === 'amount') comparison = a.amount - b.amount;
+    else if (sortBy === 'manual') comparison = (a.sortOrder || 0) - (b.sortOrder || 0);
+    else if (sortBy === 'status') comparison = a.status.localeCompare(b.status);
+    else if (sortBy === 'category') {
+      const catA = getCategory(a.categoryId)?.name || '';
+      const catB = getCategory(b.categoryId)?.name || '';
+      comparison = catA.localeCompare(catB);
+    }
+    if (sortBy === 'manual') return comparison;
+    return sortOrder === 'asc' ? comparison : -comparison;
   });
+
+  const handleExportCSV = () => {
+    const headers = ['Situação', 'Data', 'Descrição', 'Categoria', 'Valor'];
+    const rows = filteredIncomes.map(t => {
+      const cat = getCategory(t.categoryId);
+      const status = t.status === 'paid' ? 'Recebido' : 'Pendente';
+      return [
+        status,
+        format(parseISO(t.date), 'dd/MM/yyyy'),
+        `"${t.description.replace(/"/g, '""')}"`,
+        `"${cat?.name || ''}"`,
+        t.amount.toString().replace('.', ',')
+      ].join(';');
+    });
+    const csvContent = [headers.join(';'), ...rows].join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `receitas_${format(currentDate, 'yyyy_MM')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -351,7 +402,7 @@ export const Incomes = () => {
               variant={sortBy === 'date' ? 'default' : 'ghost'} 
               size="sm" 
               className="rounded-full h-7 text-[10px] px-3"
-              onClick={() => setSortBy('date')}
+              onClick={() => handleSort('date')}
             >
               Data
             </Button>
@@ -359,7 +410,7 @@ export const Incomes = () => {
               variant={sortBy === 'description' ? 'default' : 'ghost'} 
               size="sm" 
               className="rounded-full h-7 text-[10px] px-3"
-              onClick={() => setSortBy('description')}
+              onClick={() => handleSort('description')}
             >
               Nome
             </Button>
@@ -367,7 +418,7 @@ export const Incomes = () => {
               variant={sortBy === 'amount' ? 'default' : 'ghost'} 
               size="sm" 
               className="rounded-full h-7 text-[10px] px-3"
-              onClick={() => setSortBy('amount')}
+              onClick={() => handleSort('amount')}
             >
               Valor
             </Button>
@@ -375,11 +426,20 @@ export const Incomes = () => {
               variant={sortBy === 'manual' ? 'default' : 'ghost'} 
               size="sm" 
               className="rounded-full h-7 text-[10px] px-3"
-              onClick={() => setSortBy('manual')}
+              onClick={() => handleSort('manual')}
             >
               Manual
             </Button>
           </div>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="rounded-full shrink-0 h-9 w-9"
+            onClick={handleExportCSV}
+            title="Exportar CSV"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
@@ -427,11 +487,36 @@ export const Incomes = () => {
                       <table className="w-full text-sm text-left">
                         <thead className="text-xs text-zinc-500 dark:text-zinc-400 uppercase">
                           <tr>
-                            <th className="px-4 py-3 font-medium">Situação</th>
-                            <th className="px-4 py-3 font-medium">Data</th>
-                            <th className="px-4 py-3 font-medium">Descrição</th>
-                            <th className="px-4 py-3 font-medium">Categoria</th>
-                            <th className="px-4 py-3 font-medium text-right">Valor</th>
+                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" onClick={() => handleSort('status')}>
+                              <div className="flex items-center gap-1">
+                                Situação
+                                {sortBy === 'status' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                              </div>
+                            </th>
+                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" onClick={() => handleSort('date')}>
+                              <div className="flex items-center gap-1">
+                                Data
+                                {sortBy === 'date' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                              </div>
+                            </th>
+                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" onClick={() => handleSort('description')}>
+                              <div className="flex items-center gap-1">
+                                Descrição
+                                {sortBy === 'description' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                              </div>
+                            </th>
+                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" onClick={() => handleSort('category')}>
+                              <div className="flex items-center gap-1">
+                                Categoria
+                                {sortBy === 'category' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                              </div>
+                            </th>
+                            <th className="px-4 py-3 font-medium text-right cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" onClick={() => handleSort('amount')}>
+                              <div className="flex items-center justify-end gap-1">
+                                {sortBy === 'amount' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                                Valor
+                              </div>
+                            </th>
                             <th className="px-4 py-3 font-medium text-center">Ações</th>
                           </tr>
                         </thead>
@@ -471,6 +556,7 @@ export const Incomes = () => {
                         <XAxis type="number" hide />
                         <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
                         <Tooltip 
+                          trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
                           cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
                           content={({ active, payload }) => {
                             if (active && payload && payload.length) {
@@ -520,6 +606,7 @@ export const Incomes = () => {
                           ))}
                         </Pie>
                         <Tooltip 
+                          trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
                           content={({ active, payload }) => {
                             if (active && payload && payload.length) {
                               const data = payload[0].payload;

@@ -235,6 +235,7 @@ export const Charts = () => {
                   </Pie>
                   {pieData.data.length > 0 && (
                     <Tooltip 
+                      trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           const data = payload[0].payload;
@@ -313,6 +314,7 @@ export const Charts = () => {
                   <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#888' }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#888' }} tickFormatter={(val) => userSettings.showValues ? `R$${val}` : 'R$••'} />
                   <Tooltip 
+                    trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         const data = payload[0].payload;
@@ -352,6 +354,7 @@ export const Charts = () => {
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#888' }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#888' }} tickFormatter={(val) => userSettings.showValues ? `R$${val}` : 'R$••'} />
                 <Tooltip 
+                  trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
                   labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: '4px' }}
                   contentStyle={{ 
                     backgroundColor: 'rgba(0, 0, 0, 0.9)', 
@@ -386,6 +389,7 @@ export const Charts = () => {
                 <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#888' }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#888' }} tickFormatter={(val) => userSettings.showValues ? `R$${val}` : 'R$••'} />
                 <Tooltip 
+                  trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
                   labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: '4px' }}
                   contentStyle={{ 
                     backgroundColor: 'rgba(0, 0, 0, 0.9)', 

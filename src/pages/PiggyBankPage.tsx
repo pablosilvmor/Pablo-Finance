@@ -396,7 +396,7 @@ export const PiggyBankPage = () => {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#333" />
                   <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
                   <YAxis hide />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+                  <Tooltip trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'} content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
                   <Bar dataKey="amount" radius={[8, 8, 0, 0]}>
                     {chartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.amount > 0 ? '#8B5CF6' : '#3A3A3C'} />

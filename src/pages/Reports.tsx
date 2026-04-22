@@ -149,6 +149,7 @@ export const Reports = () => {
                   tickFormatter={(value) => userSettings.showValues ? new Intl.NumberFormat(userSettings.language, { style: 'currency', currency: userSettings.currency, maximumFractionDigits: 0 }).format(value) : '•••••'} 
                 />
                 <Tooltip 
+                  trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
                   cursor={{ fill: 'hsl(var(--secondary))', opacity: 0.4 }}
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
@@ -201,6 +202,7 @@ export const Reports = () => {
                   ))}
                 </Pie>
                 <Tooltip 
+                  trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
@@ -243,6 +245,7 @@ export const Reports = () => {
                 tickFormatter={(value) => userSettings.showValues ? new Intl.NumberFormat(userSettings.language, { style: 'currency', currency: userSettings.currency, maximumFractionDigits: 0 }).format(value) : '•••••'} 
               />
               <Tooltip 
+                trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     const data = payload[0].payload;

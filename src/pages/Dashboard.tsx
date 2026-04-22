@@ -189,6 +189,7 @@ export const Dashboard = () => {
                       <XAxis type="number" hide />
                       <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
                       <Tooltip 
+                        trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
                         cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
@@ -238,6 +239,7 @@ export const Dashboard = () => {
                         ))}
                       </Pie>
                       <Tooltip 
+                        trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
                             const data = payload[0].payload;
@@ -287,6 +289,7 @@ export const Dashboard = () => {
                       <XAxis type="number" hide />
                       <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
                       <Tooltip 
+                        trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
                         cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
@@ -336,6 +339,7 @@ export const Dashboard = () => {
                         ))}
                       </Pie>
                       <Tooltip 
+                        trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
                             const data = payload[0].payload;
@@ -385,6 +389,7 @@ export const Dashboard = () => {
                       <XAxis dataKey="name" axisLine={false} tickLine={false} />
                       <YAxis hide />
                       <Tooltip 
+                        trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
                         cursor={{ fill: 'transparent' }}
                         labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: '4px' }}
                         contentStyle={{ 

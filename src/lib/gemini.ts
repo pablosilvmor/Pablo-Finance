@@ -47,20 +47,25 @@ export async function getSpendingInsights(transactions: Transaction[], categorie
   }
 }
 
-export async function autoCategorizeTransaction(description: string, amount: number, categories: Category[]): Promise<string | null> {
+export async function autoCategorizeTransaction(description: string, amount: number, categories: Category[], recentTransactions: Transaction[] = []): Promise<string | null> {
   try {
     const ai = getAI();
     if (!ai) return null;
 
     const prompt = `
       Dada a descrição de uma transação financeira e o valor, determine a categoria mais apropriada da lista fornecida.
+      Aprenda com as transações anteriores do usuário para melhorar a precisão.
       Retorne APENAS o ID da categoria, ou nulo se nenhuma se aplicar.
       
+      Nova Transação:
       Descrição: "${description}"
       Valor: ${amount}
       
       Categorias disponíveis:
       ${JSON.stringify(categories.map(c => ({ id: c.id, name: c.name, type: c.type })))}
+
+      Histórico de Transações do Usuário (use como exemplo):
+      ${JSON.stringify(recentTransactions.map(t => ({ description: t.description, amount: t.amount, categoryId: t.categoryId })))}
     `;
 
     const response = await ai.models.generateContent({

@@ -138,7 +138,9 @@ export const NewTransactionDialog = ({
     if (!description || !amount || categoryId || transactionId) return;
     
     setIsAutoCategorizing(true);
-    const suggestedCategoryId = await autoCategorizeTransaction(description, parseFloat(amount), categories);
+    // Use the last 50 transactions to learn from user's manual inputs
+    const recentTransactions = transactions.slice(-50);
+    const suggestedCategoryId = await autoCategorizeTransaction(description, parseFloat(amount), categories, recentTransactions);
     setIsAutoCategorizing(false);
 
     if (suggestedCategoryId) {

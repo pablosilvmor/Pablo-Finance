@@ -128,7 +128,7 @@ export const GoalDetailDialog: React.FC<GoalDetailDialogProps> = ({ goal, open, 
                     <CartesianGrid strokeDasharray="3 3" stroke="#444" />
                     <XAxis dataKey="month" stroke="#888" fontSize={12} />
                     <YAxis stroke="#888" fontSize={12} tickFormatter={(value) => formatCurrency(value).replace(/[^0-9]/g, '')} />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'} content={<CustomTooltip />} />
                     <Bar dataKey="amount" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
