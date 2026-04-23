@@ -8,8 +8,10 @@ import { useAppStore } from '@/lib/store';
 import { format, parseISO, startOfYear, endOfYear, eachMonthOfInterval, isSameMonth, isSameYear, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MonthPicker } from '@/components/MonthPicker';
+import { useNavigate } from 'react-router';
 
 export const Performance = () => {
+  const navigate = useNavigate();
   const { transactions, categories, userSettings } = useAppStore();
   const [viewMode, setViewMode] = useState<'monthly' | 'annual'>('monthly');
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -278,7 +280,10 @@ export const Performance = () => {
               <p className="text-sm text-muted-foreground max-w-[250px]">
                 Baseado na média de economia dos seus últimos 3 meses.
               </p>
-              <Button className="mt-6 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8">
+              <Button 
+                className="mt-6 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8"
+                onClick={() => navigate('/charts')}
+              >
                 Ver Detalhes
               </Button>
             </div>

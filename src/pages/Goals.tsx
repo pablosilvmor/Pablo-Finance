@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Target, Plus, ArrowLeft, ChevronRight, Home, Car, Plane, Shield, Briefcase, HelpCircle, Trash2, Edit2, Calculator, Wallet, Coins, TrendingUp, Landmark, Trophy } from 'lucide-react';
+import { Target, Plus, ArrowLeft, ChevronRight, Home, Car, Plane, Shield, Briefcase, HelpCircle, Trash2, Edit2, Calculator, Wallet, Coins, TrendingUp, Landmark, Trophy, BookOpen, GraduationCap, Heart, Music, ShoppingBag, Smartphone, Umbrella, Utensils, Star, Gift, Gem, Camera, Coffee, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -23,6 +23,12 @@ export const GOAL_TYPES = [
   { id: 'car', name: 'Comprar um carro', icon: Car, color: '#f59e0b' },
   { id: 'house', name: 'Comprar uma casa', icon: Home, color: '#ef4444' },
   { id: 'retirement', name: 'Aposentadoria', icon: Briefcase, color: '#8b5cf6' },
+  { id: 'education', name: 'Estudos', icon: GraduationCap, color: '#10b981' },
+  { id: 'health', name: 'Saúde & Bem-estar', icon: Heart, color: '#f43f5e' },
+  { id: 'leisure', name: 'Lazer & Hobbies', icon: Music, color: '#ec4899' },
+  { id: 'gadget', name: 'Eletrônicos', icon: Smartphone, color: '#6366f1' },
+  { id: 'event', name: 'Casamento / Festa', icon: Gift, color: '#d946ef' },
+  { id: 'investment', name: 'Investimento Fixo', icon: Landmark, color: '#14b8a6' },
   { id: 'other', name: 'Outro', icon: HelpCircle, color: '#6b7280' },
 ];
 

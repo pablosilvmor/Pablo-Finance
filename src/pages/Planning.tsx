@@ -166,9 +166,6 @@ export const Planning = () => {
             <div className="bg-secondary text-foreground rounded-full px-6 py-2 text-sm font-medium flex items-center cursor-default">
               Planejamento Mensal
             </div>
-            <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground">
-              <Info className="w-5 h-5" />
-            </Button>
           </div>
           
           <div className="flex items-center gap-4 bg-card p-1 rounded-full border border-border self-center">
@@ -209,13 +206,23 @@ export const Planning = () => {
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden mr-1"
                   >
-                    <Input 
-                      placeholder="Buscar categoria..." 
-                      className="w-48 h-9 rounded-full bg-card border-border"
-                      value={tableSearch}
-                      onChange={(e) => setTableSearch(e.target.value)}
-                      autoFocus
-                    />
+                    <div className="relative w-48">
+                      <Input 
+                        placeholder="Buscar categoria..." 
+                        className="w-full h-9 rounded-full bg-card border-border pr-8"
+                        value={tableSearch}
+                        onChange={(e) => setTableSearch(e.target.value)}
+                        autoFocus
+                      />
+                      {tableSearch && (
+                        <button 
+                          onClick={() => setTableSearch('')} 
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                      )}
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -776,10 +783,18 @@ export const Planning = () => {
                 <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                 <Input 
                   placeholder="Buscar por nome" 
-                  className="pl-10 bg-transparent border-border focus-visible:ring-primary"
+                  className="pl-10 pr-8 bg-transparent border-border focus-visible:ring-primary"
                   value={categorySearch}
                   onChange={e => setCategorySearch(e.target.value)}
                 />
+                {categorySearch && (
+                  <button 
+                    onClick={() => setCategorySearch('')} 
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                  </button>
+                )}
               </div>
             </div>
 

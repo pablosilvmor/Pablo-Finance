@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Search, Maximize2, MoreVertical, Edit2, Archive, FileText, Utensils, DollarSign, Home, Book, Monitor, Wifi, Umbrella, Shield, ShoppingCart, Car, Zap, Briefcase, ChevronDown, ChevronUp, Trash2, Coffee, Gift, Heart, Music, Camera, Plane, Smartphone, Gamepad, ShoppingBag, CreditCard, Landmark, PiggyBank, Receipt, Settings, Download, Upload, BarChart3 } from 'lucide-react';
+import { Plus, Search, Maximize2, MoreVertical, Edit2, Archive, FileText, Utensils, DollarSign, Home, Book, Monitor, Wifi, Umbrella, Shield, ShoppingCart, Car, Zap, Briefcase, ChevronDown, ChevronUp, Trash2, Coffee, Gift, Heart, Music, Camera, Plane, Smartphone, Gamepad, ShoppingBag, CreditCard, Landmark, PiggyBank, Receipt, Settings, Download, Upload, BarChart3, Activity, Anchor, Aperture, Award, Battery, Bell, Box, Calendar, Clipboard, Cloud, Compass, Cpu, Crosshair, Droplet, Feather, Flag, Folder, Globe, Hash, Headphones, Key, Layers, Leaf, Link, MapPin, Mic, Moon, Package, Paperclip, PenTool, Printer, Radio, Scissors, Server, Speaker, Sun, Target, Thermometer, Truck, Tv, Unlock, User, Video, Watch, Wind } from 'lucide-react';
 import { useAppStore } from '../lib/store';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -38,7 +38,52 @@ const iconMap: Record<string, React.ElementType> = {
   'landmark': Landmark,
   'piggy-bank': PiggyBank,
   'receipt': Receipt,
-  'settings': Settings
+  'settings': Settings,
+  'activity': Activity,
+  'anchor': Anchor,
+  'aperture': Aperture,
+  'award': Award,
+  'battery': Battery,
+  'bell': Bell,
+  'box': Box,
+  'calendar': Calendar,
+  'clipboard': Clipboard,
+  'cloud': Cloud,
+  'compass': Compass,
+  'cpu': Cpu,
+  'crosshair': Crosshair,
+  'droplet': Droplet,
+  'feather': Feather,
+  'flag': Flag,
+  'folder': Folder,
+  'globe': Globe,
+  'hash': Hash,
+  'headphones': Headphones,
+  'key': Key,
+  'layers': Layers,
+  'leaf': Leaf,
+  'link': Link,
+  'map-pin': MapPin,
+  'mic': Mic,
+  'moon': Moon,
+  'package': Package,
+  'paperclip': Paperclip,
+  'pen-tool': PenTool,
+  'printer': Printer,
+  'radio': Radio,
+  'scissors': Scissors,
+  'server': Server,
+  'speaker': Speaker,
+  'sun': Sun,
+  'target': Target,
+  'thermometer': Thermometer,
+  'truck': Truck,
+  'tv': Tv,
+  'unlock': Unlock,
+  'user': User,
+  'video': Video,
+  'watch': Watch,
+  'wind': Wind
 };
 
 export const Categories = () => {
@@ -259,7 +304,7 @@ export const Categories = () => {
                 <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-4 rounded-xl bg-secondary/50">
-                      <p className="text-xs text-muted-foreground uppercase mb-1 font-semibold">Gastoeste Mês</p>
+                      <p className="text-xs text-muted-foreground uppercase mb-1 font-semibold">Gasto este Mês</p>
                       <p className="text-xl font-bold text-foreground">
                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(getCategoryStats(selectedStatsCategory).total)}
                       </p>
@@ -311,13 +356,23 @@ export const Categories = () => {
 
           <div className="flex items-center gap-1 bg-secondary/50 p-1 rounded-full border border-border overflow-hidden">
             {isSearchOpen && (
-              <Input 
-                placeholder="Buscar..." 
-                className="w-32 h-7 bg-transparent border-none text-xs focus-visible:ring-0 px-2"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                autoFocus
-              />
+              <div className="relative">
+                <Input 
+                  placeholder="Buscar..." 
+                  className="w-32 h-7 bg-transparent border-none text-xs focus-visible:ring-0 pl-2 pr-6"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  autoFocus
+                />
+                {searchTerm && (
+                  <button 
+                    onClick={() => setSearchTerm('')} 
+                    className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                  </button>
+                )}
+              </div>
             )}
             <Button 
               variant="ghost" 

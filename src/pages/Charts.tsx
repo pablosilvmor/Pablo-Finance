@@ -139,16 +139,8 @@ export const Charts = () => {
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Gráficos</h1>
         </div>
         <div className="flex items-center gap-4 text-zinc-500 dark:text-zinc-400">
-          <Filter 
-            className="w-5 h-5 cursor-pointer hover:text-zinc-900 dark:hover:text-white transition-colors" 
-            onClick={() => {
-              toast.info('Filtros Avançados', {
-                description: 'Funcionalidade em desenvolvimento: Filtrar por tags, contas ou valores.'
-              });
-            }}
-          />
           <CalendarIcon 
-            className="w-5 h-5 cursor-pointer hover:text-zinc-900 dark:hover:text-white transition-colors" 
+            className="w-5 h-5 cursor-pointer text-muted-foreground hover:text-foreground transition-colors" 
             onClick={() => setIsMonthPickerOpen(true)}
           />
         </div>
