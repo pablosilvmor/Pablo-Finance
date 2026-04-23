@@ -110,13 +110,41 @@ export const GoalDetailDialog: React.FC<GoalDetailDialogProps> = ({ goal, open, 
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
           <div className="space-y-6">
-            <div className="bg-[#2C2C2E] p-6 rounded-3xl flex flex-col items-center justify-center">
-              <h3 className="text-xl font-bold mb-4">{goal.name}</h3>
-              <div className="w-40 h-40 rounded-full border-8 border-zinc-700 flex items-center justify-center mb-4">
-                <span className="text-2xl font-bold">{progress.toFixed(0)}%</span>
+            <div className="bg-[#2C2C2E] p-6 rounded-3xl flex flex-col items-center justify-center relative">
+              <h3 className="text-xl font-bold mb-6">{goal.name}</h3>
+              
+              <div className="relative w-48 h-48 mb-6 flex items-center justify-center">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  <circle
+                    className="text-zinc-700"
+                    strokeWidth="8"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="40"
+                    cx="50"
+                    cy="50"
+                  />
+                  <circle
+                    className="text-purple-600 transition-all duration-1000 ease-out"
+                    strokeWidth="8"
+                    strokeDasharray={251.2}
+                    strokeDashoffset={251.2 - (251.2 * progress) / 100}
+                    strokeLinecap="round"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="40"
+                    cx="50"
+                    cy="50"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-3xl font-bold">{progress.toFixed(0)}%</span>
+                </div>
               </div>
-              <div className="text-sm text-zinc-400">
-                Progresso: <span className="font-bold text-white">{formatCurrency(goal.currentAmount)}</span> / {formatCurrency(goal.targetAmount)}
+
+              <div className="text-sm text-zinc-400 text-center space-y-1">
+                <p>Progresso: <span className="font-bold text-white">{formatCurrency(goal.currentAmount)}</span> de {formatCurrency(goal.targetAmount)}</p>
+                <p>Restam: <span className="font-bold text-purple-400">{formatCurrency(Math.max(0, goal.targetAmount - goal.currentAmount))}</span></p>
               </div>
             </div>
 
@@ -128,7 +156,7 @@ export const GoalDetailDialog: React.FC<GoalDetailDialogProps> = ({ goal, open, 
                     <CartesianGrid strokeDasharray="3 3" stroke="#444" />
                     <XAxis dataKey="month" stroke="#888" fontSize={12} />
                     <YAxis stroke="#888" fontSize={12} tickFormatter={(value) => formatCurrency(value).replace(/[^0-9]/g, '')} />
-                    <Tooltip trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'} content={<CustomTooltip />} />
+                    <Tooltip trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'} content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
                     <Bar dataKey="amount" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>

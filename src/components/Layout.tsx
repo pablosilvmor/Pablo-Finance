@@ -9,6 +9,7 @@ import { NewTransactionDialog } from './NewTransactionDialog';
 import { TipsOverlay } from './TipsOverlay';
 import { MobileMoreMenu } from './MobileMoreMenu';
 import { useNavigate } from 'react-router';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const Layout = () => {
   const location = useLocation();
@@ -37,17 +38,25 @@ export const Layout = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex overflow-hidden">
       <div className="hidden md:block">
         <Sidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
       </div>
       <div className={cn(
-        "flex-1 flex flex-col w-full transition-all duration-300 ease-in-out",
+        "flex-1 flex flex-col w-full h-screen transition-all duration-300 ease-in-out relative overflow-hidden",
         isSidebarCollapsed ? "md:ml-20" : "md:ml-64"
       )}>
         <Header />
-        <main className="flex-1 p-4 md:p-6 overflow-x-hidden pb-24 md:pb-6">
-          <Outlet />
+        <main className="flex-1 p-4 md:p-6 pb-24 md:pb-6 relative overflow-y-auto overflow-x-hidden">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="h-full w-full"
+          >
+            <Outlet />
+          </motion.div>
         </main>
       </div>
 

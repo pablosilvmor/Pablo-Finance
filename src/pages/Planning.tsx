@@ -17,6 +17,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { MonthPicker } from '@/components/MonthPicker';
 import { format, isSameMonth, parseISO, endOfMonth, differenceInDays } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const Planning = () => {
   const navigate = useNavigate();
@@ -162,10 +163,9 @@ export const Planning = () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Button variant="default" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-6">
+            <div className="bg-secondary text-foreground rounded-full px-6 py-2 text-sm font-medium flex items-center cursor-default">
               Planejamento Mensal
-              <ChevronDown className="w-4 h-4 ml-2" />
-            </Button>
+            </div>
             <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground">
               <Info className="w-5 h-5" />
             </Button>
@@ -199,16 +199,26 @@ export const Planning = () => {
               <Plus className="w-4 h-4 mr-2" />
               NOVO ORÇAMENTO
             </Button>
-            <div className="relative flex items-center">
-              {isTableSearchOpen && (
-                <Input 
-                  placeholder="Buscar categoria..." 
-                  className="absolute right-10 w-48 h-9 rounded-full bg-card border-border"
-                  value={tableSearch}
-                  onChange={(e) => setTableSearch(e.target.value)}
-                  autoFocus
-                />
-              )}
+            <div className="flex items-center">
+              <AnimatePresence>
+                {isTableSearchOpen && (
+                  <motion.div
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: 192, opacity: 1 }}
+                    exit={{ width: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden mr-1"
+                  >
+                    <Input 
+                      placeholder="Buscar categoria..." 
+                      className="w-48 h-9 rounded-full bg-card border-border"
+                      value={tableSearch}
+                      onChange={(e) => setTableSearch(e.target.value)}
+                      autoFocus
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -218,22 +228,54 @@ export const Planning = () => {
                 <Search className="w-5 h-5" />
               </Button>
             </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full text-muted-foreground hover:text-foreground"
-              onClick={() => {
-                toast.info('Opções de planejamento', {
-                  description: 'Funcionalidade em desenvolvimento: Exportar PDF, Resetar Planejamento.'
-                });
-              }}
-            >
-              <MoreVertical className="w-5 h-5" />
-            </Button>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger render={
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="rounded-full text-muted-foreground hover:text-foreground"
+                >
+                  <MoreVertical className="w-5 h-5" />
+                </Button>
+              } />
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => {
+                  window.print();
+                }}>
+                  Exportar PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="text-red-600"
+                  onClick={() => {
+                    updateMonthlyPlan({ budgets: [], income: 0, savingsPercentage: 0 });
+                    toast.success('Planejamento resetado com sucesso');
+                  }}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Resetar Planejamento
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {monthlyPlan.income === 0 && monthlyPlan.budgets.length === 0 ? (
+          <div className="flex flex-col items-center justify-center bg-card rounded-3xl p-16 mt-8 shadow-sm text-center">
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-6 mx-auto">
+              <Target className="w-10 h-10" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2 text-foreground">Nenhum planejamento definido</h2>
+            <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+              Você ainda não definiu um planejamento para este mês. Configure sua renda e crie seu orçamento mensal.
+            </p>
+            <Button onClick={() => { setViewMode('edit'); setStep(1); }} className="rounded-full px-8 bg-primary hover:bg-primary/90 text-primary-foreground mx-auto">
+              <Plus className="w-5 h-5 mr-2" />
+              Criar Planejamento
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
             <Card className="bg-card border-none shadow-sm rounded-3xl overflow-hidden">
@@ -274,7 +316,7 @@ export const Planning = () => {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => {
-                        updateMonthlyPlan({ budgets: [] });
+                        updateMonthlyPlan({ budgets: [], income: 0, savingsPercentage: 0 });
                         toast.success('Todos os planejamentos excluídos');
                       }} className="text-red-600">
                         <Trash2 className="w-4 h-4 mr-2" />
@@ -508,6 +550,7 @@ export const Planning = () => {
             </Card>
           </div>
         </div>
+        )}
 
         <MonthPicker 
           open={isMonthPickerOpen} 

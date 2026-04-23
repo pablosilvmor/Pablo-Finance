@@ -262,7 +262,7 @@ export const Goals = () => {
                         </div>
                         <div className="flex justify-between text-xs text-zinc-400 pt-1">
                           <span>{formatCurrency(goal.currentAmount)}</span>
-                          <span>Faltam {formatCurrency(goal.targetAmount - goal.currentAmount)}</span>
+                          <span>Restam <span className="font-bold text-purple-400">{formatCurrency(Math.max(0, goal.targetAmount - goal.currentAmount))}</span></span>
                         </div>
                       </div>
                     </CardContent>
