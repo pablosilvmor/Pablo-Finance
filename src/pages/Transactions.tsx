@@ -13,7 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, Tooltip } from 'recharts';
 import { NewTransactionDialog } from '@/components/NewTransactionDialog';
 import { MonthPicker } from '@/components/MonthPicker';
 import { TransactionMenuOverlay } from '@/components/TransactionMenuOverlay';
@@ -962,33 +962,95 @@ export const Transactions = () => {
               {(() => {
                 if (!selectedTransaction?.description) return null;
                 const searchDesc = selectedTransaction.description.trim().toLowerCase();
-                const history = transactions.filter(t => 
-                  t.id !== selectedTransaction.id && 
+                // Get more history for the chart
+                const fullHistory = transactions.filter(t => 
                   t.description && 
                   t.description.trim().toLowerCase() === searchDesc
-                ).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3);
+                ).sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
                 
-                if (history.length > 0) {
+                const historyForList = [...fullHistory].reverse().filter(t => t.id !== selectedTransaction.id).slice(0, 3);
+                
+                if (fullHistory.length > 1) {
+                  const chartData = fullHistory.map(h => ({
+                    date: format(parseISO(h.date), 'MMM', { locale: ptBR }),
+                    amount: h.amount,
+                    fullDate: h.date
+                  })).slice(-6); // Last 6 occurrences
+
                   return (
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-semibold text-zinc-900 dark:text-white">Histórico de "{selectedTransaction.description}"</h4>
-                      <div className="space-y-2 max-h-[120px] overflow-y-auto">
-                        {history.map(ht => {
-                          const diff = selectedTransaction.amount - ht.amount;
-                          const perc = ht.amount > 0 ? (diff / ht.amount) * 100 : 0;
-                          return (
-                            <div key={ht.id} className="flex justify-between items-center bg-zinc-50 dark:bg-zinc-950 p-2 rounded-lg border border-zinc-100 dark:border-zinc-800">
-                              <span className="text-xs text-zinc-500">{format(parseISO(ht.date), "dd/MM/yyyy")}</span>
-                              <div className="flex items-center gap-2">
-                                <span className={`text-xs font-semibold ${diff > 0 ? 'text-red-500' : diff < 0 ? 'text-green-500' : 'text-zinc-500'}`}>
-                                  {diff > 0 ? '+' : ''}{diff !== 0 ? `${perc.toFixed(1)}%` : '='}
-                                </span>
-                                <span className="text-sm font-medium">{formatCurrency(ht.amount)}</span>
-                              </div>
-                            </div>
-                          );
-                        })}
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <h4 className="text-sm font-semibold text-zinc-900 dark:text-white">Histórico de "{selectedTransaction.description}"</h4>
+                        {fullHistory.length > 2 && (
+                          <span className="text-[10px] bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                            Evolução
+                          </span>
+                        )}
                       </div>
+
+                      {fullHistory.length > 2 && (
+                        <div className="h-[100px] w-full mt-2">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartData}>
+                              <defs>
+                                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.8}/>
+                                  <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+                                </linearGradient>
+                              </defs>
+                              <XAxis 
+                                dataKey="date" 
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{ fontSize: 10, fill: '#9F9FA9' }}
+                                dy={10}
+                              />
+                              <Tooltip 
+                                cursor={{ fill: 'transparent' }}
+                                content={({ active, payload }) => {
+                                  if (active && payload && payload.length) {
+                                    return (
+                                      <div className="bg-white dark:bg-zinc-800 p-2 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-xl text-xs">
+                                        <p className="font-bold">{formatCurrency(payload[0].value as number)}</p>
+                                        <p className="text-zinc-500">{payload[0].payload.date}</p>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                }}
+                              />
+                              <Bar 
+                                dataKey="amount" 
+                                fill="url(#barGradient)"
+                                radius={[4, 4, 0, 0]}
+                                barSize={25}
+                                isAnimationActive={true}
+                                animationDuration={1500}
+                              />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      )}
+                      
+                      {historyForList.length > 0 && (
+                        <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1 custom-scrollbar">
+                          {historyForList.map(ht => {
+                            const diff = selectedTransaction.amount - ht.amount;
+                            const perc = ht.amount > 0 ? (diff / ht.amount) * 100 : 0;
+                            return (
+                              <div key={ht.id} className="flex justify-between items-center bg-zinc-50 dark:bg-zinc-950 p-2 rounded-lg border border-zinc-100 dark:border-zinc-800 hover:border-purple-200 dark:hover:border-purple-900/50 transition-colors">
+                                <span className="text-xs text-zinc-500">{format(parseISO(ht.date), "dd/MM/yyyy")}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-xs font-semibold ${diff > 0 ? 'text-red-500' : diff < 0 ? 'text-green-500' : 'text-zinc-500'}`}>
+                                    {diff > 0 ? '+' : ''}{diff !== 0 ? `${perc.toFixed(1)}%` : '='}
+                                  </span>
+                                  <span className="text-sm font-medium">{formatCurrency(ht.amount)}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
                 }

@@ -120,15 +120,17 @@ export const TransactionFilterDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger>
-        <Button 
-          variant="outline" 
-          size="icon" 
-          className="rounded-full bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
-        >
-          <Filter className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger 
+        render={
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="rounded-full bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+          >
+            <Filter className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+          </Button>
+        } 
+      />
       <DialogContent className="sm:max-w-[450px] bg-[#1C1C1C] text-white border-zinc-800 p-0 overflow-hidden gap-0">
         <div className="p-6 pb-2">
           <DialogTitle className="text-xl font-bold text-white mb-4">Filtro de transações</DialogTitle>
@@ -180,32 +182,34 @@ export const TransactionFilterDialog = ({
               <div className="space-y-2">
                 <Label className="text-[10px] uppercase text-zinc-500 font-bold">Categorias</Label>
                 <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <div className="flex flex-wrap items-center gap-2 border-b border-zinc-700 min-h-10 pb-2 cursor-pointer">
-                      {localFilters.categories.length === 0 ? (
-                        <span className="text-zinc-400 text-sm">Todas as categorias</span>
-                      ) : (
-                        localFilters.categories.map(catId => {
-                          const cat = categories.find(c => c.id === catId);
-                          if (!cat) return null;
-                          const Icon = iconMap[cat.icon] || FileText;
-                          return (
-                            <div 
-                              key={catId}
-                              className="flex items-center gap-2 bg-zinc-800 rounded-full px-3 py-1 text-xs border border-zinc-700"
-                            >
-                              <Icon className="w-3 h-3" style={{ color: cat.color }} />
-                              <span>{cat.name}</span>
-                              <button onClick={(e) => { e.stopPropagation(); toggleCategory(catId); }}>
-                                <X className="w-3 h-3 text-red-500 ml-1" />
-                              </button>
-                            </div>
-                          );
-                        })
-                      )}
-                      <ChevronDown className="w-4 h-4 ml-auto text-zinc-600" />
-                    </div>
-                  </DropdownMenuTrigger>
+                  <DropdownMenuTrigger 
+                    render={
+                      <div className="flex flex-wrap items-center gap-2 border-b border-zinc-700 min-h-10 pb-2 cursor-pointer">
+                        {localFilters.categories.length === 0 ? (
+                          <span className="text-zinc-400 text-sm">Todas as categorias</span>
+                        ) : (
+                          localFilters.categories.map(catId => {
+                            const cat = categories.find(c => c.id === catId);
+                            if (!cat) return null;
+                            const Icon = iconMap[cat.icon] || FileText;
+                            return (
+                              <div 
+                                key={catId}
+                                className="flex items-center gap-2 bg-zinc-800 rounded-full px-3 py-1 text-xs border border-zinc-700"
+                              >
+                                <Icon className="w-3 h-3" style={{ color: cat.color }} />
+                                <span>{cat.name}</span>
+                                <button onClick={(e) => { e.stopPropagation(); toggleCategory(catId); }}>
+                                  <X className="w-3 h-3 text-red-500 ml-1" />
+                                </button>
+                              </div>
+                            );
+                          })
+                        )}
+                        <ChevronDown className="w-4 h-4 ml-auto text-zinc-600" />
+                      </div>
+                    } 
+                  />
                   <DropdownMenuContent className="bg-[#1C1C1C] border-zinc-800 text-white w-[380px] max-h-60 overflow-y-auto">
                     {categories.map(cat => {
                       const Icon = iconMap[cat.icon] || FileText;
@@ -234,31 +238,33 @@ export const TransactionFilterDialog = ({
               <div className="space-y-2">
                 <Label className="text-[10px] uppercase text-zinc-500 font-bold">Tags</Label>
                 <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <div className="flex items-center justify-between border-b border-zinc-700 h-10 cursor-pointer">
-                      <div className="flex flex-wrap gap-2 py-1">
-                        {localFilters.tags.length === 0 ? (
-                          <span className="text-zinc-400 text-sm">Todas as tags</span>
-                        ) : (
-                          localFilters.tags.map(tagId => {
-                            const tag = tags.find(t => t.id === tagId);
-                            if (!tag) return null;
-                            const Icon = iconMap[tag.icon || 'tag'] || TagIcon;
-                            return (
-                              <div key={tagId} className="bg-zinc-800 rounded-full px-3 py-1 text-xs border border-zinc-700 flex items-center gap-1">
-                                <Icon className="w-3 h-3" style={{ color: tag.color }} />
-                                <span>{tag.name}</span>
-                                <button onClick={(e) => { e.stopPropagation(); toggleTag(tagId); }}>
-                                  <X className="w-3 h-3 text-red-400" />
-                                </button>
-                              </div>
-                            );
-                          })
-                        )}
+                  <DropdownMenuTrigger 
+                    render={
+                      <div className="flex items-center justify-between border-b border-zinc-700 h-10 cursor-pointer">
+                        <div className="flex flex-wrap gap-2 py-1">
+                          {localFilters.tags.length === 0 ? (
+                            <span className="text-zinc-400 text-sm">Todas as tags</span>
+                          ) : (
+                            localFilters.tags.map(tagId => {
+                              const tag = tags.find(t => t.id === tagId);
+                              if (!tag) return null;
+                              const Icon = iconMap[tag.icon || 'tag'] || TagIcon;
+                              return (
+                                <div key={tagId} className="bg-zinc-800 rounded-full px-3 py-1 text-xs border border-zinc-700 flex items-center gap-1">
+                                  <Icon className="w-3 h-3" style={{ color: tag.color }} />
+                                  <span>{tag.name}</span>
+                                  <button onClick={(e) => { e.stopPropagation(); toggleTag(tagId); }}>
+                                    <X className="w-3 h-3 text-red-400" />
+                                  </button>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                        <ChevronDown className="w-4 h-4 text-zinc-600" />
                       </div>
-                      <ChevronDown className="w-4 h-4 text-zinc-600" />
-                    </div>
-                  </DropdownMenuTrigger>
+                    } 
+                  />
                   <DropdownMenuContent className="bg-[#1C1C1C] border-zinc-800 text-white w-[380px] max-h-60 overflow-y-auto">
                     {tags.map(tag => {
                       const Icon = iconMap[tag.icon || 'tag'] || TagIcon;
@@ -305,9 +311,7 @@ export const TransactionFilterDialog = ({
                       </button>
                     )}
                     <DropdownMenu>
-                      <DropdownMenuTrigger>
-                        <ChevronDown className="w-4 h-4 text-zinc-600 cursor-pointer" />
-                      </DropdownMenuTrigger>
+                      <DropdownMenuTrigger render={<ChevronDown className="w-4 h-4 text-zinc-600 cursor-pointer" />} />
                       <DropdownMenuContent className="bg-[#1C1C1C] border-zinc-800 text-white">
                         <DropdownMenuCheckboxItem 
                           checked={localFilters.statuses.includes('paid')} 
@@ -348,11 +352,13 @@ export const TransactionFilterDialog = ({
 
         <DialogFooter className="px-6 pt-4 pb-8 bg-transparent border-t border-zinc-800 flex flex-row items-center justify-between gap-2 w-full">
           <div className="flex items-center gap-2">
-            <DialogClose>
-              <Button variant="ghost" className="text-[#F95F5F] hover:text-[#F95F5F] hover:bg-zinc-800/50 uppercase text-[10px] font-bold transition-colors h-auto px-2">
-                CANCELAR
-              </Button>
-            </DialogClose>
+            <DialogClose 
+              render={
+                <Button variant="ghost" className="text-[#F95F5F] hover:text-[#F95F5F] hover:bg-zinc-800/50 uppercase text-[10px] font-bold transition-colors h-auto px-2">
+                  CANCELAR
+                </Button>
+              } 
+            />
             <Button 
               variant="ghost" 
               onClick={handleClear}
