@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router';
-import { LayoutDashboard, ArrowRightLeft, Wallet, CreditCard, PieChart, Target, Settings, LogOut, Calculator, ShieldAlert, Calendar, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Tags, Hash, TrendingUp, UploadCloud, DownloadCloud, Bookmark, Tag, BarChart3, Coins } from 'lucide-react';
+import { LayoutDashboard, ArrowRightLeft, Wallet, CreditCard, PieChart, Target, Settings, LogOut, Calculator, ShieldAlert, Calendar, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Tags, Hash, TrendingUp, UploadCloud, DownloadCloud, Bookmark, Tag, BarChart3, Coins, ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { auth } from '../lib/firebase';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -24,11 +24,11 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
   const mainNavItems = [
     { icon: LayoutDashboard, label: t('dashboard'), path: '/' },
     { icon: ArrowRightLeft, label: t('transactions'), path: '/transactions' },
-    { icon: Target, label: t('planning'), path: '/planning' },
     { icon: BarChart3, label: t('performance'), path: '/performance' },
     { icon: PieChart, label: t('charts'), path: '/charts' },
     { icon: Coins, label: t('piggyBank'), path: '/piggy-bank' },
     { icon: Target, label: t('goals'), path: '/goals' },
+    { icon: ClipboardList, label: t('planning'), path: '/planning' },
   ];
 
   const moreItems = [
