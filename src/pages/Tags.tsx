@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tag, Plus, Search, MoreVertical, Edit2, Trash2 } from 'lucide-react';
+import { Tag as TagIcon, Plus, Search, MoreVertical, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { useAppStore } from '../lib/store';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { iconMap } from '@/lib/icons';
 
 export const Tags = () => {
   const { tags, addTag, deleteTag, bulkDeleteTags, updateTag } = useAppStore();
@@ -16,6 +17,7 @@ export const Tags = () => {
   const [editingTag, setEditingTag] = useState<any>(null);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState('#8B5CF6');
+  const [newIcon, setNewIcon] = useState('tag');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
 
@@ -33,12 +35,14 @@ export const Tags = () => {
       updateTag(editingTag.id, {
         name: newName,
         color: newColor,
+        icon: newIcon
       });
       toast.success('Tag atualizada com sucesso!');
     } else {
       addTag({
         name: newName,
         color: newColor,
+        icon: newIcon
       });
       toast.success('Tag criada com sucesso!');
     }
@@ -49,6 +53,7 @@ export const Tags = () => {
   const resetForm = () => {
     setNewName('');
     setNewColor('#8B5CF6');
+    setNewIcon('tag');
     setIsAddOpen(false);
     setEditingTag(null);
   };
@@ -57,6 +62,7 @@ export const Tags = () => {
     setEditingTag(tag);
     setNewName(tag.name);
     setNewColor(tag.color);
+    setNewIcon(tag.icon || 'tag');
     setIsAddOpen(true);
   };
 
@@ -171,16 +177,31 @@ export const Tags = () => {
                   <Label>Nome da Tag</Label>
                   <Input value={newName} onChange={e => setNewName(e.target.value)} required placeholder="Ex: Viagem" />
                 </div>
-                <div className="space-y-2">
-                  <Label>Cor</Label>
-                  <div className="flex gap-2">
-                    <Input type="color" value={newColor} onChange={e => setNewColor(e.target.value)} className="w-16 p-1 h-10" />
-                    <Input type="text" value={newColor} onChange={e => setNewColor(e.target.value)} className="flex-1" />
+                  <div className="space-y-2">
+                    <Label>Cor</Label>
+                    <div className="flex gap-2">
+                      <Input type="color" value={newColor} onChange={e => setNewColor(e.target.value)} className="w-16 p-1 h-10" />
+                      <Input type="text" value={newColor} onChange={e => setNewColor(e.target.value)} className="flex-1" />
+                    </div>
                   </div>
-                </div>
-                <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white">
-                  {editingTag ? 'Atualizar Tag' : 'Salvar Tag'}
-                </Button>
+                  <div className="space-y-2">
+                    <Label>Ícone</Label>
+                    <div className="grid grid-cols-6 gap-2 max-h-[160px] overflow-y-auto p-1 border rounded-md">
+                      {Object.entries(iconMap).map(([key, Icon]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setNewIcon(key)}
+                          className={`p-2 rounded-md flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors ${newIcon === key ? 'bg-purple-100 dark:bg-purple-900/40 border border-purple-500' : 'border border-transparent'}`}
+                        >
+                          <Icon className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+                    {editingTag ? 'Atualizar Tag' : 'Salvar Tag'}
+                  </Button>
               </form>
             </DialogContent>
           </Dialog>
@@ -226,7 +247,10 @@ export const Tags = () => {
                     </div>
                   )}
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-white" style={{ backgroundColor: tag.color }}>
-                    <Tag className="w-4 h-4" />
+                    {(() => {
+                      const Icon = iconMap[tag.icon || 'tag'] || TagIcon;
+                      return <Icon className="w-4 h-4" />;
+                    })()}
                   </div>
                   <span className="font-medium text-zinc-900 dark:text-white">{tag.name}</span>
                 </div>

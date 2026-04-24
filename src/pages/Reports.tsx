@@ -153,7 +153,7 @@ export const Reports = () => {
                 />
                 <Tooltip 
                   trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
-                  cursor={{ fill: 'hsl(var(--secondary))', opacity: 0.4 }}
+                  cursor={{ fill: 'transparent' }}
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;

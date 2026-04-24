@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppStore } from '../lib/store';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, MoreVertical, Search, Filter, ArrowUpRight, ArrowDownRight, CheckCircle2, Circle, X, Trash2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Edit2 } from 'lucide-react';
+import { Plus, MoreVertical, Search, Filter, ArrowUpRight, ArrowDownRight, CheckCircle2, Circle, X, Trash2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format, parseISO, isSameMonth, endOfMonth } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
@@ -20,6 +20,7 @@ import { TransactionMenuOverlay } from '@/components/TransactionMenuOverlay';
 import { ImportCsvDialog } from '@/components/ImportCsvDialog';
 import { useTranslation } from '@/lib/i18n';
 import { CategoryBadge } from '@/components/CategoryBadge';
+import { iconMap } from '@/lib/icons';
 
 export const Transactions = () => {
   const { transactions, categories, deleteTransaction, bulkDeleteTransactions, updateTransaction, userSettings, tags } = useAppStore();
@@ -29,6 +30,7 @@ export const Transactions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [tagFilter, setTagFilter] = useState<string>('all');
+  const [categoryIdFilter, setCategoryIdFilter] = useState<string>('all');
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   
@@ -87,7 +89,8 @@ export const Transactions = () => {
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = typeFilter === 'all' || t.type === typeFilter;
     const matchesTag = tagFilter === 'all' || (t.tags && t.tags.includes(tagFilter));
-    return matchesSearch && matchesType && matchesTag;
+    const matchesCategory = categoryIdFilter === 'all' || t.categoryId === categoryIdFilter;
+    return matchesSearch && matchesType && matchesTag && matchesCategory;
   }).sort((a, b) => {
     let comparison = 0;
     switch (sortBy) {
@@ -544,18 +547,58 @@ export const Transactions = () => {
             </Button>
           </div>
           
-          <div className="shrink-0 flex items-center">
-            <select
-              title="Filtrar por Tag"
-              className="h-9 px-3 py-1 rounded-full text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-purple-500"
-              value={tagFilter}
-              onChange={(e) => setTagFilter(e.target.value)}
-            >
-              <option value="all">Todas as Tags</option>
-              {tags.map(tag => (
-                <option key={tag.id} value={tag.id}>{tag.name}</option>
-              ))}
-            </select>
+          <div className="flex items-center gap-1 shrink-0">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="h-9 px-3 py-1 rounded-full text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-purple-500 flex items-center gap-2"
+              >
+                <Tag className="w-4 h-4" />
+                {tagFilter === 'all' ? 'Todas as Tags' : tags.find(t => t.id === tagFilter)?.name}
+                <ChevronDown className="w-3 h-3 opacity-50" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 max-h-80 overflow-y-auto">
+                <DropdownMenuItem onClick={() => setTagFilter('all')}>
+                  Todas as Tags
+                </DropdownMenuItem>
+                {tags.map(tag => {
+                  const Icon = iconMap[tag.icon || 'tag'] || Tag;
+                  return (
+                    <DropdownMenuItem key={tag.id} onClick={() => setTagFilter(tag.id)} className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-white shrink-0" style={{ backgroundColor: tag.color }}>
+                        <Icon className="w-3 h-3" />
+                      </div>
+                      <span className="truncate">{tag.name}</span>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="h-9 px-3 py-1 rounded-full text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-purple-500 flex items-center gap-2"
+              >
+                <Filter className="w-4 h-4" />
+                {categoryIdFilter === 'all' ? 'Todas Categorias' : categories.find(c => c.id === categoryIdFilter)?.name}
+                <ChevronDown className="w-3 h-3 opacity-50" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 max-h-80 overflow-y-auto">
+                <DropdownMenuItem onClick={() => setCategoryIdFilter('all')}>
+                  Todas as Categorias
+                </DropdownMenuItem>
+                {categories.map(cat => {
+                   const Icon = iconMap[cat.icon] || FileText;
+                   return (
+                    <DropdownMenuItem key={cat.id} onClick={() => setCategoryIdFilter(cat.id)} className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-white" style={{ backgroundColor: cat.color }}>
+                        <Icon className="w-3 h-3" />
+                      </div>
+                      {cat.name}
+                    </DropdownMenuItem>
+                   );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           {isSelectionMode && selectedTransactionIds.length > 0 && (
             <div className="shrink-0 flex items-center gap-2">

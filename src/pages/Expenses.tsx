@@ -3,7 +3,7 @@ import { useAppStore } from '@/lib/store';
 import { Transaction } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { ArrowDownRight, Filter, Search, MoreVertical, CheckCircle2, Circle, TrendingDown, Calendar, ArrowLeft, ChevronLeft, ChevronRight, Edit2, Trash2, AlertTriangle, X, ArrowUp, ArrowDown, ArrowUpDown, Download } from 'lucide-react';
+import { ArrowDownRight, Filter, Search, MoreVertical, CheckCircle2, Circle, TrendingDown, Calendar, ArrowLeft, ChevronLeft, ChevronRight, Edit2, Trash2, AlertTriangle, X, ArrowUp, ArrowDown, ArrowUpDown, Download, Tag, ChevronDown, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format, parseISO, addMonths, subMonths, isSameMonth, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
@@ -15,6 +15,16 @@ import { toast } from 'sonner';
 import { NewTransactionDialog } from '@/components/NewTransactionDialog';
 import { MonthPicker } from '@/components/MonthPicker';
 import { CategoryBadge } from '@/components/CategoryBadge';
+import { iconMap } from '@/lib/icons';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuGroup,
+} from "@/components/ui/dropdown-menu";
 import {
   DndContext,
   closestCenter,
@@ -43,7 +53,8 @@ const SortableRow = ({
   isManualSort,
   formatCurrency,
   isSelected,
-  onSelect
+  onSelect,
+  isSelectionMode
 }: { 
   transaction: Transaction; 
   category: any; 
@@ -54,6 +65,7 @@ const SortableRow = ({
   formatCurrency: (value: number) => string;
   isSelected?: boolean;
   onSelect?: (id: string, e: React.MouseEvent) => void;
+  isSelectionMode?: boolean;
 }) => {
   const {
     attributes,
@@ -82,16 +94,18 @@ const SortableRow = ({
       )}
       onClick={(e) => onEdit(transaction.id, e)}
     >
-      <td className={cn("px-4 py-4", !isSelected && "hidden")} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-center">
-          <input 
-            type="checkbox" 
-            className="rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-purple-600 focus:ring-purple-500"
-            checked={isSelected}
-            onChange={(e) => onSelect?.(transaction.id, e as any)}
-          />
-        </div>
-      </td>
+      {isSelectionMode && (
+        <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-center">
+            <input 
+              type="checkbox" 
+              className="rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-purple-600 focus:ring-purple-500"
+              checked={isSelected}
+              onChange={(e) => onSelect?.(transaction.id, e as any)}
+            />
+          </div>
+        </td>
+      )}
       <td className="px-4 py-4">
         <div className="flex items-center gap-2">
           {isManualSort && (
@@ -141,11 +155,13 @@ const SortableRow = ({
 };
 
 export const Expenses = () => {
-  const { transactions, categories, updateTransaction, deleteTransaction, bulkDeleteTransactions, bulkUpdateTransactions, addTransaction, setTransactions, userSettings } = useAppStore();
+  const { transactions, categories, updateTransaction, deleteTransaction, bulkDeleteTransactions, bulkUpdateTransactions, addTransaction, setTransactions, userSettings, tags } = useAppStore();
   const getCategory = (id: string) => categories.find(c => c.id === id);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'pending'>('all');
+  const [tagFilter, setTagFilter] = useState<string>('all');
+  const [categoryIdFilter, setCategoryIdFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'date' | 'description' | 'amount' | 'manual' | 'status' | 'category'>(() => {
     return (localStorage.getItem('expenses-sort') as any) || 'date';
   });
@@ -243,7 +259,9 @@ export const Expenses = () => {
   const filteredExpenses = monthlyExpenses.filter(t => {
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesTag = tagFilter === 'all' || (t.tags && t.tags.includes(tagFilter));
+    const matchesCategory = categoryIdFilter === 'all' || t.categoryId === categoryIdFilter;
+    return matchesSearch && matchesStatus && matchesTag && matchesCategory;
   }).sort((a, b) => {
     let comparison = 0;
     if (sortBy === 'date') comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
@@ -455,14 +473,132 @@ export const Expenses = () => {
               </button>
             )}
           </div>
-          <Button 
-            variant={statusFilter === 'all' ? 'outline' : 'default'} 
-            size="icon" 
-            className="rounded-full"
-            onClick={() => setStatusFilter(statusFilter === 'all' ? 'pending' : 'all')}
-          >
-            <Filter className={cn("w-5 h-5", statusFilter !== 'all' && "text-white")} />
-          </Button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className={cn(
+                "flex items-center justify-center rounded-full h-9 w-9 border transition-colors cursor-pointer",
+                (statusFilter !== 'all' || tagFilter !== 'all' || categoryIdFilter !== 'all') 
+                  ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-white dark:text-zinc-900 dark:border-white' 
+                  : 'bg-white text-zinc-900 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-100 dark:border-zinc-800'
+              )}
+            >
+              <Filter className="w-5 h-5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 max-h-[500px] overflow-y-auto">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Filtros</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                
+                <div className="p-2 space-y-4">
+                  <div className="space-y-2">
+                    <p className="text-[10px] uppercase font-bold text-zinc-500 px-2 tracking-wider">Situação</p>
+                    <div className="flex flex-wrap gap-1">
+                      <Button 
+                        variant={statusFilter === 'all' ? 'default' : 'outline'} 
+                        size="sm" 
+                        onClick={() => setStatusFilter('all')} 
+                        className="rounded-full h-7 text-[10px]"
+                      >
+                        Todos
+                      </Button>
+                      <Button 
+                        variant={statusFilter === 'paid' ? 'default' : 'outline'} 
+                        size="sm" 
+                        onClick={() => setStatusFilter('paid')}
+                        className="rounded-full h-7 text-[10px]"
+                      >
+                        Pagos
+                      </Button>
+                      <Button 
+                        variant={statusFilter === 'pending' ? 'default' : 'outline'} 
+                        size="sm" 
+                        onClick={() => setStatusFilter('pending')}
+                        className="rounded-full h-7 text-[10px]"
+                      >
+                        Pendentes
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-[10px] uppercase font-bold text-zinc-500 px-2 tracking-wider">Tags</p>
+                    <div className="grid grid-cols-1 gap-1">
+                      <Button
+                        variant={tagFilter === 'all' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        className="justify-start font-normal text-xs h-8"
+                        onClick={() => setTagFilter('all')}
+                      >
+                        Todas as Tags
+                      </Button>
+                      {tags.map(tag => {
+                        const Icon = iconMap[tag.icon || 'tag'] || Tag;
+                        return (
+                          <Button
+                            key={tag.id}
+                            variant={tagFilter === tag.id ? 'secondary' : 'ghost'}
+                            size="sm"
+                            className="justify-start font-normal text-xs h-8 gap-2"
+                            onClick={() => setTagFilter(tag.id)}
+                          >
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-white shrink-0" style={{ backgroundColor: tag.color }}>
+                              <Icon className="w-3 h-3" />
+                            </div>
+                            <span className="truncate">{tag.name}</span>
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-[10px] uppercase font-bold text-zinc-500 px-2 tracking-wider">Categorias</p>
+                    <div className="grid grid-cols-1 gap-1">
+                      <Button
+                        variant={categoryIdFilter === 'all' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        className="justify-start font-normal text-xs h-8"
+                        onClick={() => setCategoryIdFilter('all')}
+                      >
+                        Todas as Categorias
+                      </Button>
+                      {categories.filter(c => c.type === 'expense').map(cat => {
+                        const Icon = iconMap[cat.icon] || FileText;
+                        return (
+                          <Button
+                            key={cat.id}
+                            variant={categoryIdFilter === cat.id ? 'secondary' : 'ghost'}
+                            size="sm"
+                            className="justify-start font-normal text-xs h-8 gap-2"
+                            onClick={() => setCategoryIdFilter(cat.id)}
+                          >
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-white shrink-0" style={{ backgroundColor: cat.color }}>
+                              <Icon className="w-3 h-3" />
+                            </div>
+                            <span className="truncate">{cat.name}</span>
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full text-[10px] h-7"
+                    onClick={() => {
+                      setStatusFilter('all');
+                      setTagFilter('all');
+                      setCategoryIdFilter('all');
+                    }}
+                  >
+                    Limpar Filtros
+                  </Button>
+                </div>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-full">
             <Button 
@@ -655,6 +791,7 @@ export const Expenses = () => {
                               formatCurrency={formatCurrency}
                               isSelected={selectedTransactionIds.includes(t.id)}
                               onSelect={toggleSelection}
+                              isSelectionMode={isSelectionMode}
                             />
                           ))}
                         </tbody>

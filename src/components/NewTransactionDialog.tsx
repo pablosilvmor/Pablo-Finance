@@ -191,7 +191,8 @@ export const NewTransactionDialog = ({
 
     addTag({
       name: newTagName,
-      color: newTagColor
+      color: newTagColor,
+      icon: 'tag'
     });
     
     setIsAddingTag(false);
