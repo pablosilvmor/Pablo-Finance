@@ -190,6 +190,8 @@ export const Incomes = () => {
   const totalReceived = monthlyIncomes.filter(t => t.status === 'paid').reduce((acc, curr) => acc + curr.amount, 0);
   const totalPending = monthlyIncomes.filter(t => t.status === 'pending').reduce((acc, curr) => acc + curr.amount, 0);
 
+  const getCategory = (id: string) => categories.find(c => c.id === id);
+
   const filteredIncomes = monthlyIncomes.filter(t => 
     t.description.toLowerCase().includes(searchTerm.toLowerCase())
   ).sort((a, b) => {
@@ -260,8 +262,6 @@ export const Incomes = () => {
       setSortBy('manual');
     }
   };
-
-  const getCategory = (id: string) => categories.find(c => c.id === id);
 
   const handlePrevMonth = () => setCurrentDate(subMonths(currentDate, 1));
   const handleNextMonth = () => setCurrentDate(addMonths(currentDate, 1));

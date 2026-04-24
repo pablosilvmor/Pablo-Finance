@@ -200,6 +200,8 @@ export const Expenses = () => {
   
   const monthlyBalance = totalIncome - totalExpense;
 
+  const getCategory = (id: string) => categories.find(c => c.id === id);
+
   const filteredExpenses = monthlyExpenses.filter(t => {
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
@@ -272,8 +274,6 @@ export const Expenses = () => {
       setSortBy('manual');
     }
   };
-
-  const getCategory = (id: string) => categories.find(c => c.id === id);
 
   const handlePrevMonth = () => setCurrentDate(subMonths(currentDate, 1));
   const handleNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
