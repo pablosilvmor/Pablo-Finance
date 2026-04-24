@@ -870,7 +870,7 @@ export const Transactions = () => {
                     <td className="px-6 py-4">
                       <CategoryBadge category={category} />
                     </td>
-                    <td className={`px-6 py-4 text-right font-medium ${t.type === 'income' ? 'text-[#01bfa5]' : 'text-[#ee5350]'}`}>
+                    <td className={`px-6 py-4 text-right font-medium whitespace-nowrap ${t.type === 'income' ? 'text-[#01bfa5]' : 'text-[#ee5350]'}`}>
                       {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
                     </td>
                     <td className="px-6 py-4 text-center">
@@ -932,7 +932,7 @@ export const Transactions = () => {
                   <div className={`w-16 h-16 rounded-full flex items-center justify-center ${selectedTransaction.type === 'income' ? 'bg-[#01bfa5]/10 text-[#01bfa5] dark:bg-[#01bfa5]/20' : 'bg-[#ee5350]/10 text-[#ee5350] dark:bg-[#ee5350]/20'}`}>
                     {selectedTransaction.type === 'income' ? <ArrowUpRight className="w-8 h-8" /> : <ArrowDownRight className="w-8 h-8" />}
                   </div>
-                  <h2 className={`text-2xl font-bold ${selectedTransaction.type === 'income' ? 'text-[#01bfa5]' : 'text-[#ee5350]'}`}>
+                  <h2 className={`text-2xl font-bold whitespace-nowrap ${selectedTransaction.type === 'income' ? 'text-[#01bfa5]' : 'text-[#ee5350]'}`}>
                     {selectedTransaction.type === 'income' ? '+' : '-'} {formatCurrency(selectedTransaction.amount)}
                   </h2>
                   <p className="text-zinc-500 dark:text-zinc-400 font-medium text-center">{selectedTransaction.description}</p>
