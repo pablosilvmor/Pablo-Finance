@@ -65,6 +65,9 @@ export const MobileMoreMenu = ({ isOpen, onClose }: MobileMoreMenuProps) => {
     { icon: Calendar, label: 'Calendário', path: '/calendar' },
     { icon: PieChart, label: 'Gráficos', path: '/charts' },
     { icon: Activity, label: 'Meu Desempenho', path: '/performance' },
+    { icon: Target, label: 'Planejamento', path: '/planning' },
+    { icon: PiggyBank, label: 'Cofrinho', path: '/piggy-bank' },
+    { icon: Settings, label: 'Configurações', path: '/settings' },
   ].sort((a, b) => a.label.localeCompare(b.label));
 
   return (

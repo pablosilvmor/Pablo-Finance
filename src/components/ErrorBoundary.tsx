@@ -27,21 +27,35 @@ class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4 text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Ops! Algo deu errado.</h1>
-          <p className="text-zinc-400 mb-6 max-w-md">
-            Ocorreu um erro inesperado ao carregar a aplicação. Por favor, tente recarregar a página.
-          </p>
-          <div className="bg-zinc-900 p-4 rounded-lg text-left overflow-auto max-w-full">
-            <pre className="text-xs text-red-400">
-              {this.state.error?.message}
-            </pre>
+          <div className="bg-[#1C1C1E] p-8 rounded-[2rem] max-w-lg w-full shadow-2xl border border-zinc-800 flex flex-col items-center">
+            <h1 className="text-2xl font-bold text-white mb-3">Ops! Encontramos um problema.</h1>
+            <p className="text-zinc-400 mb-6 max-w-md">
+              Desculpe, ocorreu um erro inesperado em nosso sistema. Nossa equipe técnica já pode ter sido notificada.
+            </p>
+            <div className="bg-zinc-950/50 p-4 rounded-xl text-left overflow-auto w-full mb-6 border border-zinc-800/50">
+              <p className="text-sm text-red-400 font-mono break-words">
+                {this.state.error?.toString()}
+              </p>
+              {this.state.error?.stack && (
+                <details className="mt-2">
+                  <summary className="text-xs text-zinc-500 cursor-pointer select-none">Mostrar detalhes técnicos</summary>
+                  <pre className="text-[10px] text-zinc-500 mt-2 whitespace-pre-wrap font-mono">
+                    {this.state.error.stack}
+                  </pre>
+                </details>
+              )}
+            </div>
+            <button
+              onClick={() => {
+                this.setState({ hasError: false, error: null });
+                window.location.hash = ''; // Clear route state
+                window.location.reload();
+              }}
+              className="px-8 py-3 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-colors w-full"
+            >
+              Recarregar Página e Tentar Novamente
+            </button>
           </div>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-8 px-6 py-2 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition-colors"
-          >
-            Recarregar Página
-          </button>
         </div>
       );
     }

@@ -18,6 +18,7 @@ import { MonthPicker } from '@/components/MonthPicker';
 import { format, isSameMonth, parseISO, endOfMonth, differenceInDays } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CategoryBadge } from '@/components/CategoryBadge';
 
 export const Planning = () => {
   const navigate = useNavigate();
@@ -370,15 +371,12 @@ export const Planning = () => {
                         return (
                           <tr key={budget.categoryId} className="text-foreground">
                             <td className="py-4">
-                              <div className="flex items-center gap-3">
-                                <div 
-                                  className="w-8 h-8 rounded-full flex items-center justify-center text-white"
-                                  style={{ backgroundColor: category.color }}
-                                >
-                                  <Tag className="w-4 h-4" />
-                                </div>
-                                <span>{category.name}</span>
-                              </div>
+                              <CategoryBadge 
+                                category={category} 
+                                circleClassName="w-8 h-8"
+                                iconClassName="w-4 h-4 text-white"
+                                textClassName="text-foreground"
+                              />
                             </td>
                             <td className="py-4">{formatCurrency(budget.limit)}</td>
                             <td className="py-4">{formatCurrency(catSpentPaid)}</td>

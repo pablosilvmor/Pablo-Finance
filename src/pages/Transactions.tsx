@@ -19,12 +19,16 @@ import { MonthPicker } from '@/components/MonthPicker';
 import { TransactionMenuOverlay } from '@/components/TransactionMenuOverlay';
 import { ImportCsvDialog } from '@/components/ImportCsvDialog';
 import { useTranslation } from '@/lib/i18n';
+import { CategoryBadge } from '@/components/CategoryBadge';
 
 export const Transactions = () => {
-  const { transactions, categories, deleteTransaction, bulkDeleteTransactions, updateTransaction, userSettings } = useAppStore();
+  const { transactions, categories, deleteTransaction, bulkDeleteTransactions, updateTransaction, userSettings, tags } = useAppStore();
+  const getCategory = (id: string) => categories.find(c => c.id === id);
+  const getTag = (id: string) => tags.find(t => t.id === id);
   const { t } = useTranslation(userSettings.language);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
+  const [tagFilter, setTagFilter] = useState<string>('all');
   
   // Sorting State
   const [sortBy, setSortBy] = useState<'date' | 'description' | 'amount' | 'category' | 'type' | 'status'>(() => {
@@ -67,8 +71,6 @@ export const Transactions = () => {
     }
   }, [location.state]);
 
-  const getCategory = (id: string) => categories.find(c => c.id === id);
-
   const handleMenuSelect = (type: 'expense' | 'income') => {
     setIsMenuOpen(false);
     setNewTransactionType(type);
@@ -82,7 +84,8 @@ export const Transactions = () => {
   const filteredTransactions = currentMonthTransactions.filter(t => {
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = typeFilter === 'all' || t.type === typeFilter;
-    return matchesSearch && matchesType;
+    const matchesTag = tagFilter === 'all' || (t.tags && t.tags.includes(tagFilter));
+    return matchesSearch && matchesType && matchesTag;
   }).sort((a, b) => {
     let comparison = 0;
     switch (sortBy) {
@@ -519,6 +522,20 @@ export const Transactions = () => {
               {t('expenses')}
             </Button>
           </div>
+          
+          <div className="shrink-0 flex items-center">
+            <select
+              title="Filtrar por Tag"
+              className="h-9 px-3 py-1 rounded-full text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-purple-500"
+              value={tagFilter}
+              onChange={(e) => setTagFilter(e.target.value)}
+            >
+              <option value="all">Todas as Tags</option>
+              {tags.map(tag => (
+                <option key={tag.id} value={tag.id}>{tag.name}</option>
+              ))}
+            </select>
+          </div>
           <div className="flex items-center gap-1 shrink-0">
             <Button 
               variant="outline" 
@@ -703,17 +720,34 @@ export const Transactions = () => {
                     <td className="px-6 py-4 text-zinc-500 dark:text-zinc-400">
                       {format(parseISO(t.date), "dd/MM/yyyy")}
                     </td>
-                    <td className="px-6 py-4 font-medium text-zinc-900 dark:text-zinc-100">
-                      {t.description}
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-zinc-900 dark:text-zinc-100 mb-1">
+                        {t.description}
+                      </div>
+                      {t.tags && t.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {t.tags.map(tagId => {
+                            const tag = getTag(tagId);
+                            if (!tag) return null;
+                            return (
+                              <span 
+                                key={tag.id}
+                                className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium"
+                                style={{
+                                  backgroundColor: `${tag.color}15`,
+                                  color: tag.color,
+                                  border: `1px solid ${tag.color}30`
+                                }}
+                              >
+                                {tag.name}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <span 
-                          className="w-2 h-2 rounded-full" 
-                          style={{ backgroundColor: category?.color || '#ccc' }}
-                        />
-                        <span className="text-zinc-700 dark:text-zinc-300">{category?.name}</span>
-                      </div>
+                      <CategoryBadge category={category} />
                     </td>
                     <td className={`px-6 py-4 text-right font-medium ${t.type === 'income' ? 'text-[#01bfa5]' : 'text-[#ee5350]'}`}>
                       {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
@@ -788,10 +822,7 @@ export const Transactions = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-zinc-500 dark:text-zinc-400">{t('category')}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: selectedTransaction.category?.color || '#ccc' }} />
-                    <span className="font-medium text-zinc-900 dark:text-white">{selectedTransaction.category?.name}</span>
-                  </div>
+                  <CategoryBadge category={selectedTransaction.category} />
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-zinc-500 dark:text-zinc-400">{t('status')}</span>

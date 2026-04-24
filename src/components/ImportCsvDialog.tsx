@@ -27,24 +27,33 @@ export const ImportCsvDialog = ({ open, onOpenChange }: ImportCsvDialogProps) =>
 
     try {
       const text = await file.text();
-      const lines = text.split('\n').filter(line => line.trim() !== '');
+      // Import Papa dynamically so we don't break SSR
+      const Papa = await import('papaparse');
       
+      const parsed = Papa.parse(text, {
+        header: false,
+        skipEmptyLines: true,
+      });
+
+      if (parsed.errors.length > 0) {
+        console.warn('PapaParse errors:', parsed.errors);
+      }
+
+      const lines = parsed.data as string[][];
+
       if (lines.length <= 1) {
         throw new Error('O arquivo CSV está vazio ou possui apenas o cabeçalho.');
       }
 
-      // Detect delimiter
-      const firstLine = lines[0];
-      const delimiter = firstLine.includes(';') ? ';' : ',';
-      
-      // We expect columns like Data, Descrição, Categoria, Tipo, Valor, Status
-      const headers = firstLine.split(delimiter).map(h => h.trim().replace(/"/g, '').toLowerCase());
+      const headers = lines[0].map(h => h.trim().toLowerCase());
+      const isNubankCreditCard = headers.includes('date') && headers.includes('title') && headers.includes('amount');
       
       const dateIdx = headers.findIndex(h => h.includes('data') || h.includes('date'));
-      const descIdx = headers.findIndex(h => h.includes('descri') || h.includes('memo'));
+      const descIdx = headers.findIndex(h => h.includes('descri') || h.includes('memo') || h.includes('title'));
       const catIdx = headers.findIndex(h => h.includes('categoria') || h.includes('category'));
       const typeIdx = headers.findIndex(h => h.includes('tipo') || h.includes('type'));
       const valIdx = headers.findIndex(h => h.includes('valor') || h.includes('amount'));
+
       // fallback if headers are not exact
       if (dateIdx === -1 || valIdx === -1) {
         throw new Error('Colunas obrigatórias não encontradas. O arquivo deve ter pelo menos Date e Amount/Valor.');
@@ -52,8 +61,7 @@ export const ImportCsvDialog = ({ open, onOpenChange }: ImportCsvDialogProps) =>
 
       const defaultCategory = categories[0]?.id || '';
       
-      const newTransactions = lines.slice(1).map((line, index) => {
-        const columns = line.split(delimiter).map(c => c.trim().replace(/"/g, ''));
+      const newTransactions = lines.slice(1).map((columns, index) => {
         if (columns.length < 2) return null;
 
         const dateStr = columns[dateIdx];
@@ -79,6 +87,9 @@ export const ImportCsvDialog = ({ open, onOpenChange }: ImportCsvDialogProps) =>
         let type: 'income' | 'expense' = 'expense';
         if (typeIdx !== -1 && columns[typeIdx]) {
            type = columns[typeIdx].toLowerCase().includes('receita') || columns[typeIdx].toLowerCase().includes('income') ? 'income' : 'expense';
+        } else if (isNubankCreditCard) {
+           type = amount > 0 ? 'expense' : 'income';
+           amount = Math.abs(amount);
         } else if (amount < 0) {
            type = 'expense';
            amount = Math.abs(amount);

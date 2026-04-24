@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { NewTransactionDialog } from '@/components/NewTransactionDialog';
 import { MonthPicker } from '@/components/MonthPicker';
+import { CategoryBadge } from '@/components/CategoryBadge';
 import {
   DndContext,
   closestCenter,
@@ -105,10 +106,7 @@ const SortableRow = ({
         </div>
       </td>
       <td className="px-4 py-4">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: category?.color || '#ccc' }} />
-          <span className="text-zinc-700 dark:text-zinc-300">{category?.name}</span>
-        </div>
+        <CategoryBadge category={category} />
       </td>
       <td className="px-4 py-4 text-right font-bold text-[#ee5350] whitespace-nowrap">
         {formatCurrency(transaction.amount)}
@@ -129,6 +127,7 @@ const SortableRow = ({
 
 export const Expenses = () => {
   const { transactions, categories, updateTransaction, deleteTransaction, bulkDeleteTransactions, bulkUpdateTransactions, addTransaction, setTransactions, userSettings } = useAppStore();
+  const getCategory = (id: string) => categories.find(c => c.id === id);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'pending'>('all');
@@ -199,8 +198,6 @@ export const Expenses = () => {
   const totalPending = monthlyExpenses.filter(t => t.status === 'pending').reduce((acc, curr) => acc + curr.amount, 0);
   
   const monthlyBalance = totalIncome - totalExpense;
-
-  const getCategory = (id: string) => categories.find(c => c.id === id);
 
   const filteredExpenses = monthlyExpenses.filter(t => {
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());

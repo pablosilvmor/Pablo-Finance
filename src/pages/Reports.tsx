@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { format, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MonthPicker } from '@/components/MonthPicker';
+import { CategoryBadge } from '@/components/CategoryBadge';
 
 export const Reports = () => {
   const { transactions, categories, tags, userSettings } = useAppStore();
@@ -74,6 +75,7 @@ export const Reports = () => {
             name: tagId === 'sem_tag' ? 'Sem Tag' : (tag?.name || 'Desconhecido'),
             value: amount,
             color: tagId === 'sem_tag' ? '#9CA3AF' : (tag?.color || '#ccc'),
+            icon: 'tag',
             percentage: total > 0 ? ((amount / total) * 100).toFixed(2) : '0.00'
           };
         })
@@ -93,6 +95,7 @@ export const Reports = () => {
             name: category?.name || 'Desconhecido',
             value: amount,
             color: category?.color || '#ccc',
+            icon: category?.icon || 'file-text',
             percentage: total > 0 ? ((amount / total) * 100).toFixed(2) : '0.00'
           };
         })
@@ -370,12 +373,18 @@ export const Reports = () => {
                 {filteredData.map((category, index) => (
                   <div key={index} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div 
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-white"
-                        style={{ backgroundColor: category.color }}
-                      >
-                        <span className="text-xs font-bold">{category.name.substring(0, 1)}</span>
-                      </div>
+                      <CategoryBadge 
+                        category={{ 
+                          id: category.name, 
+                          name: category.name, 
+                          color: category.color, 
+                          icon: (category as any).icon || 'tag', 
+                          type: 'expense' 
+                        }} 
+                        circleClassName="w-10 h-10"
+                        iconClassName="w-5 h-5 text-white"
+                        hideName={true}
+                      />
                       <div>
                         <p className="font-medium text-zinc-900 dark:text-white">{category.name}</p>
                         <p className="text-sm text-zinc-500 dark:text-zinc-400">Porcentagem</p>

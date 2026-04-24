@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { NewTransactionDialog } from '@/components/NewTransactionDialog';
 import { MonthPicker } from '@/components/MonthPicker';
+import { CategoryBadge } from '@/components/CategoryBadge';
 import {
   DndContext,
   closestCenter,
@@ -105,10 +106,7 @@ const SortableRow = ({
         </div>
       </td>
       <td className="px-4 py-4">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: category?.color || '#ccc' }} />
-          <span className="text-zinc-700 dark:text-zinc-300">{category?.name}</span>
-        </div>
+        <CategoryBadge category={category} />
       </td>
       <td className="px-4 py-4 text-right font-bold text-[#01bfa5] whitespace-nowrap">
         {formatCurrency(transaction.amount)}
@@ -129,6 +127,7 @@ const SortableRow = ({
 
 export const Incomes = () => {
   const { transactions, deleteTransaction, bulkDeleteTransactions, bulkUpdateTransactions, updateTransaction, categories, userSettings, setTransactions } = useAppStore();
+  const getCategory = (id: string) => categories.find(c => c.id === id);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'description' | 'amount' | 'manual' | 'status' | 'category'>(() => {
@@ -189,8 +188,6 @@ export const Incomes = () => {
   const totalIncome = monthlyIncomes.reduce((acc, curr) => acc + curr.amount, 0);
   const totalReceived = monthlyIncomes.filter(t => t.status === 'paid').reduce((acc, curr) => acc + curr.amount, 0);
   const totalPending = monthlyIncomes.filter(t => t.status === 'pending').reduce((acc, curr) => acc + curr.amount, 0);
-
-  const getCategory = (id: string) => categories.find(c => c.id === id);
 
   const filteredIncomes = monthlyIncomes.filter(t => 
     t.description.toLowerCase().includes(searchTerm.toLowerCase())

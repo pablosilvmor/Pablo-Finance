@@ -3,88 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Search, Maximize2, MoreVertical, Edit2, Archive, FileText, Utensils, DollarSign, Home, Book, Monitor, Wifi, Umbrella, Shield, ShoppingCart, Car, Zap, Briefcase, ChevronDown, ChevronUp, Trash2, Coffee, Gift, Heart, Music, Camera, Plane, Smartphone, Gamepad, ShoppingBag, CreditCard, Landmark, PiggyBank, Receipt, Settings, Download, Upload, BarChart3, Activity, Anchor, Aperture, Award, Battery, Bell, Box, Calendar, Clipboard, Cloud, Compass, Cpu, Crosshair, Droplet, Feather, Flag, Folder, Globe, Hash, Headphones, Key, Layers, Leaf, Link, MapPin, Mic, Moon, Package, Paperclip, PenTool, Printer, Radio, Scissors, Server, Speaker, Sun, Target, Thermometer, Truck, Tv, Unlock, User, Video, Watch, Wind } from 'lucide-react';
+import { Plus, Search, Maximize2, MoreVertical, Edit2, Archive, FileText, ChevronDown, ChevronUp, Trash2, Download, Upload, BarChart3 } from 'lucide-react';
 import { useAppStore } from '../lib/store';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-
-const iconMap: Record<string, React.ElementType> = {
-  'utensils': Utensils,
-  'dollar-sign': DollarSign,
-  'home': Home,
-  'book': Book,
-  'monitor': Monitor,
-  'wifi': Wifi,
-  'umbrella': Umbrella,
-  'shield': Shield,
-  'shopping-cart': ShoppingCart,
-  'car': Car,
-  'zap': Zap,
-  'briefcase': Briefcase,
-  'file-text': FileText,
-  'coffee': Coffee,
-  'gift': Gift,
-  'heart': Heart,
-  'music': Music,
-  'camera': Camera,
-  'plane': Plane,
-  'smartphone': Smartphone,
-  'gamepad': Gamepad,
-  'shopping-bag': ShoppingBag,
-  'credit-card': CreditCard,
-  'landmark': Landmark,
-  'piggy-bank': PiggyBank,
-  'receipt': Receipt,
-  'settings': Settings,
-  'activity': Activity,
-  'anchor': Anchor,
-  'aperture': Aperture,
-  'award': Award,
-  'battery': Battery,
-  'bell': Bell,
-  'box': Box,
-  'calendar': Calendar,
-  'clipboard': Clipboard,
-  'cloud': Cloud,
-  'compass': Compass,
-  'cpu': Cpu,
-  'crosshair': Crosshair,
-  'droplet': Droplet,
-  'feather': Feather,
-  'flag': Flag,
-  'folder': Folder,
-  'globe': Globe,
-  'hash': Hash,
-  'headphones': Headphones,
-  'key': Key,
-  'layers': Layers,
-  'leaf': Leaf,
-  'link': Link,
-  'map-pin': MapPin,
-  'mic': Mic,
-  'moon': Moon,
-  'package': Package,
-  'paperclip': Paperclip,
-  'pen-tool': PenTool,
-  'printer': Printer,
-  'radio': Radio,
-  'scissors': Scissors,
-  'server': Server,
-  'speaker': Speaker,
-  'sun': Sun,
-  'target': Target,
-  'thermometer': Thermometer,
-  'truck': Truck,
-  'tv': Tv,
-  'unlock': Unlock,
-  'user': User,
-  'video': Video,
-  'watch': Watch,
-  'wind': Wind
-};
+import { iconMap } from '@/lib/icons';
 
 export const Categories = () => {
   const { categories, addTransaction, transactions, addCategory, deleteCategory, updateCategory } = useAppStore();
