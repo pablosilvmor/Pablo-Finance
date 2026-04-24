@@ -920,144 +920,149 @@ export const Transactions = () => {
       </Card>
 
       <Dialog open={!!selectedTransaction} onOpenChange={(open) => !open && setSelectedTransaction(null)}>
-        <DialogContent className="sm:max-w-[425px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[425px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 p-0 overflow-hidden flex flex-col max-h-[90vh]">
+          <DialogHeader className="p-6 pb-2">
             <DialogTitle className="text-zinc-900 dark:text-white">{t('transactionDetails')}</DialogTitle>
           </DialogHeader>
+          
           {selectedTransaction && (
-            <div className="space-y-6 pt-4">
-              <div className="flex flex-col items-center justify-center gap-2">
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center ${selectedTransaction.type === 'income' ? 'bg-[#01bfa5]/10 text-[#01bfa5] dark:bg-[#01bfa5]/20' : 'bg-[#ee5350]/10 text-[#ee5350] dark:bg-[#ee5350]/20'}`}>
-                  {selectedTransaction.type === 'income' ? <ArrowUpRight className="w-8 h-8" /> : <ArrowDownRight className="w-8 h-8" />}
-                </div>
-                <h2 className={`text-2xl font-bold ${selectedTransaction.type === 'income' ? 'text-[#01bfa5]' : 'text-[#ee5350]'}`}>
-                  {selectedTransaction.type === 'income' ? '+' : '-'} {formatCurrency(selectedTransaction.amount)}
-                </h2>
-                <p className="text-zinc-500 dark:text-zinc-400 font-medium">{selectedTransaction.description}</p>
-              </div>
-
-              <div className="space-y-4 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-xl border border-zinc-100 dark:border-zinc-800">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">{t('date')}</span>
-                  <span className="font-medium text-zinc-900 dark:text-white">{format(parseISO(selectedTransaction.date), "dd 'de' MMMM 'de' yyyy", { locale: userSettings.language === 'en' ? enUS : userSettings.language === 'es' ? es : ptBR })}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">{t('category')}</span>
-                  <CategoryBadge category={selectedTransaction.category} />
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">{t('status')}</span>
-                  <span className="font-medium text-zinc-900 dark:text-white">
-                    {selectedTransaction.status === 'paid' ? t('paid') : t('pending')}
-                  </span>
-                </div>
-                {selectedTransaction.isFixed && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-zinc-500 dark:text-zinc-400">Tipo</span>
-                    <span className="font-medium text-zinc-900 dark:text-white">{t('fixedTransaction')}</span>
+            <>
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 custom-scrollbar">
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center ${selectedTransaction.type === 'income' ? 'bg-[#01bfa5]/10 text-[#01bfa5] dark:bg-[#01bfa5]/20' : 'bg-[#ee5350]/10 text-[#ee5350] dark:bg-[#ee5350]/20'}`}>
+                    {selectedTransaction.type === 'income' ? <ArrowUpRight className="w-8 h-8" /> : <ArrowDownRight className="w-8 h-8" />}
                   </div>
-                )}
-              </div>
+                  <h2 className={`text-2xl font-bold ${selectedTransaction.type === 'income' ? 'text-[#01bfa5]' : 'text-[#ee5350]'}`}>
+                    {selectedTransaction.type === 'income' ? '+' : '-'} {formatCurrency(selectedTransaction.amount)}
+                  </h2>
+                  <p className="text-zinc-500 dark:text-zinc-400 font-medium text-center">{selectedTransaction.description}</p>
+                </div>
 
-              {(() => {
-                if (!selectedTransaction?.description) return null;
-                const searchDesc = selectedTransaction.description.trim().toLowerCase();
-                // Get more history for the chart
-                const fullHistory = transactions.filter(t => 
-                  t.description && 
-                  t.description.trim().toLowerCase() === searchDesc
-                ).sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-                
-                const historyForList = [...fullHistory].reverse().filter(t => t.id !== selectedTransaction.id).slice(0, 3);
-                
-                if (fullHistory.length > 1) {
-                  const chartData = fullHistory.map(h => ({
-                    date: format(parseISO(h.date), 'MMM', { locale: ptBR }),
-                    amount: h.amount,
-                    fullDate: h.date
-                  })).slice(-6); // Last 6 occurrences
+                <div className="space-y-4 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-zinc-500 dark:text-zinc-400">{t('date')}</span>
+                    <span className="font-medium text-zinc-900 dark:text-white">{format(parseISO(selectedTransaction.date), "dd 'de' MMMM 'de' yyyy", { locale: userSettings.language === 'en' ? enUS : userSettings.language === 'es' ? es : ptBR })}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-zinc-500 dark:text-zinc-400">{t('category')}</span>
+                    <CategoryBadge category={selectedTransaction.category} />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-zinc-500 dark:text-zinc-400">{t('status')}</span>
+                    <span className="font-medium text-zinc-900 dark:text-white">
+                      {selectedTransaction.status === 'paid' ? t('paid') : t('pending')}
+                    </span>
+                  </div>
+                  {selectedTransaction.isFixed && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-zinc-500 dark:text-zinc-400">Tipo</span>
+                      <span className="font-medium text-zinc-900 dark:text-white">{t('fixedTransaction')}</span>
+                    </div>
+                  )}
+                </div>
 
-                  return (
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h4 className="text-sm font-semibold text-zinc-900 dark:text-white">Histórico de "{selectedTransaction.description}"</h4>
+                {(() => {
+                  if (!selectedTransaction?.description) return null;
+                  const searchDesc = selectedTransaction.description.trim().toLowerCase();
+                  // Get more history for the chart
+                  const fullHistory = transactions.filter(t => 
+                    t.description && 
+                    t.description.trim().toLowerCase() === searchDesc
+                  ).sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                  
+                  const historyForList = [...fullHistory].reverse().filter(t => t.id !== selectedTransaction.id).slice(0, 3);
+                  
+                  if (fullHistory.length > 1) {
+                    const chartData = fullHistory.map(h => ({
+                      date: format(parseISO(h.date), 'MMM', { locale: ptBR }),
+                      amount: h.amount,
+                      fullDate: h.date
+                    })).slice(-6); // Last 6 occurrences
+
+                    return (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center gap-4">
+                          <h4 className="text-sm font-semibold text-zinc-900 dark:text-white truncate flex-1" title={selectedTransaction.description}>
+                            Histórico de "{selectedTransaction.description}"
+                          </h4>
+                          {fullHistory.length > 2 && (
+                            <span className="text-[10px] bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0">
+                              Evolução
+                            </span>
+                          )}
+                        </div>
+
                         {fullHistory.length > 2 && (
-                          <span className="text-[10px] bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                            Evolução
-                          </span>
+                          <div className="h-[100px] w-full mt-2">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={chartData}>
+                                <defs>
+                                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.8}/>
+                                    <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+                                  </linearGradient>
+                                </defs>
+                                <XAxis 
+                                  dataKey="date" 
+                                  axisLine={false} 
+                                  tickLine={false} 
+                                  tick={{ fontSize: 10, fill: '#9F9FA9' }}
+                                  dy={10}
+                                />
+                                <Tooltip 
+                                  cursor={{ fill: 'transparent' }}
+                                  content={({ active, payload }) => {
+                                    if (active && payload && payload.length) {
+                                      return (
+                                        <div className="bg-white dark:bg-zinc-800 p-2 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-xl text-xs">
+                                          <p className="font-bold">{formatCurrency(payload[0].value as number)}</p>
+                                          <p className="text-zinc-500">{payload[0].payload.date}</p>
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  }}
+                                />
+                                <Bar 
+                                  dataKey="amount" 
+                                  fill="url(#barGradient)"
+                                  radius={[4, 4, 0, 0]}
+                                  barSize={25}
+                                  isAnimationActive={true}
+                                  animationDuration={1500}
+                                />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        )}
+                        
+                        {historyForList.length > 0 && (
+                          <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1 custom-scrollbar">
+                            {historyForList.map(ht => {
+                              const diff = selectedTransaction.amount - ht.amount;
+                              const perc = ht.amount > 0 ? (diff / ht.amount) * 100 : 0;
+                              return (
+                                <div key={ht.id} className="flex justify-between items-center bg-zinc-50 dark:bg-zinc-950 p-2 rounded-lg border border-zinc-100 dark:border-zinc-800 hover:border-purple-200 dark:hover:border-purple-900/50 transition-colors">
+                                  <span className="text-xs text-zinc-500">{format(parseISO(ht.date), "dd/MM/yyyy")}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className={`text-xs font-semibold ${diff > 0 ? 'text-red-500' : diff < 0 ? 'text-green-500' : 'text-zinc-500'}`}>
+                                      {diff > 0 ? '+' : ''}{diff !== 0 ? `${perc.toFixed(1)}%` : '='}
+                                    </span>
+                                    <span className="text-sm font-medium">{formatCurrency(ht.amount)}</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         )}
                       </div>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
 
-                      {fullHistory.length > 2 && (
-                        <div className="h-[100px] w-full mt-2">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData}>
-                              <defs>
-                                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.8}/>
-                                  <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.3}/>
-                                </linearGradient>
-                              </defs>
-                              <XAxis 
-                                dataKey="date" 
-                                axisLine={false} 
-                                tickLine={false} 
-                                tick={{ fontSize: 10, fill: '#9F9FA9' }}
-                                dy={10}
-                              />
-                              <Tooltip 
-                                cursor={{ fill: 'transparent' }}
-                                content={({ active, payload }) => {
-                                  if (active && payload && payload.length) {
-                                    return (
-                                      <div className="bg-white dark:bg-zinc-800 p-2 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-xl text-xs">
-                                        <p className="font-bold">{formatCurrency(payload[0].value as number)}</p>
-                                        <p className="text-zinc-500">{payload[0].payload.date}</p>
-                                      </div>
-                                    );
-                                  }
-                                  return null;
-                                }}
-                              />
-                              <Bar 
-                                dataKey="amount" 
-                                fill="url(#barGradient)"
-                                radius={[4, 4, 0, 0]}
-                                barSize={25}
-                                isAnimationActive={true}
-                                animationDuration={1500}
-                              />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      )}
-                      
-                      {historyForList.length > 0 && (
-                        <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1 custom-scrollbar">
-                          {historyForList.map(ht => {
-                            const diff = selectedTransaction.amount - ht.amount;
-                            const perc = ht.amount > 0 ? (diff / ht.amount) * 100 : 0;
-                            return (
-                              <div key={ht.id} className="flex justify-between items-center bg-zinc-50 dark:bg-zinc-950 p-2 rounded-lg border border-zinc-100 dark:border-zinc-800 hover:border-purple-200 dark:hover:border-purple-900/50 transition-colors">
-                                <span className="text-xs text-zinc-500">{format(parseISO(ht.date), "dd/MM/yyyy")}</span>
-                                <div className="flex items-center gap-2">
-                                  <span className={`text-xs font-semibold ${diff > 0 ? 'text-red-500' : diff < 0 ? 'text-green-500' : 'text-zinc-500'}`}>
-                                    {diff > 0 ? '+' : ''}{diff !== 0 ? `${perc.toFixed(1)}%` : '='}
-                                  </span>
-                                  <span className="text-sm font-medium">{formatCurrency(ht.amount)}</span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-
-              <div className="flex gap-3 pt-2">
+              <DialogFooter className="p-6 pt-2 border-t border-zinc-100 dark:border-zinc-800 flex flex-row gap-3">
                 <Button variant="outline" className="flex-1" onClick={() => setSelectedTransaction(null)}>
                   {t('close')}
                 </Button>
@@ -1071,8 +1076,8 @@ export const Transactions = () => {
                 >
                   {t('edit')}
                 </Button>
-              </div>
-            </div>
+              </DialogFooter>
+            </>
           )}
         </DialogContent>
       </Dialog>
