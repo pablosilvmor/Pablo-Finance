@@ -3,7 +3,7 @@ import { useAppStore } from '../lib/store';
 import { Card, CardContent } from '@/components/ui/card';
 import { Plus, MoreVertical, Search, Filter, ArrowUpRight, ArrowDownRight, CheckCircle2, Circle, X, Trash2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { format, parseISO, isSameMonth, endOfMonth } from 'date-fns';
+import { format, parseISO, isSameMonth, endOfMonth, startOfMonth, isWithinInterval } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
 import { useNavigate, useLocation } from 'react-router';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -22,18 +22,36 @@ import { useTranslation } from '@/lib/i18n';
 import { CategoryBadge } from '@/components/CategoryBadge';
 import { iconMap } from '@/lib/icons';
 
+import { TransactionFilterDialog, FilterConfig } from '@/components/TransactionFilterDialog';
+
 export const Transactions = () => {
-  const { transactions, categories, deleteTransaction, bulkDeleteTransactions, updateTransaction, userSettings, tags } = useAppStore();
+  const { transactions, categories, deleteTransaction, bulkDeleteTransactions, updateTransaction, userSettings, tags, piggyBank } = useAppStore();
   const getCategory = (id: string) => categories.find(c => c.id === id);
   const getTag = (id: string) => tags.find(t => t.id === id);
   const { t } = useTranslation(userSettings.language);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
-  const [tagFilter, setTagFilter] = useState<string>('all');
-  const [categoryIdFilter, setCategoryIdFilter] = useState<string>('all');
+  const [filters, setFilters] = useState<FilterConfig>({
+    startDate: startOfMonth(new Date()),
+    endDate: endOfMonth(new Date()),
+    categories: [],
+    tags: [],
+    accounts: [],
+    statuses: [],
+    type: 'all'
+  });
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   
+  // Update filters when selectedDate changes to keep date range synced with month selector
+  useEffect(() => {
+    setFilters(prev => ({
+      ...prev,
+      startDate: startOfMonth(selectedDate),
+      endDate: endOfMonth(selectedDate)
+    }));
+  }, [selectedDate]);
+
   // Sorting State
   const [sortBy, setSortBy] = useState<'date' | 'description' | 'amount' | 'category' | 'type' | 'status'>(() => {
     return (localStorage.getItem('transactions-sort') as any) || 'date';
@@ -65,7 +83,6 @@ export const Transactions = () => {
   const [editingTransactionId, setEditingTransactionId] = useState<string | undefined>(undefined);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [newTransactionType, setNewTransactionType] = useState<'expense' | 'income'>('expense');
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
 
   useEffect(() => {
@@ -81,17 +98,43 @@ export const Transactions = () => {
     setIsNewDialogOpen(true);
   };
 
-  const currentMonthTransactions = useMemo(() => {
-    return transactions.filter(t => isSameMonth(parseISO(t.date), selectedDate));
-  }, [transactions, selectedDate]);
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      const transactionDate = parseISO(t.date);
+      
+      // Date Range Filter
+      const isWithinDateRange = isWithinInterval(transactionDate, {
+        start: filters.startDate,
+        end: filters.endDate
+      });
+      if (!isWithinDateRange) return false;
 
-  const filteredTransactions = currentMonthTransactions.filter(t => {
-    const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = typeFilter === 'all' || t.type === typeFilter;
-    const matchesTag = tagFilter === 'all' || (t.tags && t.tags.includes(tagFilter));
-    const matchesCategory = categoryIdFilter === 'all' || t.categoryId === categoryIdFilter;
-    return matchesSearch && matchesType && matchesTag && matchesCategory;
-  }).sort((a, b) => {
+      // Search Term Filter
+      const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
+      if (!matchesSearch) return false;
+
+      // Type Filter
+      const matchesType = filters.type === 'all' || t.type === filters.type;
+      if (!matchesType) return false;
+
+      // Category Filter
+      const matchesCategory = filters.categories.length === 0 || filters.categories.includes(t.categoryId);
+      if (!matchesCategory) return false;
+
+      // Tag Filter
+      const matchesTag = filters.tags.length === 0 || (t.tags && t.tags.some(tagId => filters.tags.includes(tagId)));
+      if (!matchesTag) return false;
+
+      // Account Filter
+      const matchesAccount = filters.accounts.length === 0 || (t.accountId && filters.accounts.includes(t.accountId));
+      if (!matchesAccount) return false;
+
+      // Status Filter
+      const matchesStatus = filters.statuses.length === 0 || filters.statuses.includes(t.status);
+      if (!matchesStatus) return false;
+
+      return true;
+    }).sort((a, b) => {
     let comparison = 0;
     switch (sortBy) {
       case 'date':
@@ -117,13 +160,14 @@ export const Transactions = () => {
     }
     return sortOrder === 'asc' ? comparison : -comparison;
   });
+}, [transactions, filters, searchTerm, sortBy, sortOrder, categories]);
 
-  const totalIncome = currentMonthTransactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
-  const totalExpense = currentMonthTransactions.filter(t => t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
+  const totalIncome = filteredTransactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
+  const totalExpense = filteredTransactions.filter(t => t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
   const balance = totalIncome - totalExpense;
 
   const expensesData = useMemo(() => {
-    const expenses = currentMonthTransactions.filter(t => t.type === 'expense' && t.status === 'paid');
+    const expenses = filteredTransactions.filter(t => t.type === 'expense' && t.status === 'paid');
     const data = expenses.reduce((acc, curr) => {
       const cat = categories.find(c => c.id === curr.categoryId);
       const name = cat?.name || 'Sem categoria';
@@ -137,7 +181,7 @@ export const Transactions = () => {
       return acc;
     }, [] as any[]);
     return data.sort((a: any, b: any) => b.value - a.value);
-  }, [currentMonthTransactions, categories]);
+  }, [filteredTransactions, categories]);
 
   const currencyFormatter = useMemo(() => new Intl.NumberFormat(userSettings.language, { 
     style: 'currency', 
@@ -522,83 +566,39 @@ export const Transactions = () => {
           </div>
           <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-full border border-zinc-200 dark:border-zinc-800 overflow-x-auto max-w-full no-scrollbar shrink-0">
             <Button 
-              variant={typeFilter === 'all' ? 'secondary' : 'ghost'} 
+              variant={filters.type === 'all' ? 'secondary' : 'ghost'} 
               size="sm" 
               className="rounded-full h-8 px-3 text-xs shrink-0"
-              onClick={() => setTypeFilter('all')}
+              onClick={() => setFilters(prev => ({ ...prev, type: 'all' }))}
             >
               {t('all')}
             </Button>
             <Button 
-              variant={typeFilter === 'income' ? 'secondary' : 'ghost'} 
+              variant={filters.type === 'income' ? 'secondary' : 'ghost'} 
               size="sm" 
               className="rounded-full h-8 px-3 text-xs shrink-0"
-              onClick={() => setTypeFilter('income')}
+              onClick={() => setFilters(prev => ({ ...prev, type: 'income' }))}
             >
               {t('incomes')}
             </Button>
             <Button 
-              variant={typeFilter === 'expense' ? 'secondary' : 'ghost'} 
+              variant={filters.type === 'expense' ? 'secondary' : 'ghost'} 
               size="sm" 
               className="rounded-full h-8 px-3 text-xs shrink-0"
-              onClick={() => setTypeFilter('expense')}
+              onClick={() => setFilters(prev => ({ ...prev, type: 'expense' }))}
             >
               {t('expenses')}
             </Button>
           </div>
           
           <div className="flex items-center gap-1 shrink-0">
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className="h-9 px-3 py-1 rounded-full text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-purple-500 flex items-center gap-2"
-              >
-                <Tag className="w-4 h-4" />
-                {tagFilter === 'all' ? 'Todas as Tags' : tags.find(t => t.id === tagFilter)?.name}
-                <ChevronDown className="w-3 h-3 opacity-50" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 max-h-80 overflow-y-auto">
-                <DropdownMenuItem onClick={() => setTagFilter('all')}>
-                  Todas as Tags
-                </DropdownMenuItem>
-                {tags.map(tag => {
-                  const Icon = iconMap[tag.icon || 'tag'] || Tag;
-                  return (
-                    <DropdownMenuItem key={tag.id} onClick={() => setTagFilter(tag.id)} className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-white shrink-0" style={{ backgroundColor: tag.color }}>
-                        <Icon className="w-3 h-3" />
-                      </div>
-                      <span className="truncate">{tag.name}</span>
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className="h-9 px-3 py-1 rounded-full text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-purple-500 flex items-center gap-2"
-              >
-                <Filter className="w-4 h-4" />
-                {categoryIdFilter === 'all' ? 'Todas Categorias' : categories.find(c => c.id === categoryIdFilter)?.name}
-                <ChevronDown className="w-3 h-3 opacity-50" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 max-h-80 overflow-y-auto">
-                <DropdownMenuItem onClick={() => setCategoryIdFilter('all')}>
-                  Todas as Categorias
-                </DropdownMenuItem>
-                {categories.map(cat => {
-                   const Icon = iconMap[cat.icon] || FileText;
-                   return (
-                    <DropdownMenuItem key={cat.id} onClick={() => setCategoryIdFilter(cat.id)} className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-white" style={{ backgroundColor: cat.color }}>
-                        <Icon className="w-3 h-3" />
-                      </div>
-                      {cat.name}
-                    </DropdownMenuItem>
-                   );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <TransactionFilterDialog 
+              categories={categories}
+              tags={tags}
+              accounts={piggyBank}
+              currentFilters={filters}
+              onApply={(newFilters) => setFilters(newFilters)}
+            />
           </div>
           {isSelectionMode && selectedTransactionIds.length > 0 && (
             <div className="shrink-0 flex items-center gap-2">
@@ -667,7 +667,7 @@ export const Transactions = () => {
                 <WalletIcon className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm text-[#9F9FA9]">{t('monthBalance')} ({currentMonthTransactions.length} itens)</p>
+                <p className="text-sm text-[#9F9FA9]">{t('monthBalance')} ({filteredTransactions.length} itens)</p>
                 <p className="font-bold text-[#50A2FF]">
                   {formatCurrency(balance)}
                 </p>
@@ -685,7 +685,7 @@ export const Transactions = () => {
                 <ArrowUpRight className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm text-zinc-400">{t('incomes')} ({currentMonthTransactions.filter(t => t.type === 'income').length})</p>
+                <p className="text-sm text-zinc-400">{t('incomes')} ({filteredTransactions.filter(t => t.type === 'income').length})</p>
                 <p className="font-bold text-[#01bfa5]">
                   {formatCurrency(totalIncome)}
                 </p>
@@ -703,7 +703,7 @@ export const Transactions = () => {
                 <ArrowDownRight className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm text-zinc-400">{t('expenses')} ({currentMonthTransactions.filter(t => t.type === 'expense').length})</p>
+                <p className="text-sm text-zinc-400">{t('expenses')} ({filteredTransactions.filter(t => t.type === 'expense').length})</p>
                 <p className="font-bold text-[#ee5350]">
                   {formatCurrency(totalExpense)}
                 </p>
