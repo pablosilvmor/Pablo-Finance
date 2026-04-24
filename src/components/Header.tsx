@@ -56,7 +56,7 @@ export const Header = () => {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Buscar..."
+            placeholder="Explorar..."
             onClick={() => setIsSearchOpen(true)}
             readOnly
             className="w-full h-9 pl-9 pr-4 rounded-full bg-secondary border-none text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"

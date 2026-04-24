@@ -49,16 +49,16 @@ export const GlobalSearchDialog = ({ open, onOpenChange }: GlobalSearchDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden rounded-[2rem] border-none shadow-2xl">
+      <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden rounded-[2rem] border-none shadow-2xl">
         <div className="bg-white dark:bg-[#1C1C1E]">
-          <form onSubmit={handleSearch} className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-3">
-            <Search className="w-5 h-5 text-zinc-400" />
+          <form onSubmit={handleSearch} className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-4 pr-14">
+            <Search className="w-6 h-6 text-zinc-400 shrink-0" />
             <Input 
               autoFocus
               placeholder="Busque transações, metas ou tire dúvidas sobre o sistema..." 
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="border-none bg-transparent focus-visible:ring-0 text-lg p-0 h-auto"
+              className="border-none bg-transparent focus-visible:ring-0 text-xl px-4 h-12 flex-1"
             />
             {query && (
               <Button 
@@ -66,17 +66,17 @@ export const GlobalSearchDialog = ({ open, onOpenChange }: GlobalSearchDialogPro
                 variant="ghost" 
                 size="icon" 
                 onClick={() => setQuery('')}
-                className="rounded-full h-8 w-8"
+                className="rounded-full h-10 w-10 shrink-0"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </Button>
             )}
             <Button 
               type="submit"
               disabled={isLoading || !query.trim()}
-              className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-4 font-bold h-9"
+              className="bg-purple-600 hover:bg-purple-700 text-white rounded-2xl px-6 font-bold h-12 text-lg shrink-0"
             >
-              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Buscar'}
+              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Buscar'}
             </Button>
           </form>
 

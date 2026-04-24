@@ -28,10 +28,10 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
     { icon: BarChart3, label: t('performance'), path: '/performance' },
     { icon: PieChart, label: t('charts'), path: '/charts' },
     { icon: Coins, label: t('piggyBank'), path: '/piggy-bank' },
+    { icon: Target, label: t('goals'), path: '/goals' },
   ];
 
   const moreItems = [
-    { icon: Target, label: t('goals'), path: '/goals' },
     { icon: Bookmark, label: t('categories'), path: '/categories' },
     { icon: Tag, label: t('tags'), path: '/tags' },
     { icon: Calendar, label: t('calendar'), path: '/calendar' },
@@ -157,10 +157,6 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-
-          <div className="pt-2">
-            <NavItem item={{ icon: Settings, label: t('settings'), path: '/settings' }} />
           </div>
 
           {isAdmin && (
