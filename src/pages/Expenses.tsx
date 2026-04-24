@@ -41,7 +41,9 @@ const SortableRow = ({
   onDelete, 
   onToggleStatus,
   isManualSort,
-  formatCurrency
+  formatCurrency,
+  isSelected,
+  onSelect
 }: { 
   transaction: Transaction; 
   category: any; 
@@ -50,6 +52,8 @@ const SortableRow = ({
   onToggleStatus: (id: string, status: 'paid' | 'pending', e: React.MouseEvent) => void;
   isManualSort: boolean;
   formatCurrency: (value: number) => string;
+  isSelected?: boolean;
+  onSelect?: (id: string, e: React.MouseEvent) => void;
 }) => {
   const {
     attributes,
@@ -72,11 +76,22 @@ const SortableRow = ({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors cursor-pointer group",
+        "transition-colors cursor-pointer group",
+        isSelected ? 'bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30' : 'hover:bg-zinc-50 dark:hover:bg-zinc-900/50',
         isDragging && "bg-zinc-100 dark:bg-zinc-800"
       )}
       onClick={(e) => onEdit(transaction.id, e)}
     >
+      <td className={cn("px-4 py-4", !isSelected && "hidden")} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-center">
+          <input 
+            type="checkbox" 
+            className="rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-purple-600 focus:ring-purple-500"
+            checked={isSelected}
+            onChange={(e) => onSelect?.(transaction.id, e as any)}
+          />
+        </div>
+      </td>
       <td className="px-4 py-4">
         <div className="flex items-center gap-2">
           {isManualSort && (
@@ -156,6 +171,32 @@ export const Expenses = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
+  const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+
+  const handleDeleteSelected = () => {
+    if (selectedTransactionIds.length === 0) return;
+    bulkDeleteTransactions(selectedTransactionIds).then(() => {
+      toast.success(`${selectedTransactionIds.length} ${selectedTransactionIds.length === 1 ? 'item excluído' : 'itens excluídos'}!`);
+      setSelectedTransactionIds([]);
+      setIsSelectionMode(false);
+    }).catch(console.error);
+  };
+
+  const toggleSelection = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedTransactionIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const toggleAllSelection = () => {
+    if (selectedTransactionIds.length === filteredExpenses.length) {
+      setSelectedTransactionIds([]);
+    } else {
+      setSelectedTransactionIds(filteredExpenses.map(t => t.id));
+    }
+  };
 
   const getDateLocale = () => {
     switch (userSettings.language) {
@@ -297,9 +338,10 @@ export const Expenses = () => {
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const transactionToDelete = transactions.find(t => t.id === id);
-    if (!transactionToDelete) return;
-    setTransactionToDelete(transactionToDelete);
+    setIsSelectionMode(true);
+    if (!selectedTransactionIds.includes(id)) {
+      setSelectedTransactionIds(prev => [...prev, id]);
+    }
   };
 
   const confirmDelete = async (type: 'single' | 'future' | 'all') => {
@@ -456,6 +498,32 @@ export const Expenses = () => {
               Manual
             </Button>
           </div>
+          {isSelectionMode && (
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="rounded-full h-9 px-4"
+                onClick={() => {
+                  setIsSelectionMode(false);
+                  setSelectedTransactionIds([]);
+                }}
+              >
+                Cancelar
+              </Button>
+              {selectedTransactionIds.length > 0 && (
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  className="rounded-full shrink-0 h-9 px-3 bg-red-500 hover:bg-red-600 gap-2"
+                  onClick={handleDeleteSelected}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span className="hidden md:inline">Confirmar ({selectedTransactionIds.length})</span>
+                </Button>
+              )}
+            </div>
+          )}
           <Button 
             variant="outline" 
             size="icon" 
@@ -524,6 +592,16 @@ export const Expenses = () => {
                       <table className="w-full text-sm text-left">
                         <thead className="text-xs text-zinc-500 dark:text-zinc-400 uppercase">
                           <tr>
+                            {isSelectionMode && (
+                              <th className="px-4 py-3 font-medium w-12 text-center">
+                                <input 
+                                  type="checkbox" 
+                                  className="rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-purple-600 focus:ring-purple-500"
+                                  checked={selectedTransactionIds.length === filteredExpenses.length && filteredExpenses.length > 0}
+                                  onChange={toggleAllSelection}
+                                />
+                              </th>
+                            )}
                             <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" onClick={() => handleSort('status')}>
                               <div className="flex items-center gap-1">
                                 <button onClick={(e) => { e.stopPropagation(); handleToggleAllStatus(); }} className="focus:outline-none mr-1">
@@ -575,6 +653,8 @@ export const Expenses = () => {
                               onToggleStatus={handleToggleStatus}
                               isManualSort={sortBy === 'manual'}
                               formatCurrency={formatCurrency}
+                              isSelected={selectedTransactionIds.includes(t.id)}
+                              onSelect={toggleSelection}
                             />
                           ))}
                         </tbody>

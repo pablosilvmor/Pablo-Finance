@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { iconMap } from '@/lib/icons';
 
 export const Categories = () => {
-  const { categories, addTransaction, transactions, addCategory, deleteCategory, updateCategory } = useAppStore();
+  const { categories, addTransaction, transactions, addCategory, deleteCategory, bulkDeleteCategories, updateCategory } = useAppStore();
   const [typeFilter, setTypeFilter] = useState<'expense' | 'income'>('expense');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
@@ -26,6 +26,8 @@ export const Categories = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   const filteredCategories = categories
     .filter(c => c.type === typeFilter)
@@ -84,7 +86,10 @@ export const Categories = () => {
   };
 
   const handleDeleteCategory = (id: string) => {
-    setCategoryToDelete(id);
+    setIsSelectionMode(true);
+    if (!selectedCategoryIds.includes(id)) {
+      setSelectedCategoryIds(prev => [...prev, id]);
+    }
   };
 
   const confirmDeleteCategory = () => {
@@ -92,6 +97,30 @@ export const Categories = () => {
       deleteCategory(categoryToDelete);
       toast.success('Categoria excluída com sucesso!');
       setCategoryToDelete(null);
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedCategoryIds.length === 0) return;
+    bulkDeleteCategories(selectedCategoryIds).then(() => {
+      toast.success(`${selectedCategoryIds.length} ${selectedCategoryIds.length === 1 ? 'categoria excluída' : 'categorias excluídas'}!`);
+      setSelectedCategoryIds([]);
+      setIsSelectionMode(false);
+    }).catch(console.error);
+  };
+
+  const toggleSelection = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedCategoryIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const toggleAllSelection = () => {
+    if (selectedCategoryIds.length === filteredCategories.length) {
+      setSelectedCategoryIds([]);
+    } else {
+      setSelectedCategoryIds(filteredCategories.map(c => c.id));
     }
   };
 
@@ -310,6 +339,33 @@ export const Categories = () => {
             </Button>
           </div>
 
+          {isSelectionMode && (
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="rounded-full h-9 px-4"
+                onClick={() => {
+                  setIsSelectionMode(false);
+                  setSelectedCategoryIds([]);
+                }}
+              >
+                Cancelar
+              </Button>
+              {selectedCategoryIds.length > 0 && (
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  className="rounded-full shrink-0 h-9 px-3 bg-red-500 hover:bg-red-600 gap-2"
+                  onClick={handleDeleteSelected}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span className="hidden md:inline">Confirmar ({selectedCategoryIds.length})</span>
+                </Button>
+              )}
+            </div>
+          )}
+
           <DropdownMenu>
             <DropdownMenuTrigger render={
               <Button 
@@ -372,6 +428,16 @@ export const Categories = () => {
           <table className="w-full text-sm text-left">
             <thead className="text-xs text-muted-foreground bg-secondary/50 border-b border-border">
               <tr>
+                {isSelectionMode && (
+                  <th className="px-6 py-4 font-medium w-12 text-center">
+                    <input 
+                      type="checkbox" 
+                      className="rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-purple-600 focus:ring-purple-500"
+                      checked={selectedCategoryIds.length === filteredCategories.length && filteredCategories.length > 0}
+                      onChange={toggleAllSelection}
+                    />
+                  </th>
+                )}
                 <th className="px-6 py-4 font-medium">Nome</th>
                 <th className="px-6 py-4 font-medium">Ícone</th>
                 <th className="px-6 py-4 font-medium">Cor</th>
@@ -381,8 +447,19 @@ export const Categories = () => {
             <tbody className="divide-y divide-border">
               {filteredCategories.map((category) => {
                 const Icon = iconMap[category.icon] || FileText;
+                const isSelected = selectedCategoryIds.includes(category.id);
                 return (
-                  <tr key={category.id} className="hover:bg-secondary/50 transition-colors group">
+                  <tr key={category.id} className={cn("transition-colors group cursor-pointer", isSelected ? "bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30" : "hover:bg-secondary/50")} onClick={(e) => isSelectionMode ? toggleSelection(category.id, e) : handleEdit(category)}>
+                    {isSelectionMode && (
+                      <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+                        <input 
+                          type="checkbox" 
+                          className="rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-purple-600 focus:ring-purple-500"
+                          checked={isSelected}
+                          onChange={(e) => toggleSelection(category.id, e as any)}
+                        />
+                      </td>
+                    )}
                     <td className="px-6 py-4 font-medium text-foreground">
                       {category.name}
                     </td>
@@ -401,7 +478,7 @@ export const Categories = () => {
                           variant="ghost" 
                           size="icon" 
                           className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                          onClick={() => setSelectedStatsCategory(category)}
+                          onClick={(e) => { e.stopPropagation(); setSelectedStatsCategory(category); }}
                           title="Estatísticas"
                         >
                           <BarChart3 className="w-4 h-4" />
@@ -410,7 +487,7 @@ export const Categories = () => {
                           variant="ghost" 
                           size="icon" 
                           className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                          onClick={() => handleEdit(category)}
+                          onClick={(e) => { e.stopPropagation(); handleEdit(category); }}
                         >
                           <Edit2 className="w-4 h-4" />
                         </Button>
@@ -418,7 +495,7 @@ export const Categories = () => {
                           variant="ghost" 
                           size="icon" 
                           className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                          onClick={() => handleDeleteCategory(category.id)}
+                          onClick={(e) => { e.stopPropagation(); handleDeleteCategory(category.id); }}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

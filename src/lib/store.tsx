@@ -64,12 +64,15 @@ interface AppState {
   addGoal: (g: Omit<Goal, 'id'>) => Promise<void>;
   updateGoal: (id: string, g: Partial<Goal>) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
+  bulkDeleteGoals: (ids: string[]) => Promise<void>;
   addCategory: (c: Omit<Category, 'id'>) => Promise<void>;
   updateCategory: (id: string, c: Partial<Category>) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
+  bulkDeleteCategories: (ids: string[]) => Promise<void>;
   addTag: (t: Omit<Tag, 'id'>) => Promise<void>;
   updateTag: (id: string, t: Partial<Tag>) => Promise<void>;
   deleteTag: (id: string) => Promise<void>;
+  bulkDeleteTags: (ids: string[]) => Promise<void>;
   updateTransaction: (id: string, t: Partial<Transaction>) => Promise<void>;
   bulkUpdateTransactions: (updates: { id: string; data: Partial<Transaction> }[]) => Promise<void>;
   bulkDeleteTransactions: (ids: string[]) => Promise<void>;
@@ -341,6 +344,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await deleteDoc(doc(db, `users/${userId}/goals`, id));
   };
 
+  const bulkDeleteGoals = async (ids: string[]) => {
+    if (!userId || !db) return;
+    const batch = writeBatch(db);
+    ids.forEach(id => {
+      const docRef = doc(db, `users/${userId}/goals`, id);
+      batch.delete(docRef);
+    });
+    await batch.commit();
+  };
+
   const addCategory = async (c: Omit<Category, 'id'>) => {
     if (!userId || !db) return;
     const id = Math.random().toString(36).substr(2, 9);
@@ -358,6 +371,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await deleteDoc(doc(db, `users/${userId}/categories`, id));
   };
 
+  const bulkDeleteCategories = async (ids: string[]) => {
+    if (!userId || !db) return;
+    const batch = writeBatch(db);
+    ids.forEach(id => {
+      const docRef = doc(db, `users/${userId}/categories`, id);
+      batch.delete(docRef);
+    });
+    await batch.commit();
+  };
+
   const addTag = async (t: Omit<Tag, 'id'>) => {
     if (!userId || !db) return;
     const id = Math.random().toString(36).substr(2, 9);
@@ -373,6 +396,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteTag = async (id: string) => {
     if (!userId || !db) return;
     await deleteDoc(doc(db, `users/${userId}/tags`, id));
+  };
+
+  const bulkDeleteTags = async (ids: string[]) => {
+    if (!userId || !db) return;
+    const batch = writeBatch(db);
+    ids.forEach(id => {
+      const docRef = doc(db, `users/${userId}/tags`, id);
+      batch.delete(docRef);
+    });
+    await batch.commit();
   };
 
   const updateMonthlyPlan = async (p: Partial<MonthlyPlan>) => {
@@ -491,8 +524,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider value={{ 
       transactions, categories, tags, goals, monthlyPlan, piggyBank, piggyBankHistory, userSettings,
       isTipsOpen, setIsTipsOpen, isDataLoaded,
-      addTransaction, addGoal, updateGoal, deleteGoal, addCategory,
-      updateCategory, deleteCategory, addTag, updateTag, deleteTag, updateTransaction, bulkUpdateTransactions, bulkDeleteTransactions, bulkUpsertTransactions, upsertTransaction, findTransaction, removeDuplicateTransactions, deleteTransaction,
+      addTransaction, addGoal, updateGoal, deleteGoal, bulkDeleteGoals, addCategory,
+      updateCategory, deleteCategory, bulkDeleteCategories, addTag, updateTag, deleteTag, bulkDeleteTags, updateTransaction, bulkUpdateTransactions, bulkDeleteTransactions, bulkUpsertTransactions, upsertTransaction, findTransaction, removeDuplicateTransactions, deleteTransaction,
       setTransactions, setCategories, setGoals, updateMonthlyPlan,
       updatePiggyBank, bulkUpdatePiggyBank, addPiggyBank, deletePiggyBank, resetPiggyBankBalance, addPiggyBankTransaction, updatePiggyBankDeposit, deletePiggyBankDeposit,
       updateUserSettings

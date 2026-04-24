@@ -1,5 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Target, Plus, ArrowLeft, ChevronRight, Home, Car, Plane, Shield, Briefcase, HelpCircle, Trash2, Edit2, Calculator, Wallet, Coins, TrendingUp, Landmark, Trophy, BookOpen, GraduationCap, Heart, Music, ShoppingBag, Smartphone, Umbrella, Utensils, Star, Gift, Gem, Camera, Coffee, Monitor } from 'lucide-react';
+import { 
+  Target, Plus, ArrowLeft, ChevronRight, Home, Car, Plane, Shield, Briefcase, HelpCircle, 
+  Trash2, Edit2, Calculator, Wallet, Coins, TrendingUp, Landmark, Trophy, BookOpen, 
+  GraduationCap, Heart, Music, ShoppingBag, Smartphone, Umbrella, Utensils, Star, Gift, 
+  Gem, Camera, Coffee, Monitor, Shirt, Fuel, Bike, HeartPulse, Palmtree, Guitar, Sofa 
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -20,21 +25,26 @@ import { ptBR, enUS, es } from 'date-fns/locale';
 export const GOAL_TYPES = [
   { id: 'emergency', name: 'Reserva de emergência', icon: Shield, color: '#01bfa5' },
   { id: 'travel', name: 'Viagem', icon: Plane, color: '#3b82f6' },
+  { id: 'vacation', name: 'Férias', icon: Palmtree, color: '#22c55e' },
   { id: 'car', name: 'Comprar um carro', icon: Car, color: '#f59e0b' },
+  { id: 'moto', name: 'Comprar uma moto', icon: Bike, color: '#0ea5e9' },
   { id: 'house', name: 'Comprar uma casa', icon: Home, color: '#ef4444' },
   { id: 'retirement', name: 'Aposentadoria', icon: Briefcase, color: '#8b5cf6' },
   { id: 'education', name: 'Estudos', icon: GraduationCap, color: '#10b981' },
-  { id: 'health', name: 'Saúde & Bem-estar', icon: Heart, color: '#f43f5e' },
-  { id: 'leisure', name: 'Lazer & Hobbies', icon: Music, color: '#ec4899' },
+  { id: 'health', name: 'Saúde', icon: HeartPulse, color: '#f43f5e' },
+  { id: 'clothing', name: 'Vestuário', icon: Shirt, color: '#f97316' },
+  { id: 'fuel', name: 'Reserva Combustível', icon: Fuel, color: '#64748b' },
+  { id: 'music', name: 'Música / Instrumentos', icon: Guitar, color: '#d946ef' },
+  { id: 'leisure', name: 'Lazer & Descanso', icon: Sofa, color: '#ec4899' },
   { id: 'gadget', name: 'Eletrônicos', icon: Smartphone, color: '#6366f1' },
-  { id: 'event', name: 'Casamento / Festa', icon: Gift, color: '#d946ef' },
+  { id: 'event', name: 'Casamento / Festa', icon: Gift, color: '#a855f7' },
   { id: 'investment', name: 'Investimento Fixo', icon: Landmark, color: '#14b8a6' },
   { id: 'other', name: 'Outro', icon: HelpCircle, color: '#6b7280' },
 ];
 
 export const Goals = () => {
   const { 
-    goals, addGoal, updateGoal, deleteGoal, 
+    goals, addGoal, updateGoal, deleteGoal, bulkDeleteGoals,
     piggyBank, updatePiggyBank, addPiggyBank, deletePiggyBank, addPiggyBankTransaction, updatePiggyBankDeposit, deletePiggyBankDeposit, piggyBankHistory, userSettings
   } = useAppStore();
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -52,6 +62,8 @@ export const Goals = () => {
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [isUpdateProgressOpen, setIsUpdateProgressOpen] = useState(false);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
+  const [selectedGoalIds, setSelectedGoalIds] = useState<string[]>([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [progressValue, setProgressValue] = useState('');
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedGoalForDetail, setSelectedGoalForDetail] = useState<any>(null);
@@ -63,6 +75,30 @@ export const Goals = () => {
   const [editingDepositIndex, setEditingDepositIndex] = useState<number | null>(null);
   const [editDepositAmount, setEditDepositAmount] = useState('');
   const [editDepositDate, setEditDepositDate] = useState('');
+
+  const handleDeleteSelected = () => {
+    if (selectedGoalIds.length === 0) return;
+    bulkDeleteGoals(selectedGoalIds).then(() => {
+      toast.success(`${selectedGoalIds.length} ${selectedGoalIds.length === 1 ? 'objetivo excluído' : 'objetivos excluídos'}!`);
+      setSelectedGoalIds([]);
+      setIsSelectionMode(false);
+    }).catch(console.error);
+  };
+
+  const toggleSelection = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setSelectedGoalIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const toggleAllSelection = () => {
+    if (selectedGoalIds.length === goals.length) {
+      setSelectedGoalIds([]);
+    } else {
+      setSelectedGoalIds(goals.map(g => g.id));
+    }
+  };
 
   const getDateLocale = () => {
     switch (userSettings.language) {
@@ -160,33 +196,55 @@ export const Goals = () => {
   const completedGoals = goals.filter(g => g.currentAmount >= g.targetAmount);
 
   const handleDeleteGoal = (id: string) => {
-    const goalToDelete = goals.find(g => g.id === id);
-    if (!goalToDelete) return;
-
-    deleteGoal(id);
-    toast.success('Objetivo excluído', {
-      action: {
-        label: 'Desfazer',
-        onClick: () => addGoal(goalToDelete)
-      }
-    });
+    setIsSelectionMode(true);
+    if (!selectedGoalIds.includes(id)) {
+      setSelectedGoalIds(prev => [...prev, id]);
+    }
   };
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-20">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Objetivos</h1>
-        <Button 
-          onClick={() => setIsAddOpen(true)}
-          className="bg-purple-600 hover:bg-purple-700 text-white rounded-full px-6"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Novo Objetivo
-        </Button>
+        <div className="flex items-center gap-2">
+          {isSelectionMode && (
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                className="rounded-full h-10 px-4"
+                onClick={() => {
+                  setIsSelectionMode(false);
+                  setSelectedGoalIds([]);
+                }}
+              >
+                Cancelar
+              </Button>
+              {selectedGoalIds.length > 0 && (
+                <Button 
+                  variant="destructive" 
+                  className="rounded-full bg-red-500 hover:bg-red-600 px-4 h-10"
+                  onClick={handleDeleteSelected}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  <span className="hidden md:inline">Excluir ({selectedGoalIds.length})</span>
+                </Button>
+              )}
+            </div>
+          )}
+          {!isSelectionMode && (
+            <Button 
+              onClick={() => setIsAddOpen(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white rounded-full px-6 h-10"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Novo Objetivo</span>
+            </Button>
+          )}
+        </div>
       </div>
 
       <Tabs defaultValue="ongoing" className="w-full">
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-8 relative">
           <TabsList className="bg-zinc-100 dark:bg-zinc-900 rounded-full p-1 h-12 w-full max-w-lg">
             <TabsTrigger 
               value="ongoing" 
@@ -201,6 +259,23 @@ export const Goals = () => {
               Concluídos
             </TabsTrigger>
           </TabsList>
+          
+          {isSelectionMode && (
+            <div className="absolute right-0 flex items-center h-full">
+              <div className="flex items-center gap-2">
+                <input 
+                  type="checkbox" 
+                  className="rounded border-zinc-600 bg-zinc-800 text-purple-600 focus:ring-purple-500"
+                  checked={selectedGoalIds.length === goals.length && goals.length > 0}
+                  onChange={toggleAllSelection}
+                  id="select-all-goals"
+                />
+                <label htmlFor="select-all-goals" className="text-sm font-medium text-zinc-500 cursor-pointer hidden md:inline">
+                  Selecionar todos
+                </label>
+              </div>
+            </div>
+          )}
         </div>
 
         <TabsContent value="ongoing">
@@ -224,11 +299,22 @@ export const Goals = () => {
               {ongoingGoals.map(goal => {
                 const progress = (goal.currentAmount / goal.targetAmount) * 100;
                 const Icon = GOAL_TYPES.find(t => t.id === goal.icon)?.icon || Target;
+                const isSelected = selectedGoalIds.includes(goal.id);
                 return (
-                  <Card key={goal.id} className="bg-[#2C2C2E] border-none shadow-sm rounded-3xl overflow-hidden group cursor-pointer" onClick={() => { setSelectedGoalForDetail(goal); setIsDetailOpen(true); }}>
+                  <Card key={goal.id} className={cn("bg-[#2C2C2E] border-none shadow-sm rounded-3xl overflow-hidden group cursor-pointer transition-colors", isSelected ? 'ring-2 ring-purple-500' : '')} onClick={() => { setSelectedGoalForDetail(goal); setIsDetailOpen(true); }}>
                     <CardContent className="p-6 space-y-6">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
+                          {isSelectionMode && (
+                            <div className="flex items-center justify-center -ml-2 mr-1" onClick={(e) => toggleSelection(goal.id, e)}>
+                              <input 
+                                type="checkbox" 
+                                className="rounded border-zinc-600 bg-zinc-800 text-purple-600 focus:ring-purple-500"
+                                checked={isSelected}
+                                onChange={(e) => toggleSelection(goal.id, e as any)}
+                              />
+                            </div>
+                          )}
                           <div 
                             className="w-12 h-12 rounded-2xl flex items-center justify-center text-white"
                             style={{ backgroundColor: goal.color }}
@@ -288,10 +374,21 @@ export const Goals = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {completedGoals.map(goal => {
                 const Icon = GOAL_TYPES.find(t => t.id === goal.icon)?.icon || Target;
+                const isSelected = selectedGoalIds.includes(goal.id);
                 return (
-                  <Card key={goal.id} className="bg-[#2C2C2E] border-none shadow-sm rounded-3xl overflow-hidden opacity-80">
+                  <Card key={goal.id} className={cn("bg-[#2C2C2E] border-none shadow-sm rounded-3xl overflow-hidden opacity-80 transition-colors", isSelected ? 'ring-2 ring-purple-500 opacity-100' : '')}>
                     <CardContent className="p-6 flex items-center justify-between">
                       <div className="flex items-center gap-4">
+                        {isSelectionMode && (
+                          <div className="flex items-center justify-center -ml-2 mr-1" onClick={(e) => toggleSelection(goal.id, e)}>
+                            <input 
+                              type="checkbox" 
+                              className="rounded border-zinc-600 bg-zinc-800 text-purple-600 focus:ring-purple-500"
+                              checked={isSelected}
+                              onChange={(e) => toggleSelection(goal.id, e as any)}
+                            />
+                          </div>
+                        )}
                         <div 
                           className="w-12 h-12 rounded-2xl flex items-center justify-center text-white bg-zinc-700"
                         >

@@ -1,9 +1,25 @@
-import { Utensils, DollarSign, Home, Book, Monitor, Wifi, Umbrella, Shield, ShoppingCart, Car, Zap, Briefcase, FileText, Coffee, Gift, Heart, Music, Camera, Plane, Smartphone, Gamepad, ShoppingBag, CreditCard, Landmark, PiggyBank, Receipt, Settings, Activity, Anchor, Aperture, Award, Battery, Bell, Box, Calendar, Clipboard, Cloud, Compass, Cpu, Crosshair, Droplet, Feather, Flag, Folder, Globe, Hash, Headphones, Key, Layers, Leaf, Link, MapPin, Mic, Moon, Package, Paperclip, PenTool, Printer, Radio, Scissors, Server, Speaker, Sun, Target, Thermometer, Truck, Tv, Unlock, User, Video, Watch, Wind, Tag } from 'lucide-react';
+import { Utensils, DollarSign, Home, Book, Monitor, Wifi, Umbrella, Shield, ShoppingCart, Car, Zap, Briefcase, FileText, Coffee, Gift, Heart, Music, Camera, Plane, Smartphone, Gamepad, ShoppingBag, CreditCard, Landmark, PiggyBank, Receipt, Settings, Activity, Anchor, Aperture, Award, Battery, Bell, Box, Calendar, Clipboard, Cloud, Compass, Cpu, Crosshair, Droplet, Feather, Flag, Folder, Globe, Hash, Headphones, Key, Layers, Leaf, Link, MapPin, Mic, Moon, Package, Paperclip, PenTool, Printer, Radio, Scissors, Server, Speaker, Sun, Target, Thermometer, Truck, Tv, Unlock, User, Video, Watch, Wind, Tag, Shirt, Fuel, Bike, Palmtree, Tent, Guitar, Sofa, Armchair, Pizza, Pill, Hospital, Luggage, UtensilsCrossed, HeartPulse, Flame, Trees } from 'lucide-react';
 import React from 'react';
 
 export const iconMap: Record<string, React.ElementType> = {
   'tag': Tag,
+  'shirt': Shirt,
+  'fuel': Fuel,
+  'bike': Bike,
+  'heart-pulse': HeartPulse,
   'utensils': Utensils,
+  'palmtree': Palmtree,
+  'guitar': Guitar,
+  'sofa': Sofa,
+  'armchair': Armchair,
+  'pizza': Pizza,
+  'pill': Pill,
+  'hospital': Hospital,
+  'luggage': Luggage,
+  'utensils-crossed': UtensilsCrossed,
+  'flame': Flame,
+  'trees': Trees,
+  'music': Music,
   'dollar-sign': DollarSign,
   'home': Home,
   'book': Book,
@@ -19,7 +35,6 @@ export const iconMap: Record<string, React.ElementType> = {
   'coffee': Coffee,
   'gift': Gift,
   'heart': Heart,
-  'music': Music,
   'camera': Camera,
   'plane': Plane,
   'smartphone': Smartphone,

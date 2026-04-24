@@ -29,6 +29,8 @@ export const Transactions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [tagFilter, setTagFilter] = useState<string>('all');
+  const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   
   // Sorting State
   const [sortBy, setSortBy] = useState<'date' | 'description' | 'amount' | 'category' | 'type' | 'status'>(() => {
@@ -141,13 +143,8 @@ export const Transactions = () => {
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const transaction = transactions.find(t => t.id === id);
-    if (transaction?.isFixed) {
-      setTransactionToDelete(transaction);
-    } else {
-      deleteTransaction(id);
-      toast.success(t('transactionDeleted'));
-    }
+    setIsSelectionMode(true);
+    setSelectedTransactionIds([id]);
   };
 
   const handleExportCSV = () => {
@@ -422,6 +419,30 @@ export const Transactions = () => {
     updateTransaction(id, { status: currentStatus === 'paid' ? 'pending' : 'paid' });
   };
 
+  const handleDeleteSelected = () => {
+    if (selectedTransactionIds.length === 0) return;
+    bulkDeleteTransactions(selectedTransactionIds).then(() => {
+      toast.success(`${selectedTransactionIds.length} ${selectedTransactionIds.length === 1 ? 'item excluído' : 'itens excluídos'}!`);
+      setSelectedTransactionIds([]);
+      setIsSelectionMode(false);
+    }).catch(console.error);
+  };
+
+  const toggleSelection = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedTransactionIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const toggleAllSelection = () => {
+    if (selectedTransactionIds.length === filteredTransactions.length) {
+      setSelectedTransactionIds([]);
+    } else {
+      setSelectedTransactionIds(filteredTransactions.map(t => t.id));
+    }
+  };
+
   const formatCurrency = (value: number) => {
     if (!userSettings.showValues) return `${userSettings.currency === 'BRL' ? 'R$' : userSettings.currency === 'USD' ? '$' : '€'} •••••`;
     return new Intl.NumberFormat(userSettings.language, { 
@@ -536,6 +557,30 @@ export const Transactions = () => {
               ))}
             </select>
           </div>
+          {isSelectionMode && selectedTransactionIds.length > 0 && (
+            <div className="shrink-0 flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="rounded-full h-8 px-3 text-xs shrink-0"
+                onClick={() => {
+                  setSelectedTransactionIds([]);
+                  setIsSelectionMode(false);
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                className="rounded-full h-8 px-3 text-xs shrink-0 bg-red-500 hover:bg-red-600 space-x-1"
+                onClick={handleDeleteSelected}
+              >
+                <Trash2 className="w-3 h-3" />
+                <span>Excluir ({selectedTransactionIds.length})</span>
+              </Button>
+            </div>
+          )}
           <div className="flex items-center gap-1 shrink-0">
             <Button 
               variant="outline" 
@@ -648,6 +693,18 @@ export const Transactions = () => {
           <table className="w-full text-sm text-left">
             <thead className="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800">
               <tr>
+                {isSelectionMode && (
+                  <th className="px-6 py-4 font-medium w-12">
+                    <div className="flex items-center justify-center">
+                      <input 
+                        type="checkbox" 
+                        className="rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-purple-600 focus:ring-purple-500"
+                        checked={selectedTransactionIds.length === filteredTransactions.length && filteredTransactions.length > 0}
+                        onChange={toggleAllSelection}
+                      />
+                    </div>
+                  </th>
+                )}
                 <th 
                   className="px-6 py-4 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
                   onClick={() => handleSort('status')}
@@ -702,9 +759,30 @@ export const Transactions = () => {
                 return (
                   <tr 
                     key={t.id} 
-                    className="bg-white dark:bg-zinc-950 border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors cursor-pointer"
-                    onClick={() => setSelectedTransaction({ ...t, category })}
+                    className={`border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors cursor-pointer ${selectedTransactionIds.includes(t.id) ? 'bg-purple-50 dark:bg-purple-900/20' : 'bg-white dark:bg-zinc-950'}`}
+                    onClick={() => {
+                      if (isSelectionMode) {
+                        toggleSelection(t.id, { stopPropagation: () => {} } as any);
+                      } else {
+                        setSelectedTransaction({ ...t, category });
+                      }
+                    }}
                   >
+                    {isSelectionMode && (
+                      <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-center">
+                          <input 
+                            type="checkbox" 
+                            className="rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-purple-600 focus:ring-purple-500"
+                            checked={selectedTransactionIds.includes(t.id)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              toggleSelection(t.id, e as any);
+                            }}
+                          />
+                        </div>
+                      </td>
+                    )}
                     <td className="px-6 py-4">
                       <button 
                         onClick={(e) => handleToggleStatus(t.id, t.status, e)}
