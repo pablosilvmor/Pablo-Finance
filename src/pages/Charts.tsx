@@ -243,7 +243,7 @@ export const Charts = () => {
                             }}>
                               <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
                               <p style={{ color: data.color || (payload[0] as any).color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
-                                Valor: {userSettings.showValues ? new Intl.NumberFormat(userSettings.language || 'pt-BR', { style: 'currency', currency: userSettings.currency || 'BRL' }).format(value) : '•••••'} ({percentage}%)
+                                Valor: {userSettings.showValues ? new Intl.NumberFormat(userSettings.language || 'pt-BR', { style: 'currency', currency: userSettings.currency || 'BRL' }).format(value) : '•••••'} {userSettings.showValues ? `(${percentage}%)` : ''}
                               </p>
                             </div>
                           );
@@ -322,7 +322,7 @@ export const Charts = () => {
                           }}>
                             <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.date}</p>
                             <p style={{ color: '#00b4d8', fontWeight: '500', margin: 0, fontSize: '14px' }}>
-                              Quantia: {userSettings.showValues ? new Intl.NumberFormat(userSettings.language || 'pt-BR', { style: 'currency', currency: userSettings.currency || 'BRL' }).format(value) : '•••••'} ({percentage}%)
+                              Quantia: {userSettings.showValues ? new Intl.NumberFormat(userSettings.language || 'pt-BR', { style: 'currency', currency: userSettings.currency || 'BRL' }).format(value) : '•••••'} {userSettings.showValues ? `(${percentage}%)` : ''}
                             </p>
                           </div>
                         );

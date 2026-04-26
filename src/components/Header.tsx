@@ -74,6 +74,7 @@ export const Header = () => {
           size="icon" 
           className="rounded-full"
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
         >
           {theme === 'dark' ? <Sun className="w-5 h-5 text-zinc-400" /> : <Moon className="w-5 h-5 text-zinc-600" />}
         </Button>
@@ -83,6 +84,7 @@ export const Header = () => {
           size="icon" 
           className="rounded-full text-purple-600 dark:text-purple-400"
           onClick={() => setIsTipsOpen(true)}
+          title="Ideias e Dicas (IA)"
         >
           <Lightbulb className="w-5 h-5" />
         </Button>
@@ -92,13 +94,14 @@ export const Header = () => {
           size="icon" 
           className="rounded-full text-zinc-600 dark:text-zinc-400"
           onClick={handleToggleValues}
+          title={userSettings.showValues ? 'Ocultar Valores' : 'Mostrar Valores'}
         >
           {userSettings.showValues ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
         </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger render={
-            <Button variant="ghost" size="icon" className="rounded-full relative hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+            <Button variant="ghost" size="icon" className="rounded-full relative hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" title="Notificações">
               <Bell className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
               <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-zinc-950 animate-pulse" />
             </Button>
@@ -129,7 +132,7 @@ export const Header = () => {
 
         <DropdownMenu>
           <DropdownMenuTrigger render={
-            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+            <Button variant="ghost" className="relative h-9 w-9 rounded-full" title="Perfil do Usuário">
               <Avatar className="h-9 w-9 border border-zinc-200 dark:border-zinc-800">
                 <AvatarImage src={user?.photoURL || "https://github.com/shadcn.png"} alt="@user" />
                 <AvatarFallback>{user?.displayName?.charAt(0) || 'U'}</AvatarFallback>

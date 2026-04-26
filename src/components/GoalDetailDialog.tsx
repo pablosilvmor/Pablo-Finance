@@ -80,7 +80,7 @@ export const GoalDetailDialog: React.FC<GoalDetailDialogProps> = ({ goal, open, 
           <p className="text-sm">
             <span className="text-gray-400">Quantia : </span>
             <span className="font-bold text-[#8b5cf6]">
-              {formatCurrency(value)} ({percentage}%)
+              {formatCurrency(value)} {userSettings.showValues ? `(${percentage}%)` : ''}
             </span>
           </p>
         </div>

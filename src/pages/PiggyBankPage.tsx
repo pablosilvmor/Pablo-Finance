@@ -294,7 +294,7 @@ export const PiggyBankPage = () => {
           <p className="text-sm">
             <span className="text-gray-400">Quantia : </span>
             <span style={{ color: value > 0 ? '#8B5CF6' : '#9ca3af' }} className="font-bold">
-              {formatCurrency(value)} ({percentage}%)
+              {formatCurrency(value)} {userSettings.showValues ? `(${percentage}%)` : ''}
             </span>
           </p>
         </div>

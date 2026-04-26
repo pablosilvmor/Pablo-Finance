@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
 import { Transaction, Category } from '../types';
 
 let aiInstance: GoogleGenAI | null = null;
@@ -36,6 +36,7 @@ export async function getSpendingInsights(transactions: Transaction[], categorie
       model: 'gemini-3.1-pro-preview',
       contents: prompt,
       config: {
+        thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
         systemInstruction: "Você é um consultor financeiro pessoal experiente e amigável, focado em ajudar o usuário a economizar dinheiro e atingir seus objetivos financeiros.",
       }
     });
@@ -118,6 +119,7 @@ export async function searchSystem(query: string, context: any): Promise<string>
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
+        thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
         systemInstruction: "Você é o assistente inteligente do Dindin, um app de finanças. Você ajuda os usuários a encontrar informações e entender como o app funciona.",
       }
     });

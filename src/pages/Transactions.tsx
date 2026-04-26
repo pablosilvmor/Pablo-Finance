@@ -1187,7 +1187,7 @@ export const Transactions = () => {
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                                 <span style={{ fontWeight: '600', fontSize: '15px', color: '#ef4444' }}>{currencyFormatter.format(item.value)}</span>
-                                <span style={{ fontSize: '13px', color: '#71717a' }}>{percentage}%</span>
+                                {userSettings.showValues && <span style={{ fontSize: '13px', color: '#71717a' }}>{percentage}%</span>}
                             </div>
                          </div>
                        );
@@ -1236,7 +1236,7 @@ export const Transactions = () => {
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                                 <span style={{ fontWeight: '600', fontSize: '15px', color: '#ef4444' }}>{currencyFormatter.format(item.value)}</span>
-                                <span style={{ fontSize: '13px', color: '#71717a' }}>{percentage}%</span>
+                                {userSettings.showValues && <span style={{ fontSize: '13px', color: '#71717a' }}>{percentage}%</span>}
                             </div>
                          </div>
                        );
@@ -1282,7 +1282,7 @@ export const Transactions = () => {
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                                 <span style={{ fontWeight: '600', fontSize: '15px', color: '#ef4444' }}>{currencyFormatter.format(item.value)}</span>
-                                <span style={{ fontSize: '13px', color: '#71717a' }}>{percentage}%</span>
+                                {userSettings.showValues && <span style={{ fontSize: '13px', color: '#71717a' }}>{percentage}%</span>}
                             </div>
                          </div>
                        );

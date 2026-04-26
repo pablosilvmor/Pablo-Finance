@@ -195,7 +195,7 @@ export const Performance = () => {
                     const translatedName = name === 'income' ? 'Receita' : name === 'expense' ? 'Despesa' : name;
                     const color = props.color;
                     return [
-                      <span key="val" style={{ color }}>{`${formatCurrency(value)} (${percentage}%)`}</span>,
+                      <span key="val" style={{ color }}>{`${formatCurrency(value)} ${userSettings.showValues ? `(${percentage}%)` : ''}`}</span>,
                       <span key="name" style={{ color }}>{translatedName}</span>
                     ];
                   }}

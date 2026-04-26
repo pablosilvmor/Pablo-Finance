@@ -87,12 +87,15 @@ export const PrivacyPasswordDialog = ({ open, onOpenChange, onSuccess }: Privacy
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[360px] p-0 bg-white dark:bg-[#1C1C1E] border-none rounded-[2.5rem] overflow-hidden">
+      <DialogContent showCloseButton={false} className="sm:max-w-[360px] p-0 bg-white dark:bg-[#1C1C1E] border-none rounded-[2.5rem] overflow-hidden">
         <div className="p-8 space-y-8">
           <div className="flex flex-col items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600">
+            <button 
+              className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
+              onClick={() => onOpenChange(false)}
+            >
               <X className="w-8 h-8" />
-            </div>
+            </button>
             <div className="text-center">
               <DialogTitle className="text-xl font-bold">
                 {mode === 'unlock' ? 'Digite sua senha' : mode === 'reset_current' ? 'Senha Atual' : 'Nova Senha'}

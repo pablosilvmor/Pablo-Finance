@@ -800,7 +800,7 @@ export const Incomes = () => {
                                 }}>
                                   <p style={{ color: '#white', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }} className="text-white">{data.name}</p>
                                   <p style={{ color: data.color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
-                                    Valor: {formatCurrency(value)} ({percentage}%)
+                                    Valor: {formatCurrency(value)} {userSettings.showValues ? `(${percentage}%)` : ''}
                                   </p>
                                 </div>
                               );
@@ -849,7 +849,7 @@ export const Incomes = () => {
                                 }}>
                                   <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
                                   <p style={{ color: data.color || (payload[0] as any).color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
-                                    Valor: {formatCurrency(value)} ({percentage}%)
+                                    Valor: {formatCurrency(value)} {userSettings.showValues ? `(${percentage}%)` : ''}
                                   </p>
                                 </div>
                               );
