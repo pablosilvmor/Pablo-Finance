@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppStore } from '../lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowDownIcon, ArrowUpIcon, CreditCardIcon, WalletIcon, Sparkles, Loader2, Eye, EyeOff, Plus, ChevronLeft, ChevronRight, Activity, BellRing, Trophy, Target } from 'lucide-react';
@@ -11,6 +11,35 @@ import { useNavigate } from 'react-router';
 import { MonthPicker } from '@/components/MonthPicker';
 import { useTranslation } from '@/lib/i18n';
 import { PrivacyPasswordDialog } from '@/components/PrivacyPasswordDialog';
+import { motion, animate } from 'motion/react';
+
+const AnimatedValue = ({ value, userSettings }: { value: number, userSettings: any }) => {
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    if (!userSettings.showValues) {
+      setDisplayValue(value);
+      return;
+    }
+    
+    const controls = animate(displayValue, value, {
+      duration: 1.2,
+      ease: [0.16, 1, 0.3, 1], // Custom ease out for a "natural" count feel
+      onUpdate: (latest) => setDisplayValue(latest)
+    });
+    return () => controls.stop();
+  }, [value, userSettings.showValues]);
+
+  const format = (val: number) => {
+    if (!userSettings.showValues) return `${userSettings.currency === 'BRL' ? 'R$' : userSettings.currency === 'USD' ? '$' : '€'} •••••`;
+    return new Intl.NumberFormat(userSettings.language, { 
+      style: 'currency', 
+      currency: userSettings.currency 
+    }).format(val);
+  };
+
+  return <span>{format(displayValue)}</span>;
+};
 
 export const Dashboard = () => {
   const { activeTransactions: transactions, categories, userSettings, monthlyPlan } = useAppStore();
@@ -497,14 +526,14 @@ export const Dashboard = () => {
         <div className="flex flex-col items-center gap-1">
           <p className="text-sm text-zinc-500 dark:text-zinc-400">{t('totalBalance')}</p>
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
-            {formatCurrency(totalBalance)}
+            <AnimatedValue value={totalBalance} userSettings={userSettings} />
           </h1>
         </div>
         
         <div className="mt-4 flex flex-col items-center gap-1">
           <p className="text-xs text-[#01BFA5]">{t('monthBalance')} ({formattedMonth})</p>
           <p className={`text-xl font-bold ${monthlyBalance >= 0 ? 'text-[#01BFA5]' : 'text-[#ee5350]'}`}>
-            {formatCurrency(monthlyBalance)}
+            <AnimatedValue value={monthlyBalance} userSettings={userSettings} />
           </p>
         </div>
       </div>
@@ -521,7 +550,9 @@ export const Dashboard = () => {
             </div>
             <div>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">{t('incomes')} ({incomeCount})</p>
-              <p className="font-semibold text-[#01bfa5]">{formatCurrency(totalIncome)}</p>
+              <p className="font-semibold text-[#01bfa5]">
+                <AnimatedValue value={totalIncome} userSettings={userSettings} />
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -536,7 +567,9 @@ export const Dashboard = () => {
             </div>
             <div>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">{t('expenses')} ({expenseCount})</p>
-              <p className="font-semibold text-[#ee5350]">{formatCurrency(totalExpense)}</p>
+              <p className="font-semibold text-[#ee5350]">
+                <AnimatedValue value={totalExpense} userSettings={userSettings} />
+              </p>
             </div>
           </CardContent>
         </Card>
