@@ -9,7 +9,7 @@ import { MonthPicker } from '@/components/MonthPicker';
 import { toast } from 'sonner';
 
 export const Charts = () => {
-  const { transactions, categories, userSettings } = useAppStore();
+  const { activeTransactions: transactions, categories, userSettings } = useAppStore();
   const [mainTab, setMainTab] = useState<'pie' | 'line' | 'bar'>('pie');
   
   // Sub tabs state

@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { parseISO, isSameMonth, isSameYear } from 'date-fns';
 import { NumericFormat } from 'react-number-format';
 import { CalculatorDialog } from './CalculatorDialog';
+import { useLocation } from 'react-router';
 
 import { TransactionMenuOverlay } from './TransactionMenuOverlay';
 
@@ -34,6 +35,13 @@ export const NewTransactionDialog = ({
   const { addTransaction, updateTransaction, bulkUpdateTransactions, bulkUpsertTransactions, upsertTransaction, findTransaction, transactions, categories, addCategory, tags: storeTags, addTag } = useAppStore();
   const [internalOpen, setInternalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
+  
+  const buttonColorClass = location.pathname === '/expenses' 
+    ? 'bg-[#ee5350] hover:bg-[#d32f2f]' 
+    : location.pathname === '/incomes' 
+      ? 'bg-[#01bfa5] hover:bg-[#00897b]' 
+      : 'bg-purple-600 hover:bg-purple-700';
   
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
   const setOpen = setExternalOpen !== undefined ? setExternalOpen : setInternalOpen;
@@ -400,7 +408,7 @@ export const NewTransactionDialog = ({
       {!transactionId && externalOpen === undefined && (
         <Button 
           variant="default" 
-          className="bg-purple-600 hover:bg-purple-700 text-white rounded-full h-9 px-4"
+          className={`${buttonColorClass} text-white rounded-full h-9 px-4`}
           onClick={() => setIsMenuOpen(true)}
         >
           <Plus className="w-4 h-4 mr-2" />

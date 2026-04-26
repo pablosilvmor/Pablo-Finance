@@ -14,6 +14,7 @@ export interface Transaction {
   groupId?: string;
   sortOrder?: number;
   tags?: string[];
+  ignored?: boolean;
 }
 
 export interface Account {

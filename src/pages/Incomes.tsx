@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { ArrowUpRight, Filter, Search, MoreVertical, CheckCircle2, Circle, TrendingUp, Calendar, ArrowLeft, ChevronLeft, ChevronRight, Edit2, Trash2, AlertTriangle, X, ArrowUp, ArrowDown, ArrowUpDown, Download, Tag, ChevronDown, FileText } from 'lucide-react';
+import { ArrowUpRight, Filter, Search, MoreVertical, CheckCircle2, Circle, TrendingUp, Calendar, ArrowLeft, ChevronLeft, ChevronRight, Edit2, Trash2, AlertTriangle, X, ArrowUp, ArrowDown, ArrowUpDown, Download, Tag, ChevronDown, FileText, FileX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format, parseISO, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
@@ -50,22 +50,26 @@ const SortableRow = ({
   onEdit, 
   onDelete, 
   onToggleStatus,
+  onToggleIgnore,
   isManualSort,
   formatCurrency,
   isSelected,
   onSelect,
-  isSelectionMode
+  isSelectionMode,
+  getTag
 }: { 
   transaction: Transaction; 
   category: any; 
   onEdit: (id: string, e: React.MouseEvent) => void;
   onDelete: (id: string, e: React.MouseEvent) => void;
   onToggleStatus: (id: string, status: 'paid' | 'pending', e: React.MouseEvent) => void;
+  onToggleIgnore: (id: string, e: React.MouseEvent) => void;
   isManualSort: boolean;
   formatCurrency: (value: number) => string;
   isSelected?: boolean;
   onSelect?: (id: string, e: React.MouseEvent) => void;
   isSelectionMode?: boolean;
+  getTag: (id: string) => any;
 }) => {
   const {
     attributes,
@@ -123,15 +127,51 @@ const SortableRow = ({
               <Circle className="w-5 h-5 text-zinc-300 dark:text-zinc-600" />
             )}
           </button>
+          <span 
+            className={cn(
+              "flex items-center justify-center p-1.5 rounded-md transition-all cursor-pointer border",
+              transaction.ignored 
+                ? "bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20 shadow-sm shadow-amber-500/10" 
+                : "bg-transparent border-transparent text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            )}
+            onClick={(e) => { e.stopPropagation(); onToggleIgnore(transaction.id, e); }}
+            title={transaction.ignored ? "Restaurar transação" : "Ignorar transação"}
+          >
+            <FileX className="w-[18px] h-[18px]" />
+          </span>
         </div>
       </td>
       <td className="px-4 py-4 text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
         {format(parseISO(transaction.date), "dd/MM/yy")}
       </td>
       <td className="px-4 py-4 font-medium text-zinc-900 dark:text-zinc-100">
-        <div className="flex items-center gap-2">
-          {transaction.description}
-          {transaction.isFixed && <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-full text-zinc-500">Fixa</span>}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            {transaction.description}
+            {transaction.isFixed && <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-full text-zinc-500">Fixa</span>}
+          </div>
+          {transaction.tags && transaction.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {transaction.tags.map(tagId => {
+                const tag = getTag(tagId);
+                if (!tag) return null;
+                const Icon = iconMap[tag.icon || 'tag'] || Tag;
+                return (
+                  <div key={tag.id} className="inline-flex items-center gap-2 mr-1">
+                    <div 
+                      className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 shadow-sm"
+                      style={{ backgroundColor: tag.color }}
+                    >
+                      <Icon className="w-2.5 h-2.5 text-white" />
+                    </div>
+                    <span className="text-[12px] font-bold text-zinc-800 dark:text-zinc-200">
+                      {tag.name}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </td>
       <td className="px-4 py-4">
@@ -155,9 +195,10 @@ const SortableRow = ({
 };
 
 export const Incomes = () => {
-  const { transactions, deleteTransaction, bulkDeleteTransactions, bulkUpdateTransactions, updateTransaction, categories, userSettings, setTransactions, tags } = useAppStore();
+  const { activeTransactions: transactions, deleteTransaction, bulkDeleteTransactions, bulkUpdateTransactions, updateTransaction, categories, userSettings, setTransactions, tags } = useAppStore();
   const getCategory = (id: string) => categories.find(c => c.id === id);
   const navigate = useNavigate();
+  const getTag = (id: string) => tags.find(t => t.id === id);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'pending'>('all');
   const [tagFilter, setTagFilter] = useState<string>('all');
@@ -197,21 +238,6 @@ export const Incomes = () => {
       setSelectedTransactionIds([]);
       setIsSelectionMode(false);
     }).catch(console.error);
-  };
-
-  const toggleSelection = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedTransactionIds(prev => 
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
-  };
-
-  const toggleAllSelection = () => {
-    if (selectedTransactionIds.length === filteredIncomes.length) {
-      setSelectedTransactionIds([]);
-    } else {
-      setSelectedTransactionIds(filteredIncomes.map(t => t.id));
-    }
   };
 
   const getDateLocale = () => {
@@ -269,6 +295,33 @@ export const Incomes = () => {
     return sortOrder === 'asc' ? comparison : -comparison;
   });
 
+  const toggleSelection = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedTransactionIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const toggleAllSelection = () => {
+    if (selectedTransactionIds.length === filteredIncomes.length) {
+      setSelectedTransactionIds([]);
+    } else {
+      setSelectedTransactionIds(filteredIncomes.map(t => t.id));
+    }
+  };
+
+  const dailyTotals = React.useMemo(() => {
+    const results: Record<string, number> = {};
+    const sortedDates = [...new Set(filteredIncomes.map(t => t.date))];
+    
+    sortedDates.forEach(date => {
+       results[date] = filteredIncomes
+         .filter(t => t.date === date && !t.ignored)
+         .reduce((s, c) => s + c.amount, 0);
+    });
+    return results;
+  }, [filteredIncomes]);
+
   const handleExportCSV = () => {
     const headers = ['Situação', 'Data', 'Descrição', 'Categoria', 'Valor'];
     const rows = filteredIncomes.map(t => {
@@ -291,6 +344,13 @@ export const Incomes = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleToggleIgnore = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const trans = transactions.find(t => t.id === id);
+    if (!trans) return;
+    updateTransaction(id, { ignored: !trans.ignored });
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -423,18 +483,21 @@ export const Incomes = () => {
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Minhas Receitas</h1>
         </div>
 
-        <div className="flex items-center gap-4 bg-white dark:bg-zinc-900 p-1 rounded-full border border-zinc-200 dark:border-zinc-800 self-center">
-          <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="rounded-full h-8 w-8">
-            <ChevronLeft className="w-4 h-4" />
+        <div className="flex items-center gap-2 self-center">
+          <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="rounded-full h-8 w-8 hover:bg-green-500/10 hover:text-green-500">
+            <ChevronLeft className="w-5 h-5 text-green-500" />
           </Button>
           <span 
-            className="text-sm font-semibold min-w-[120px] text-center capitalize cursor-pointer select-none hover:text-[#8B5CF6] transition-colors"
+            className="text-green-500 font-semibold text-sm min-w-[120px] text-center capitalize cursor-pointer select-none hover:bg-green-500/10 transition-colors border-[1.5px] border-green-500 rounded-full px-4 py-1.5"
             onClick={() => setIsMonthPickerOpen(true)}
           >
-            {format(currentDate, 'MMMM yyyy', { locale: getDateLocale() })}
+            {(() => {
+              const formatted = format(currentDate, 'MMMM yyyy', { locale: getDateLocale() });
+              return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+            })()}
           </span>
-          <Button variant="ghost" size="icon" onClick={handleNextMonth} className="rounded-full h-8 w-8">
-            <ChevronRight className="w-4 h-4" />
+          <Button variant="ghost" size="icon" onClick={handleNextMonth} className="rounded-full h-8 w-8 hover:bg-green-500/10 hover:text-green-500">
+            <ChevronRight className="w-5 h-5 text-green-500" />
           </Button>
         </div>
 
@@ -744,21 +807,39 @@ export const Incomes = () => {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                          {filteredIncomes.map((t) => (
-                            <SortableRow 
-                              key={t.id}
-                              transaction={t}
-                              category={getCategory(t.categoryId)}
-                              onEdit={handleEdit}
-                              onDelete={handleDelete}
-                              onToggleStatus={handleToggleStatus}
-                              isManualSort={sortBy === 'manual'}
-                              formatCurrency={formatCurrency}
-                              isSelected={selectedTransactionIds.includes(t.id)}
-                              onSelect={toggleSelection}
-                              isSelectionMode={isSelectionMode}
-                            />
-                          ))}
+                          {filteredIncomes.map((t, index) => {
+                            const nextT = filteredIncomes[index + 1];
+                            const isLastOfDate = !nextT || nextT.date !== t.date;
+                            return (
+                              <React.Fragment key={t.id}>
+                                <SortableRow 
+                                  transaction={t}
+                                  category={getCategory(t.categoryId)}
+                                  onEdit={handleEdit}
+                                  onDelete={handleDelete}
+                                  onToggleStatus={handleToggleStatus}
+                                  onToggleIgnore={handleToggleIgnore}
+                                  isManualSort={sortBy === 'manual'}
+                                  formatCurrency={formatCurrency}
+                                  isSelected={selectedTransactionIds.includes(t.id)}
+                                  onSelect={toggleSelection}
+                                  isSelectionMode={isSelectionMode}
+                                  getTag={getTag}
+                                />
+                                {isLastOfDate && (
+                                  <tr className="bg-green-500/5 dark:bg-green-500/10 border-b border-zinc-100 dark:border-zinc-800/50">
+                                    <td colSpan={isSelectionMode ? 5 : 4} className="px-4 py-2.5 text-zinc-500 dark:text-zinc-400 font-medium italic text-xs">
+                                      Saldo do Final do Dia
+                                    </td>
+                                    <td className="px-4 py-2.5 text-right font-bold text-zinc-500 dark:text-zinc-400">
+                                      {formatCurrency(dailyTotals[t.date])}
+                                    </td>
+                                    <td></td>
+                                  </tr>
+                                )}
+                              </React.Fragment>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </SortableContext>

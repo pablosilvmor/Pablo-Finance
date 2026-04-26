@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { iconMap } from '@/lib/icons';
 
 export const Categories = () => {
-  const { categories, addTransaction, transactions, addCategory, deleteCategory, bulkDeleteCategories, updateCategory } = useAppStore();
+  const { categories, addTransaction, activeTransactions: transactions, addCategory, deleteCategory, bulkDeleteCategories, updateCategory } = useAppStore();
   const [typeFilter, setTypeFilter] = useState<'expense' | 'income'>('expense');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);

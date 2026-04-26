@@ -50,6 +50,7 @@ export interface UserSettings {
 
 interface AppState {
   transactions: Transaction[];
+  activeTransactions: Transaction[];
   categories: Category[];
   tags: Tag[];
   goals: Goal[];
@@ -522,7 +523,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   return (
     <AppContext.Provider value={{ 
-      transactions, categories, tags, goals, monthlyPlan, piggyBank, piggyBankHistory, userSettings,
+      transactions,
+      activeTransactions: transactions.filter(t => !t.ignored),
+      categories, tags, goals, monthlyPlan, piggyBank, piggyBankHistory, userSettings,
       isTipsOpen, setIsTipsOpen, isDataLoaded,
       addTransaction, addGoal, updateGoal, deleteGoal, bulkDeleteGoals, addCategory,
       updateCategory, deleteCategory, bulkDeleteCategories, addTag, updateTag, deleteTag, bulkDeleteTags, updateTransaction, bulkUpdateTransactions, bulkDeleteTransactions, bulkUpsertTransactions, upsertTransaction, findTransaction, removeDuplicateTransactions, deleteTransaction,

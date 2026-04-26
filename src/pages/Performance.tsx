@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router';
 
 export const Performance = () => {
   const navigate = useNavigate();
-  const { transactions, categories, userSettings } = useAppStore();
+  const { activeTransactions: transactions, categories, userSettings } = useAppStore();
   const [viewMode, setViewMode] = useState<'monthly' | 'annual'>('monthly');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);

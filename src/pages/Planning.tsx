@@ -22,7 +22,7 @@ import { CategoryBadge } from '@/components/CategoryBadge';
 
 export const Planning = () => {
   const navigate = useNavigate();
-  const { categories, monthlyPlan, updateMonthlyPlan, transactions, userSettings } = useAppStore();
+  const { categories, monthlyPlan, updateMonthlyPlan, activeTransactions: transactions, userSettings } = useAppStore();
   const [viewMode, setViewMode] = useState<'view' | 'edit'>('view');
   const [step, setStep] = useState(1);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);

@@ -82,7 +82,14 @@ export const Layout = () => {
         <div className="relative -top-6">
           <button 
             onClick={() => setIsMenuOpen(true)}
-            className="w-14 h-14 bg-purple-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-purple-600/30 hover:bg-purple-700 transition-colors"
+            className={cn(
+              "w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg transition-colors",
+              location.pathname === '/expenses' 
+                ? "bg-red-500 shadow-red-500/30 hover:bg-red-600" 
+                : location.pathname === '/incomes'
+                  ? "bg-green-500 shadow-green-500/30 hover:bg-green-600"
+                  : "bg-purple-600 shadow-purple-600/30 hover:bg-purple-700"
+            )}
           >
             <Plus className="w-6 h-6" />
           </button>

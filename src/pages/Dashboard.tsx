@@ -13,7 +13,7 @@ import { useTranslation } from '@/lib/i18n';
 import { PrivacyPasswordDialog } from '@/components/PrivacyPasswordDialog';
 
 export const Dashboard = () => {
-  const { transactions, categories, userSettings, monthlyPlan } = useAppStore();
+  const { activeTransactions: transactions, categories, userSettings, monthlyPlan } = useAppStore();
   const { t } = useTranslation(userSettings.language);
   const [insights, setInsights] = useState<string>('');
   const [loadingInsights, setLoadingInsights] = useState(false);

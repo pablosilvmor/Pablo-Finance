@@ -11,7 +11,7 @@ import { MonthPicker } from '@/components/MonthPicker';
 import { CategoryBadge } from '@/components/CategoryBadge';
 
 export const Reports = () => {
-  const { transactions, categories, tags, userSettings } = useAppStore();
+  const { activeTransactions: transactions, categories, tags, userSettings } = useAppStore();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [reportType, setReportType] = useState('expenses');
   const [chartType, setChartType] = useState<'distribution' | 'line' | 'bar' | 'pie'>(() => {

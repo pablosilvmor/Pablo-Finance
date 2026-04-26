@@ -58,6 +58,8 @@ export const TransactionFilterDialog = ({
   const [localFilters, setLocalFilters] = useState<FilterConfig>({ ...currentFilters });
   const [saveFilter, setSaveFilter] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [catSearch, setCatSearch] = useState('');
+  const [tagSearch, setTagSearch] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -160,7 +162,13 @@ export const TransactionFilterDialog = ({
                     <Input 
                       type="date" 
                       value={format(localFilters.startDate, 'yyyy-MM-dd')}
-                      onChange={(e) => setLocalFilters(prev => ({ ...prev, startDate: new Date(e.target.value) }))}
+                      onChange={(e) => {
+                        const dateStr = e.target.value;
+                        if (dateStr) {
+                          const [year, month, day] = dateStr.split('-').map(Number);
+                          setLocalFilters(prev => ({ ...prev, startDate: new Date(year, month - 1, day, 0, 0, 0) }));
+                        }
+                      }}
                       className="bg-transparent border-none rounded-none p-0 h-8 text-zinc-200 focus-visible:ring-0"
                     />
                   </div>
@@ -171,7 +179,13 @@ export const TransactionFilterDialog = ({
                     <Input 
                       type="date" 
                       value={format(localFilters.endDate, 'yyyy-MM-dd')}
-                      onChange={(e) => setLocalFilters(prev => ({ ...prev, endDate: new Date(e.target.value) }))}
+                      onChange={(e) => {
+                        const dateStr = e.target.value;
+                        if (dateStr) {
+                          const [year, month, day] = dateStr.split('-').map(Number);
+                          setLocalFilters(prev => ({ ...prev, endDate: new Date(year, month - 1, day, 23, 59, 59, 999) }));
+                        }
+                      }}
                       className="bg-transparent border-none rounded-none p-0 h-8 text-zinc-200 focus-visible:ring-0"
                     />
                   </div>
@@ -210,26 +224,41 @@ export const TransactionFilterDialog = ({
                       </div>
                     } 
                   />
-                  <DropdownMenuContent className="bg-[#1C1C1C] border-zinc-800 text-white w-[380px] max-h-60 overflow-y-auto">
-                    {categories.map(cat => {
-                      const Icon = iconMap[cat.icon] || FileText;
-                      return (
-                        <DropdownMenuCheckboxItem
-                          key={cat.id}
-                          checked={localFilters.categories.includes(cat.id)}
-                          onCheckedChange={() => toggleCategory(cat.id)}
-                          className="focus:bg-zinc-800 focus:text-white"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Icon className="w-4 h-4" style={{ color: cat.color }} />
-                            <span>{cat.name}</span>
-                            <span className={cn("ml-auto text-[8px] uppercase px-1 rounded", cat.type === 'income' ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500')}>
-                              {cat.type === 'income' ? 'Receita' : 'Despesa'}
-                            </span>
-                          </div>
-                        </DropdownMenuCheckboxItem>
-                      );
-                    })}
+                  <DropdownMenuContent className="bg-[#1C1C1C] border-zinc-800 text-white w-[380px] max-h-60 flex flex-col">
+                    <div className="p-2 border-b border-zinc-800 sticky top-0 bg-[#1C1C1C] z-10">
+                      <Input
+                        placeholder="Buscar categoria..."
+                        value={catSearch}
+                        onChange={(e) => setCatSearch(e.target.value)}
+                        className="h-8 bg-zinc-800 border-zinc-700 text-xs focus-visible:ring-1 focus-visible:ring-zinc-600"
+                        onKeyDown={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    <div className="overflow-y-auto overflow-x-hidden">
+                      {categories
+                        .slice()
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .filter(c => c.name.toLowerCase().includes(catSearch.toLowerCase()))
+                        .map(cat => {
+                        const Icon = iconMap[cat.icon] || FileText;
+                        return (
+                          <DropdownMenuCheckboxItem
+                            key={cat.id}
+                            checked={localFilters.categories.includes(cat.id)}
+                            onCheckedChange={() => toggleCategory(cat.id)}
+                            className="focus:bg-zinc-800 focus:text-white"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Icon className="w-4 h-4" style={{ color: cat.color }} />
+                              <span>{cat.name}</span>
+                              <span className={cn("ml-auto text-[8px] uppercase px-1 rounded", cat.type === 'income' ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500')}>
+                                {cat.type === 'income' ? 'Receita' : 'Despesa'}
+                              </span>
+                            </div>
+                          </DropdownMenuCheckboxItem>
+                        );
+                      })}
+                    </div>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -265,23 +294,38 @@ export const TransactionFilterDialog = ({
                       </div>
                     } 
                   />
-                  <DropdownMenuContent className="bg-[#1C1C1C] border-zinc-800 text-white w-[380px] max-h-60 overflow-y-auto">
-                    {tags.map(tag => {
-                      const Icon = iconMap[tag.icon || 'tag'] || TagIcon;
-                      return (
-                        <DropdownMenuCheckboxItem
-                          key={tag.id}
-                          checked={localFilters.tags.includes(tag.id)}
-                          onCheckedChange={() => toggleTag(tag.id)}
-                          className="focus:bg-zinc-800 focus:text-white"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Icon className="w-4 h-4" style={{ color: tag.color }} />
-                            <span>{tag.name}</span>
-                          </div>
-                        </DropdownMenuCheckboxItem>
-                      );
-                    })}
+                  <DropdownMenuContent className="bg-[#1C1C1C] border-zinc-800 text-white w-[380px] max-h-60 flex flex-col">
+                    <div className="p-2 border-b border-zinc-800 sticky top-0 bg-[#1C1C1C] z-10">
+                      <Input
+                        placeholder="Buscar tag..."
+                        value={tagSearch}
+                        onChange={(e) => setTagSearch(e.target.value)}
+                        className="h-8 bg-zinc-800 border-zinc-700 text-xs focus-visible:ring-1 focus-visible:ring-zinc-600"
+                        onKeyDown={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    <div className="overflow-y-auto overflow-x-hidden">
+                      {tags
+                        .slice()
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .filter(t => t.name.toLowerCase().includes(tagSearch.toLowerCase()))
+                        .map(tag => {
+                        const Icon = iconMap[tag.icon || 'tag'] || TagIcon;
+                        return (
+                          <DropdownMenuCheckboxItem
+                            key={tag.id}
+                            checked={localFilters.tags.includes(tag.id)}
+                            onCheckedChange={() => toggleTag(tag.id)}
+                            className="focus:bg-zinc-800 focus:text-white"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Icon className="w-4 h-4" style={{ color: tag.color }} />
+                              <span>{tag.name}</span>
+                            </div>
+                          </DropdownMenuCheckboxItem>
+                        );
+                      })}
+                    </div>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

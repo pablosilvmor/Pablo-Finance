@@ -74,7 +74,7 @@ export const GlobalSearchDialog = ({ open, onOpenChange }: GlobalSearchDialogPro
             <Button 
               type="submit"
               disabled={isLoading || !query.trim()}
-              className="bg-purple-600 hover:bg-purple-700 text-white rounded-2xl px-6 font-bold h-12 text-lg shrink-0"
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-2xl px-8 font-bold h-12 text-lg shrink-0 shadow-lg shadow-purple-500/20 active:scale-95 transition-all"
             >
               {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Buscar'}
             </Button>

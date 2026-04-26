@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppStore } from '../lib/store';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, MoreVertical, Search, Filter, ArrowUpRight, ArrowDownRight, CheckCircle2, Circle, X, Trash2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Tag } from 'lucide-react';
+import { Plus, MoreVertical, Search, Filter, ArrowUpRight, ArrowDownRight, CheckCircle2, Circle, X, Trash2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Tag, FileX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format, parseISO, isSameMonth, endOfMonth, startOfMonth, isWithinInterval } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
 import { useNavigate, useLocation } from 'react-router';
@@ -13,7 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, Tooltip as RechartsTooltip } from 'recharts';
 import { NewTransactionDialog } from '@/components/NewTransactionDialog';
 import { MonthPicker } from '@/components/MonthPicker';
 import { TransactionMenuOverlay } from '@/components/TransactionMenuOverlay';
@@ -21,11 +22,12 @@ import { ImportCsvDialog } from '@/components/ImportCsvDialog';
 import { useTranslation } from '@/lib/i18n';
 import { CategoryBadge } from '@/components/CategoryBadge';
 import { iconMap } from '@/lib/icons';
+import { cn } from '@/lib/utils';
 
 import { TransactionFilterDialog, FilterConfig } from '@/components/TransactionFilterDialog';
 
 export const Transactions = () => {
-  const { transactions, categories, deleteTransaction, bulkDeleteTransactions, updateTransaction, userSettings, tags, piggyBank } = useAppStore();
+  const { transactions, activeTransactions, categories, deleteTransaction, bulkDeleteTransactions, updateTransaction, userSettings, tags, piggyBank } = useAppStore();
   const getCategory = (id: string) => categories.find(c => c.id === id);
   const getTag = (id: string) => tags.find(t => t.id === id);
   const { t } = useTranslation(userSettings.language);
@@ -162,12 +164,12 @@ export const Transactions = () => {
   });
 }, [transactions, filters, searchTerm, sortBy, sortOrder, categories]);
 
-  const totalIncome = filteredTransactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
-  const totalExpense = filteredTransactions.filter(t => t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
+  const totalIncome = filteredTransactions.filter(t => t.type === 'income' && !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
+  const totalExpense = filteredTransactions.filter(t => t.type === 'expense' && !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
   const balance = totalIncome - totalExpense;
 
   const expensesData = useMemo(() => {
-    const expenses = filteredTransactions.filter(t => t.type === 'expense' && t.status === 'paid');
+    const expenses = filteredTransactions.filter(t => t.type === 'expense' && t.status === 'paid' && !t.ignored);
     const data = expenses.reduce((acc, curr) => {
       const cat = categories.find(c => c.id === curr.categoryId);
       const name = cat?.name || 'Sem categoria';
@@ -258,8 +260,8 @@ export const Transactions = () => {
       currency: userSettings.currency 
     });
 
-    const cumulativeIncome = transactions.filter(t => t.type === 'income' && t.status === 'paid' && new Date(t.date) <= endOfMonth(selectedDate)).reduce((acc, curr) => acc + curr.amount, 0);
-    const cumulativeExpense = transactions.filter(t => t.type === 'expense' && t.status === 'paid' && new Date(t.date) <= endOfMonth(selectedDate)).reduce((acc, curr) => acc + curr.amount, 0);
+    const cumulativeIncome = activeTransactions.filter(t => t.type === 'income' && t.status === 'paid' && new Date(t.date) <= filters.endDate).reduce((acc, curr) => acc + curr.amount, 0);
+    const cumulativeExpense = activeTransactions.filter(t => t.type === 'expense' && t.status === 'paid' && new Date(t.date) <= filters.endDate).reduce((acc, curr) => acc + curr.amount, 0);
     const saldoDoMes = cumulativeIncome - cumulativeExpense;
 
     const rows = filteredTransactions.map(t => {
@@ -277,7 +279,11 @@ export const Transactions = () => {
       ];
     });
 
-    const currentMonthLabel = format(selectedDate, 'MMMM yyyy', { locale: userSettings.language === 'en' ? enUS : userSettings.language === 'es' ? es : ptBR });
+    const isSameMonthFilter = isSameMonth(filters.startDate, filters.endDate);
+    const dateLocale = userSettings.language === 'en' ? enUS : userSettings.language === 'es' ? es : ptBR;
+    const currentMonthLabel = isSameMonthFilter 
+      ? format(filters.startDate, 'MMMM yyyy', { locale: dateLocale })
+      : `${format(filters.startDate, 'dd/MM/yyyy', { locale: dateLocale })} a ${format(filters.endDate, 'dd/MM/yyyy', { locale: dateLocale })}`;
     const generatedAt = format(new Date(), 'dd/MM/yyyy HH:mm');
 
     const totalPagesExp = '{total_pages_count_string}';
@@ -498,6 +504,19 @@ export const Transactions = () => {
     }).format(value);
   };
 
+  const dailyBalances = useMemo(() => {
+    const results: Record<string, number> = {};
+    const sortedDates = [...new Set(filteredTransactions.map(t => t.date))].sort((a,b) => b.localeCompare(a));
+    
+    sortedDates.forEach(date => {
+       const upToDate = transactions.filter(t => !t.ignored && t.date <= date);
+       const income = upToDate.filter(t => t.type === 'income').reduce((s, c) => s + c.amount, 0);
+       const expense = upToDate.filter(t => t.type === 'expense').reduce((s, c) => s + c.amount, 0);
+       results[date] = income - expense;
+    });
+    return results;
+  }, [transactions, filteredTransactions]);
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-20 md:pb-0">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -508,23 +527,32 @@ export const Transactions = () => {
             const prev = new Date(selectedDate);
             prev.setMonth(prev.getMonth() - 1);
             setSelectedDate(prev);
-          }} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors">
-            <ChevronLeft className="w-5 h-5 text-zinc-500" />
+          }} className="p-2 hover:bg-[#8B5CF6]/10 rounded-full transition-colors">
+            <ChevronLeft className="w-5 h-5 text-[#8B5CF6]" />
           </button>
           
           <div 
-            className="text-zinc-900 dark:text-white font-semibold text-lg min-w-[120px] text-center cursor-pointer select-none hover:text-[#8B5CF6] transition-colors"
+            className="text-[#8B5CF6] font-semibold text-base min-w-[120px] text-center cursor-pointer select-none hover:bg-[#8B5CF6]/10 transition-colors border-[1.5px] border-[#8B5CF6] rounded-full px-4 py-1.5"
             onClick={() => setIsMonthPickerOpen(true)}
           >
-            {format(selectedDate, 'MMMM yyyy', { locale: userSettings.language === 'en' ? enUS : userSettings.language === 'es' ? es : ptBR })}
+            {isSameMonth(filters.startDate, filters.endDate) && 
+             filters.startDate.getTime() === startOfMonth(filters.startDate).getTime() && 
+             filters.endDate.getTime() === endOfMonth(filters.endDate).getTime() ? (
+              (() => {
+                const formatted = format(filters.startDate, 'MMMM yyyy', { locale: userSettings.language === 'en' ? enUS : userSettings.language === 'es' ? es : ptBR });
+                return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+              })()
+            ) : (
+              <span className="text-sm">{`${format(filters.startDate, 'dd/MM/yyyy')} a ${format(filters.endDate, 'dd/MM/yyyy')}`}</span>
+            )}
           </div>
 
           <button onClick={() => {
             const next = new Date(selectedDate);
             next.setMonth(next.getMonth() + 1);
             setSelectedDate(next);
-          }} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors">
-            <ChevronRight className="w-5 h-5 text-zinc-500" />
+          }} className="p-2 hover:bg-[#8B5CF6]/10 rounded-full transition-colors">
+            <ChevronRight className="w-5 h-5 text-[#8B5CF6]" />
           </button>
         </div>
         </div>
@@ -797,114 +825,156 @@ export const Transactions = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {filteredTransactions.map((t) => {
+              {filteredTransactions.map((t, index) => {
                 const category = getCategory(t.categoryId);
+                const nextT = filteredTransactions[index + 1];
+                const isLastOfDate = !nextT || nextT.date !== t.date;
                 return (
-                  <tr 
-                    key={t.id} 
-                    className={`border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors cursor-pointer ${selectedTransactionIds.includes(t.id) ? 'bg-purple-50 dark:bg-purple-900/20' : 'bg-white dark:bg-zinc-950'}`}
-                    onClick={() => {
-                      if (isSelectionMode) {
-                        toggleSelection(t.id, { stopPropagation: () => {} } as any);
-                      } else {
-                        setSelectedTransaction({ ...t, category });
-                      }
-                    }}
-                  >
-                    {isSelectionMode && (
-                      <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-center">
-                          <input 
-                            type="checkbox" 
-                            className="rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-purple-600 focus:ring-purple-500"
-                            checked={selectedTransactionIds.includes(t.id)}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              toggleSelection(t.id, e as any);
-                            }}
-                          />
+                  <React.Fragment key={t.id}>
+                    <tr 
+                      className={`border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors cursor-pointer ${selectedTransactionIds.includes(t.id) ? 'bg-purple-50 dark:bg-purple-900/20' : 'bg-white dark:bg-zinc-950'}`}
+                      onClick={() => {
+                        if (isSelectionMode) {
+                          toggleSelection(t.id, { stopPropagation: () => {} } as any);
+                        } else {
+                          setSelectedTransaction({ ...t, category });
+                        }
+                      }}
+                    >
+                      {isSelectionMode && (
+                        <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-center">
+                            <input 
+                              type="checkbox" 
+                              className="rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-purple-600 focus:ring-purple-500"
+                              checked={selectedTransactionIds.includes(t.id)}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                toggleSelection(t.id, e as any);
+                              }}
+                            />
+                          </div>
+                        </td>
+                      )}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <button 
+                            onClick={(e) => handleToggleStatus(t.id, t.status, e)}
+                            className="focus:outline-none"
+                            title={t.status === 'paid' ? 'Marcar como Pendente' : 'Marcar como Pago'}
+                          >
+                            {t.status === 'paid' ? (
+                              <CheckCircle2 className="w-5 h-5 text-[#01bfa5]" />
+                            ) : (
+                              <Circle className="w-5 h-5 text-zinc-300 dark:text-zinc-600" />
+                            )}
+                          </button>
+                          <TooltipProvider>
+                            <UITooltip>
+                              <TooltipTrigger>
+                                <span 
+                                  className={cn(
+                                    "flex items-center justify-center p-1.5 rounded-md transition-all cursor-pointer border",
+                                    t.ignored 
+                                      ? "bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20 shadow-sm shadow-amber-500/10" 
+                                      : "bg-transparent border-transparent text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                  )}
+                                  onClick={(e) => { e.stopPropagation(); updateTransaction(t.id, { ignored: !t.ignored }); }}
+                                >
+                                  <FileX className="w-[18px] h-[18px]" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-[280px] bg-zinc-900 text-white border-zinc-800 text-xs p-3 relative z-50">
+                                {t.ignored ? (
+                                  <p>Restaurar transação ignorada. Ao desativar, ela voltará a ser exibida nos seus totais.</p>
+                                ) : (
+                                  <p>Ignorar transação. Ao ativar essa funcionalidade, sua transação não será exibida ou considerada em seus totais de despesas e receitas, gráficos, desempenho e planejamento mensal. Não se preocupe, você poderá desativá-la quando quiser.</p>
+                                )}
+                              </TooltipContent>
+                            </UITooltip>
+                          </TooltipProvider>
                         </div>
                       </td>
-                    )}
-                    <td className="px-6 py-4">
-                      <button 
-                        onClick={(e) => handleToggleStatus(t.id, t.status, e)}
-                        className="focus:outline-none"
-                      >
-                        {t.status === 'paid' ? (
-                          <CheckCircle2 className="w-5 h-5 text-[#01bfa5]" />
-                        ) : (
-                          <Circle className="w-5 h-5 text-zinc-300 dark:text-zinc-600" />
-                        )}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 text-zinc-500 dark:text-zinc-400">
-                      {format(parseISO(t.date), "dd/MM/yyyy")}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-zinc-900 dark:text-zinc-100 mb-1">
-                        {t.description}
-                      </div>
-                      {t.tags && t.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {t.tags.map(tagId => {
-                            const tag = getTag(tagId);
-                            if (!tag) return null;
-                            return (
-                              <span 
-                                key={tag.id}
-                                className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium"
-                                style={{
-                                  backgroundColor: `${tag.color}15`,
-                                  color: tag.color,
-                                  border: `1px solid ${tag.color}30`
-                                }}
-                              >
-                                {tag.name}
-                              </span>
-                            );
-                          })}
+                      <td className="px-6 py-4 text-zinc-500 dark:text-zinc-400">
+                        {format(parseISO(t.date), "dd/MM/yyyy")}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-zinc-900 dark:text-zinc-100 mb-1">
+                          {t.description}
                         </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <CategoryBadge category={category} />
-                    </td>
-                    <td className={`px-6 py-4 text-right font-medium whitespace-nowrap ${t.type === 'income' ? 'text-[#01bfa5]' : 'text-[#ee5350]'}`}>
-                      {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger onClick={(e) => e.stopPropagation()} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none hover:bg-muted hover:text-foreground">
-                          <MoreVertical className="w-4 h-4 text-zinc-400" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingTransactionId(t.id);
-                            setIsNewDialogOpen(true);
-                          }} className="flex items-center gap-2 cursor-pointer">
-                            <Edit2 className="w-4 h-4 text-zinc-500" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleStatus(t.id, t.status, e as any);
-                          }} className="flex items-center gap-2 cursor-pointer">
-                            {t.status === 'paid' ? <Circle className="w-4 h-4 text-zinc-500" /> : <CheckCircle2 className="w-4 h-4 text-[#01bfa5]" />}
-                            Marcar como {t.status === 'paid' ? 'Pendente' : 'Pago'}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600 flex items-center gap-2 cursor-pointer" onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(t.id, e as any);
-                          }}>
-                            <Trash2 className="w-4 h-4 text-red-600" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
+                        {t.tags && t.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {t.tags.map(tagId => {
+                              const tag = getTag(tagId);
+                              if (!tag) return null;
+                              const Icon = iconMap[tag.icon || 'tag'] || Tag;
+                              return (
+                                  <div key={tag.id} className="inline-flex items-center gap-2 mr-1">
+                                    <div 
+                                      className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 shadow-sm"
+                                      style={{ backgroundColor: tag.color }}
+                                    >
+                                      <Icon className="w-3 h-3 text-white" />
+                                    </div>
+                                    <span className="text-[12px] font-bold text-zinc-800 dark:text-zinc-200">
+                                      {tag.name}
+                                    </span>
+                                  </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <CategoryBadge category={category} />
+                      </td>
+                      <td className={`px-6 py-4 text-right font-medium whitespace-nowrap ${t.type === 'income' ? 'text-[#01bfa5]' : 'text-[#ee5350]'}`}>
+                        {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger onClick={(e) => e.stopPropagation()} title="Mais opções" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none hover:bg-muted hover:text-foreground">
+                            <MoreVertical className="w-4 h-4 text-zinc-400" />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingTransactionId(t.id);
+                              setIsNewDialogOpen(true);
+                            }} className="flex items-center gap-2 cursor-pointer">
+                              <Edit2 className="w-4 h-4 text-zinc-500" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleStatus(t.id, t.status, e as any);
+                            }} className="flex items-center gap-2 cursor-pointer">
+                              {t.status === 'paid' ? <Circle className="w-4 h-4 text-zinc-500" /> : <CheckCircle2 className="w-4 h-4 text-[#01bfa5]" />}
+                              Marcar como {t.status === 'paid' ? 'Pendente' : 'Pago'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-600 flex items-center gap-2 cursor-pointer" onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(t.id, e as any);
+                            }}>
+                              <Trash2 className="w-4 h-4 text-red-600" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                    {isLastOfDate && (
+                      <tr className="bg-purple-500/5 dark:bg-purple-500/10 border-b border-zinc-100 dark:border-zinc-800/50">
+                        <td colSpan={isSelectionMode ? 5 : 4} className="px-6 py-3 text-zinc-500 dark:text-zinc-400 italic text-xs tracking-wider">
+                          Saldo do Final do Dia
+                        </td>
+                        <td className="px-6 py-3 text-right font-black text-zinc-500 dark:text-zinc-400 text-sm">
+                          {formatCurrency(dailyBalances[t.date])}
+                        </td>
+                        <td></td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 );
               })}
               {filteredTransactions.length === 0 && (
@@ -1009,7 +1079,7 @@ export const Transactions = () => {
                                   tick={{ fontSize: 10, fill: '#9F9FA9' }}
                                   dy={10}
                                 />
-                                <Tooltip 
+                                <RechartsTooltip 
                                   cursor={{ fill: 'transparent' }}
                                   content={({ active, payload }) => {
                                     if (active && payload && payload.length) {
