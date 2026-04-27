@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Bell, Search, Moon, Sun, Lightbulb, Eye, EyeOff, User, Settings, CreditCard, ShieldAlert, LogOut, Share2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Bell, Search, Moon, Sun, Lightbulb, Eye, EyeOff, User, Settings, CreditCard, ShieldAlert, LogOut, Share2, Info } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -19,13 +19,81 @@ export const Header = () => {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const user = auth.currentUser;
-  const { userSettings, setIsTipsOpen, updateUserSettings } = useAppStore();
+  const { userSettings, setIsTipsOpen, updateUserSettings, transactions, monthlyPlan, categories } = useAppStore();
   const { t } = useTranslation(userSettings.language);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const notifications = useMemo(() => {
+    const list: { id: string; title: string; description: string; color: string }[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // 1. Contas Próximas do Vencimento (Próximos 3 dias e vencidas recentemente)
+    const upcomingExpenses = transactions.filter(t => 
+      t.type === 'expense' && 
+      t.status === 'pending' && 
+      !t.ignored
+    );
+
+    upcomingExpenses.forEach(trans => {
+      const dueDate = new Date(trans.date);
+      dueDate.setHours(0, 0, 0, 0);
+      
+      const diffTime = dueDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays <= 3 && diffDays >= -5) {
+        let deadlineLabel = '';
+        if (diffDays === 0) deadlineLabel = 'vence hoje';
+        else if (diffDays === 1) deadlineLabel = 'vence amanhã';
+        else if (diffDays > 1) deadlineLabel = `vence em ${diffDays} dias`;
+        else deadlineLabel = `vencida há ${Math.abs(diffDays)} dias`;
+
+        list.push({
+          id: `trans-${trans.id}`,
+          title: 'Conta próxima do vencimento',
+          description: `${trans.description} ${deadlineLabel}. Valor: ${new Intl.NumberFormat(userSettings.language, { style: 'currency', currency: userSettings.currency }).format(trans.amount)}`,
+          color: 'text-red-600'
+        });
+      }
+    });
+
+    // 2. Orçamentos próximos do limite (80% ou mais)
+    if (monthlyPlan && monthlyPlan.budgets && monthlyPlan.budgets.length > 0) {
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      const monthlyTransactions = transactions.filter(t => {
+        const d = new Date(t.date);
+        return d >= monthStart && !t.ignored;
+      });
+
+      monthlyPlan.budgets.forEach(budget => {
+        if (budget.limit <= 0) return;
+
+        const catSpent = monthlyTransactions
+          .filter(t => t.type === 'expense' && t.categoryId === budget.categoryId)
+          .reduce((acc, t) => acc + t.amount, 0);
+
+        const percentage = (catSpent / budget.limit) * 100;
+        if (percentage >= 80) {
+          const category = categories.find(c => c.id === budget.categoryId);
+          if (category) {
+            list.push({
+              id: `budget-${budget.categoryId}`,
+              title: `Orçamento de ${category.name}`,
+              description: `Você já atingiu ${percentage.toFixed(0)}% do seu orçamento para ${category.name} este mês.`,
+              color: percentage >= 100 ? 'text-red-600' : 'text-orange-600'
+            });
+          }
+        }
+      });
+    }
+
+    return list;
+  }, [transactions, monthlyPlan, categories, userSettings.language, userSettings.currency]);
 
   const handleLogout = () => {
     auth.signOut();
@@ -100,12 +168,12 @@ export const Header = () => {
         </Button>
 
         <DropdownMenu>
-          <DropdownMenuTrigger render={
-            <Button variant="ghost" size="icon" className="rounded-full relative hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" title="Notificações">
-              <Bell className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-zinc-950 animate-pulse" />
-            </Button>
-          } />
+          <DropdownMenuTrigger className="rounded-full relative h-8 w-8 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" title="Notificações">
+            <Bell className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+            {notifications.length > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-zinc-950 animate-pulse" />
+            )}
+          </DropdownMenuTrigger>
           <DropdownMenuContent className="w-80 rounded-2xl p-2 bg-white dark:bg-[#1A1A1A] border-zinc-200 dark:border-zinc-800" align="end">
             <DropdownMenuGroup>
               <DropdownMenuLabel className="font-bold text-zinc-900 dark:text-white px-3 py-2">
@@ -114,31 +182,31 @@ export const Header = () => {
             </DropdownMenuGroup>
             <DropdownMenuSeparator className="bg-zinc-100 dark:bg-zinc-800" />
             <div className="max-h-80 overflow-y-auto scrollbar-none">
-              <DropdownMenuItem className="flex flex-col items-start p-3 cursor-pointer rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors">
-                <p className="text-sm font-bold text-red-600">Conta próxima do vencimento</p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Sua conta de Luz (CEMIG) vence em 2 dias. Valor: R$ 183,68.</p>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="flex flex-col items-start p-3 cursor-pointer rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors">
-                <p className="text-sm font-bold text-orange-600">Orçamento de Lazer</p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Você já atingiu 80% do seu orçamento para Lazer este mês.</p>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="flex flex-col items-start p-3 cursor-pointer rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors">
-                <p className="text-sm font-bold text-purple-600">Insight da IA</p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Notei que seus gastos com delivery aumentaram 20%. Que tal cozinhar em casa este fim de semana?</p>
-              </DropdownMenuItem>
+              {notifications.length > 0 ? (
+                notifications.map(notif => (
+                  <DropdownMenuItem key={notif.id} className="flex flex-col items-start p-3 cursor-pointer rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors">
+                    <p className={`text-sm font-bold ${notif.color}`}>{notif.title}</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{notif.description}</p>
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <div className="p-8 text-center">
+                  <Info className="w-8 h-8 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Tudo em dia!</p>
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">Não há notificações no momento.</p>
+                </div>
+              )}
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
 
         <DropdownMenu>
-          <DropdownMenuTrigger render={
-            <Button variant="ghost" className="relative h-9 w-9 rounded-full" title="Perfil do Usuário">
-              <Avatar className="h-9 w-9 border border-zinc-200 dark:border-zinc-800">
-                <AvatarImage src={user?.photoURL || "https://github.com/shadcn.png"} alt="@user" />
-                <AvatarFallback>{user?.displayName?.charAt(0) || 'U'}</AvatarFallback>
-              </Avatar>
-            </Button>
-          } />
+          <DropdownMenuTrigger className="relative h-9 w-9 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-800 hover:opacity-80 transition-opacity" title="Perfil do Usuário">
+            <Avatar className="h-full w-full">
+              <AvatarImage src={user?.photoURL || "https://github.com/shadcn.png"} alt="@user" />
+              <AvatarFallback>{user?.displayName?.charAt(0) || 'U'}</AvatarFallback>
+            </Avatar>
+          </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56 rounded-2xl p-2" align="end">
             <DropdownMenuGroup>
               <DropdownMenuLabel className="font-normal px-3 py-2">

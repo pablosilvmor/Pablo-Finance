@@ -239,15 +239,9 @@ export const Planning = () => {
             </div>
             
             <DropdownMenu>
-              <DropdownMenuTrigger render={
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="rounded-full text-muted-foreground hover:text-foreground"
-                >
-                  <MoreVertical className="w-5 h-5" />
-                </Button>
-              } />
+              <DropdownMenuTrigger className="rounded-full h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                <MoreVertical className="w-5 h-5" />
+              </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => {
                   window.print();

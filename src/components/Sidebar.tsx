@@ -130,19 +130,22 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
           {/* Mais Menu */}
           <div className="pt-2">
             <DropdownMenu>
-              <DropdownMenuTrigger render={
-                <button 
-                  className={cn(
-                    "w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-[#3d3d3e]",
-                    isCollapsed && "justify-center px-0"
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <MoreHorizontal className="w-5 h-5 shrink-0" />
-                    {!isCollapsed && <span>Mais opções</span>}
+              <DropdownMenuTrigger
+                nativeButton={false}
+                render={
+                  <div 
+                    className={cn(
+                      "w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-[#3d3d3e] cursor-pointer",
+                      isCollapsed && "justify-center px-0"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <MoreHorizontal className="w-5 h-5 shrink-0" />
+                      {!isCollapsed && <span>Mais opções</span>}
+                    </div>
                   </div>
-                </button>
-              } />
+                }
+              />
               <DropdownMenuContent side="right" align="start" className="w-56 rounded-2xl p-2 bg-white dark:bg-[#1A1A1A] border-zinc-200 dark:border-zinc-800">
                 {moreItems.map((item) => (
                   <DropdownMenuItem key={item.path} render={
