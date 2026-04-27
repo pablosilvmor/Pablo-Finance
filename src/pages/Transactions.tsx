@@ -909,17 +909,17 @@ export const Transactions = () => {
                               if (!tag) return null;
                               const Icon = iconMap[tag.icon || 'tag'] || Tag;
                               return (
-                                  <div key={tag.id} className="inline-flex items-center gap-2 mr-1">
-                                    <div 
-                                      className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 shadow-sm"
-                                      style={{ backgroundColor: tag.color }}
-                                    >
-                                      <Icon className="w-3 h-3 text-white" />
-                                    </div>
-                                    <span className="text-[12px] font-bold text-zinc-800 dark:text-zinc-200">
-                                      {tag.name}
-                                    </span>
-                                  </div>
+                            <div key={tag.id} className="inline-flex items-center gap-1.5 mr-2">
+                              <div 
+                                className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 shadow-sm"
+                                style={{ backgroundColor: tag.color }}
+                              >
+                                <Icon className="w-3.5 h-3.5 text-white" />
+                              </div>
+                              <span className="text-sm font-bold text-zinc-900 dark:text-white tracking-wide">
+                                {tag.name}
+                              </span>
+                            </div>
                               );
                             })}
                           </div>
@@ -968,7 +968,7 @@ export const Transactions = () => {
                         <td colSpan={isSelectionMode ? 5 : 4} className="px-6 py-3 text-zinc-500 dark:text-zinc-400 italic text-xs tracking-wider">
                           Saldo do Final do Dia
                         </td>
-                        <td className="px-6 py-3 text-right font-black text-zinc-500 dark:text-zinc-400 text-sm">
+                        <td className="px-6 py-3 text-right text-zinc-500 dark:text-zinc-400 text-sm">
                           {formatCurrency(dailyBalances[t.date])}
                         </td>
                         <td></td>
@@ -1027,6 +1027,31 @@ export const Transactions = () => {
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-zinc-500 dark:text-zinc-400">Tipo</span>
                       <span className="font-medium text-zinc-900 dark:text-white">{t('fixedTransaction')}</span>
+                    </div>
+                  )}
+                  {selectedTransaction.tags && selectedTransaction.tags.length > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-zinc-500 dark:text-zinc-400">Tags</span>
+                      <div className="flex flex-wrap gap-2 justify-end">
+                        {selectedTransaction.tags.map(tagId => {
+                          const tag = getTag(tagId);
+                          if (!tag) return null;
+                          const Icon = iconMap[tag.icon || 'tag'] || Tag;
+                          return (
+                            <div key={tag.id} className="flex items-center gap-2 ml-1">
+                              <div 
+                                className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 shadow-sm"
+                                style={{ backgroundColor: tag.color }}
+                              >
+                                <Icon className="w-3.5 h-3.5 text-white" />
+                              </div>
+                              <span className="text-sm font-bold text-zinc-800 dark:text-white" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+                                {tag.name}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>

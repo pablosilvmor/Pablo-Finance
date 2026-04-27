@@ -157,14 +157,14 @@ const SortableRow = ({
                 if (!tag) return null;
                 const Icon = iconMap[tag.icon || 'tag'] || Tag;
                 return (
-                  <div key={tag.id} className="inline-flex items-center gap-2 mr-1">
+                  <div key={tag.id} className="inline-flex items-center gap-1.5 mr-2">
                     <div 
-                      className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 shadow-sm"
+                      className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 shadow-sm"
                       style={{ backgroundColor: tag.color }}
                     >
-                      <Icon className="w-2.5 h-2.5 text-white" />
+                      <Icon className="w-3.5 h-3.5 text-white" />
                     </div>
-                    <span className="text-[12px] font-bold text-zinc-800 dark:text-zinc-200">
+                    <span className="text-sm font-bold text-zinc-900 dark:text-white tracking-wide">
                       {tag.name}
                     </span>
                   </div>

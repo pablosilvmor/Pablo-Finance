@@ -1,7 +1,14 @@
-import { Utensils, DollarSign, Home, Book, Monitor, Wifi, Umbrella, Shield, ShoppingCart, Car, Zap, Briefcase, FileText, Coffee, Gift, Heart, Music, Camera, Plane, Smartphone, Gamepad, ShoppingBag, CreditCard, Landmark, PiggyBank, Receipt, Settings, Activity, Anchor, Aperture, Award, Battery, Bell, Box, Calendar, Clipboard, Cloud, Compass, Cpu, Crosshair, Droplet, Feather, Flag, Folder, Globe, Hash, Headphones, Key, Layers, Leaf, Link, MapPin, Mic, Moon, Package, Paperclip, PenTool, Printer, Radio, Scissors, Server, Speaker, Sun, Target, Thermometer, Truck, Tv, Unlock, User, Video, Watch, Wind, Tag, Shirt, Fuel, Bike, Palmtree, Tent, Guitar, Sofa, Armchair, Pizza, Pill, Hospital, Luggage, UtensilsCrossed, HeartPulse, Flame, Trees } from 'lucide-react';
+import { createLucideIcon, Utensils, DollarSign, Home, Book, Monitor, Wifi, Umbrella, Shield, ShoppingCart, Car, Zap, Briefcase, FileText, Coffee, Gift, Heart, Music, Camera, Plane, Smartphone, Gamepad, ShoppingBag, CreditCard, Landmark, PiggyBank, Receipt, Settings, Activity, Anchor, Aperture, Award, Battery, Bell, Box, Calendar, Clipboard, Cloud, Compass, Cpu, Crosshair, Droplet, Feather, Flag, Folder, Globe, Hash, Headphones, Key, Layers, Leaf, Link, MapPin, Mic, Moon, Package, Paperclip, PenTool, Printer, Radio, Scissors, Server, Speaker, Sun, Target, Thermometer, Truck, Tv, Unlock, User, Video, Watch, Wind, Tag, Shirt, Fuel, Bike, Palmtree, Tent, Guitar, Sofa, Armchair, Pizza, Pill, Hospital, Luggage, UtensilsCrossed, HeartPulse, Flame, Trees } from 'lucide-react';
 import React from 'react';
 
+export const MotorcycleIcon = createLucideIcon('Motorcycle', [
+  ['path', { d: 'M5 16a3 3 0 1 0 0 6 3 3 0 1 0 0-6', key: '1' }],
+  ['path', { d: 'M19 16a3 3 0 1 0 0 6 3 3 0 1 0 0-6', key: '2' }],
+  ['path', { d: 'M5 19h14M12 16v-4m0 0L7 8h5l2-2 3 3h3', key: '3' }]
+]);
+
 export const iconMap: Record<string, React.ElementType> = {
+  'motorcycle': MotorcycleIcon,
   'tag': Tag,
   'shirt': Shirt,
   'fuel': Fuel,

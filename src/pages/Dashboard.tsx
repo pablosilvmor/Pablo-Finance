@@ -42,7 +42,7 @@ const AnimatedValue = ({ value, userSettings }: { value: number, userSettings: a
 };
 
 export const Dashboard = () => {
-  const { activeTransactions: transactions, categories, userSettings, monthlyPlan } = useAppStore();
+  const { activeTransactions: transactions, categories, tags, userSettings, monthlyPlan } = useAppStore();
   const { t } = useTranslation(userSettings.language);
   const [insights, setInsights] = useState<string>('');
   const [loadingInsights, setLoadingInsights] = useState(false);
@@ -207,8 +207,14 @@ export const Dashboard = () => {
       case 'category-expenses':
         return (
           <Card key={id} className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm bg-card transition-all">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">{t('expensesByCategory')}</CardTitle>
+              <button 
+                onClick={() => navigate('/reports', { state: { tab: 'categories' } })}
+                className="text-[10px] uppercase font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors tracking-wider"
+              >
+                Ver mais
+              </button>
             </CardHeader>
             <CardContent>
               <div className="h-64 w-full min-h-[256px] min-w-0">
@@ -219,7 +225,7 @@ export const Dashboard = () => {
                       <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
                       <Tooltip 
                         trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
-                        cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                        cursor={{ fill: 'transparent' }}
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
                             const data = payload[0].payload;
@@ -319,7 +325,7 @@ export const Dashboard = () => {
                       <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
                       <Tooltip 
                         trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
-                        cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                        cursor={{ fill: 'transparent' }}
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
                             const data = payload[0].payload;
@@ -480,26 +486,135 @@ export const Dashboard = () => {
           </Card>
         );
       case 'credit-card':
+      case 'tag-expenses': {
+        const tagTotals = expensesMonth.reduce((acc, curr) => {
+          if (curr.tags && curr.tags.length > 0) {
+            curr.tags.forEach(tagId => {
+              acc[tagId] = (acc[tagId] || 0) + curr.amount;
+            });
+          }
+          return acc;
+        }, {} as Record<string, number>);
+
+        const pieDataTags = Object.entries(tagTotals)
+          .map(([tagId, amount]) => {
+            const tag = tags.find(t => t.id === tagId);
+            return {
+              name: tag?.name || 'Desconhecido',
+              value: amount,
+              color: tag?.color || '#ccc',
+            } as { name: string, value: number, color: string };
+          })
+          .sort((a, b) => b.value - a.value);
+
         return (
           <Card key={id} className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm bg-card transition-all">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">{t('creditCard')}</CardTitle>
-              <CreditCardIcon className="w-4 h-4 text-zinc-500" />
+              <CardTitle className="text-sm font-medium">Despesas por Tags</CardTitle>
+              <button 
+                onClick={() => navigate('/reports', { state: { tab: 'tags' } })}
+                className="text-[10px] uppercase font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors tracking-wider"
+              >
+                Ver mais
+              </button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="p-4 bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-xl text-white">
-                  <p className="text-[10px] uppercase tracking-widest opacity-60 mb-1">{t('currentInvoice')}</p>
-                  <p className="text-xl font-bold">{formatCurrency(totalExpense * 0.4)}</p>
-                  <div className="mt-4 flex justify-between items-end">
-                    <p className="text-xs opacity-80">•••• 4582</p>
-                    <div className="w-8 h-5 bg-orange-400 rounded-sm opacity-80" />
+              <div className="h-64 w-full min-h-[256px] min-w-0">
+                {pieDataTags.length > 5 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={pieDataTags} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
+                      <XAxis type="number" hide />
+                      <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
+                      <Tooltip 
+                        trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
+                        cursor={{ fill: 'transparent' }}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            const value = payload[0].value as number;
+                            const total = pieDataTags.reduce((acc, cur) => acc + cur.value, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                            return (
+                              <div style={{ 
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                                borderRadius: '12px', 
+                                border: '1px solid #333',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                padding: '12px'
+                              }}>
+                                <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
+                                <p style={{ color: data.color, margin: 0, fontWeight: 'bold', fontSize: '13px' }}>
+                                  {formatCurrency(value)} <span style={{ opacity: 0.8, fontWeight: 'normal', fontSize: '11px' }}>({percentage}%)</span>
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                        {pieDataTags.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : pieDataTags.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieDataTags}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {pieDataTags.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            const value = payload[0].value as number;
+                            const total = pieDataTags.reduce((acc, cur) => acc + cur.value, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                            return (
+                              <div style={{ 
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                                borderRadius: '12px', 
+                                border: '1px solid #333',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                padding: '12px'
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: data.color }} />
+                                  <p style={{ color: '#fff', fontWeight: 'bold', margin: 0, fontSize: '14px' }}>{data.name}</p>
+                                </div>
+                                <p style={{ color: '#fff', margin: 0, fontSize: '15px', fontWeight: 'bold' }}>{formatCurrency(value)}</p>
+                                <p style={{ color: 'rgba(255,255,255,0.6)', margin: '4px 0 0 0', fontSize: '12px' }}>{percentage}% do total</p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-zinc-400 text-sm font-medium">
+                    {t('noTransactionsFound')}
                   </div>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
         );
+      }
       default:
         return null;
     }
@@ -510,17 +625,17 @@ export const Dashboard = () => {
       {/* Header Section */}
       <div className="flex flex-col items-center justify-center py-6">
         <div className="flex items-center gap-4 mb-4">
-          <button onClick={handlePrevMonth} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors">
-            <ChevronLeft className="w-5 h-5 text-zinc-500" />
+          <button onClick={handlePrevMonth} className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">
+            <ChevronLeft className="w-4 h-4" />
           </button>
           <div 
-            className="text-zinc-900 dark:text-white font-semibold text-lg min-w-[120px] text-center cursor-pointer select-none hover:text-[#8B5CF6] transition-colors"
+            className="text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-800/60 rounded-full font-medium text-sm px-6 py-2 min-w-[140px] text-center cursor-pointer select-none hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors"
             onClick={() => setIsMonthPickerOpen(true)}
           >
             {formattedMonth} {currentYear}
           </div>
-          <button onClick={handleNextMonth} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors">
-            <ChevronRight className="w-5 h-5 text-zinc-500" />
+          <button onClick={handleNextMonth} className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
         <div className="flex flex-col items-center gap-1">

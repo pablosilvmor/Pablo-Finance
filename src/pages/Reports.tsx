@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { useLocation } from 'react-router';
 import { useAppStore } from '../lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
@@ -11,9 +12,14 @@ import { MonthPicker } from '@/components/MonthPicker';
 import { CategoryBadge } from '@/components/CategoryBadge';
 
 export const Reports = () => {
+  const location = useLocation();
   const { activeTransactions: transactions, categories, tags, userSettings } = useAppStore();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [reportType, setReportType] = useState('expenses');
+  
+  const initialData = location.state as { tab?: string } | null;
+  const initialReportType = initialData?.tab === 'tags' ? 'tags_expense' : 'expenses';
+
+  const [reportType, setReportType] = useState(initialReportType);
   const [chartType, setChartType] = useState<'distribution' | 'line' | 'bar' | 'pie'>(() => {
     return (localStorage.getItem('preferredChartType') as 'distribution' | 'line' | 'bar' | 'pie') || 'distribution';
   });
@@ -75,7 +81,7 @@ export const Reports = () => {
             name: tagId === 'sem_tag' ? 'Sem Tag' : (tag?.name || 'Desconhecido'),
             value: amount,
             color: tagId === 'sem_tag' ? '#9CA3AF' : (tag?.color || '#ccc'),
-            icon: 'tag',
+            icon: tagId === 'sem_tag' ? 'tag' : (tag?.icon || 'tag'),
             percentage: total > 0 ? ((amount / total) * 100).toFixed(2) : '0.00'
           };
         })
@@ -304,22 +310,43 @@ export const Reports = () => {
           </Button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Select value={reportType} onValueChange={setReportType}>
-            <SelectTrigger className="w-[180px] md:w-[220px] rounded-full bg-secondary border-border text-foreground">
-              <SelectValue placeholder="Selecione o relatório" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="expenses">Despesas por categorias</SelectItem>
-              <SelectItem value="incomes">Receitas por categorias</SelectItem>
-              <SelectItem value="tags_expense">Despesas por tags</SelectItem>
-              <SelectItem value="tags_income">Receitas por tags</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex flex-wrap items-center gap-2 md:gap-3">
+          {/* View Type Toggle */}
+          <div className="flex bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-0.5 rounded-full">
+            <button 
+              className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all ${!reportType.includes('tags') ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'}`}
+              onClick={() => setReportType(reportType.includes('expense') ? 'expenses' : 'incomes')}
+            >
+              Categorias
+            </button>
+            <button 
+              className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all ${reportType.includes('tags') ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'}`}
+              onClick={() => setReportType(reportType.includes('expense') ? 'tags_expense' : 'tags_income')}
+            >
+              Tags
+            </button>
+          </div>
+          
+          {/* Data Type Toggle */}
+          <div className="flex bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-0.5 rounded-full">
+            <button 
+              className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all ${reportType.includes('expense') ? 'bg-white dark:bg-zinc-800 text-[#ee5350] shadow-sm' : 'text-zinc-500 hover:text-[#ee5350]'}`}
+              onClick={() => setReportType(reportType.includes('tags') ? 'tags_expense' : 'expenses')}
+            >
+              Despesas
+            </button>
+            <button 
+              className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all ${reportType.includes('income') ? 'bg-white dark:bg-zinc-800 text-[#01bfa5] shadow-sm' : 'text-zinc-500 hover:text-[#01bfa5]'}`}
+              onClick={() => setReportType(reportType.includes('tags') ? 'tags_income' : 'incomes')}
+            >
+              Receitas
+            </button>
+          </div>
+
           <Button 
             variant="outline" 
             size="icon" 
-            className="rounded-full"
+            className="rounded-full h-8 w-8 ml-auto sm:ml-1 shrink-0"
             onClick={handleExportCSV}
             title="Exportar CSV"
           >
