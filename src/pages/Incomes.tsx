@@ -195,7 +195,7 @@ const SortableRow = ({
 };
 
 export const Incomes = () => {
-  const { activeTransactions: transactions, deleteTransaction, bulkDeleteTransactions, bulkUpdateTransactions, updateTransaction, categories, userSettings, setTransactions, tags } = useAppStore();
+  const { transactions, deleteTransaction, bulkDeleteTransactions, bulkUpdateTransactions, updateTransaction, categories, userSettings, setTransactions, tags } = useAppStore();
   const getCategory = (id: string) => categories.find(c => c.id === id);
   const navigate = useNavigate();
   const getTag = (id: string) => tags.find(t => t.id === id);
@@ -269,9 +269,9 @@ export const Incomes = () => {
     isSameMonth(parseISO(t.date), currentDate)
   );
 
-  const totalIncome = monthlyIncomes.reduce((acc, curr) => acc + curr.amount, 0);
-  const totalReceived = monthlyIncomes.filter(t => t.status === 'paid').reduce((acc, curr) => acc + curr.amount, 0);
-  const totalPending = monthlyIncomes.filter(t => t.status === 'pending').reduce((acc, curr) => acc + curr.amount, 0);
+  const totalIncome = monthlyIncomes.filter(t => !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
+  const totalReceived = monthlyIncomes.filter(t => t.status === 'paid' && !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
+  const totalPending = monthlyIncomes.filter(t => t.status === 'pending' && !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
 
   const filteredIncomes = monthlyIncomes.filter(t => {
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -449,7 +449,7 @@ export const Incomes = () => {
 
   // Group by category for the chart
   const categoryData = React.useMemo(() => {
-    const categoryTotals = monthlyIncomes.reduce((acc, curr) => {
+    const categoryTotals = monthlyIncomes.filter(t => !t.ignored).reduce((acc, curr) => {
       acc[curr.categoryId] = (acc[curr.categoryId] || 0) + curr.amount;
       return acc;
     }, {} as Record<string, number>);

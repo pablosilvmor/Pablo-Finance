@@ -195,7 +195,7 @@ const SortableRow = ({
 };
 
 export const Expenses = () => {
-  const { activeTransactions: transactions, categories, updateTransaction, deleteTransaction, bulkDeleteTransactions, bulkUpdateTransactions, addTransaction, setTransactions, userSettings, tags } = useAppStore();
+  const { transactions, categories, updateTransaction, deleteTransaction, bulkDeleteTransactions, bulkUpdateTransactions, addTransaction, setTransactions, userSettings, tags } = useAppStore();
   const getCategory = (id: string) => categories.find(c => c.id === id);
   const navigate = useNavigate();
   const getTag = (id: string) => tags.find(t => t.id === id);
@@ -274,11 +274,10 @@ export const Expenses = () => {
     isSameMonth(parseISO(t.date), currentDate)
   );
 
-  const totalIncome = monthlyIncomes.reduce((acc, curr) => acc + curr.amount, 0);
-
-  const totalExpense = monthlyExpenses.reduce((acc, curr) => acc + curr.amount, 0);
-  const totalPaid = monthlyExpenses.filter(t => t.status === 'paid').reduce((acc, curr) => acc + curr.amount, 0);
-  const totalPending = monthlyExpenses.filter(t => t.status === 'pending').reduce((acc, curr) => acc + curr.amount, 0);
+  const totalIncome = monthlyIncomes.filter(t => !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
+  const totalExpense = monthlyExpenses.filter(t => !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
+  const totalPaid = monthlyExpenses.filter(t => t.status === 'paid' && !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
+  const totalPending = monthlyExpenses.filter(t => t.status === 'pending' && !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
   
   const monthlyBalance = totalIncome - totalExpense;
 
@@ -465,7 +464,7 @@ export const Expenses = () => {
 
   // Group by category for the chart
   const categoryData = React.useMemo(() => {
-    const categoryTotals = monthlyExpenses.reduce((acc, curr) => {
+    const categoryTotals = monthlyExpenses.filter(t => !t.ignored).reduce((acc, curr) => {
       acc[curr.categoryId] = (acc[curr.categoryId] || 0) + curr.amount;
       return acc;
     }, {} as Record<string, number>);
