@@ -79,7 +79,12 @@ export const CalendarView = () => {
 
   const formatValue = (value: number) => {
     if (!userSettings.showValues) return '••••••';
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    // Prevent -R$ 0,00 by normalizing values very close to zero
+    const normalizedVal = Math.abs(value) < 0.005 ? 0 : value;
+    return new Intl.NumberFormat(userSettings.language, { 
+      style: 'currency', 
+      currency: userSettings.currency 
+    }).format(normalizedVal);
   };
 
   return (

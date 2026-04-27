@@ -35,10 +35,12 @@ export const Reports = () => {
         const symbol = userSettings?.currency === 'BRL' ? 'R$' : userSettings?.currency === 'USD' ? '$' : '€';
         return `${symbol} •••••`;
       }
+      // Prevent -R$ 0,00 by normalizing values very close to zero
+      const normalizedVal = Math.abs(value) < 0.005 ? 0 : value;
       return new Intl.NumberFormat(userSettings?.language || 'pt-BR', { 
         style: 'currency', 
         currency: userSettings?.currency || 'BRL'
-      }).format(value);
+      }).format(normalizedVal);
     } catch (e) {
       return value.toString();
     }

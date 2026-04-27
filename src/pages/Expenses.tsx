@@ -7,7 +7,7 @@ import { ArrowDownRight, Filter, Search, MoreVertical, CheckCircle2, Circle, Tre
 import { Button } from '@/components/ui/button';
 import { format, parseISO, addMonths, subMonths, isSameMonth, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 import { cn } from '@/lib/utils';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -223,7 +223,13 @@ export const Expenses = () => {
       setSortOrder(field === 'date' || field === 'amount' ? 'desc' : 'asc');
     }
   };
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const location = useLocation();
+  const [currentDate, setCurrentDate] = useState(() => {
+    if (location.state && location.state.date) {
+      return new Date(location.state.date);
+    }
+    return new Date();
+  });
   const [editingTransactionId, setEditingTransactionId] = useState<string | undefined>(undefined);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
@@ -250,10 +256,12 @@ export const Expenses = () => {
 
   const formatCurrency = (value: number) => {
     if (!userSettings.showValues) return `${userSettings.currency === 'BRL' ? 'R$' : userSettings.currency === 'USD' ? '$' : '€'} •••••`;
+    // Prevent -R$ 0,00 by normalizing values very close to zero
+    const normalizedVal = Math.abs(value) < 0.005 ? 0 : value;
     return new Intl.NumberFormat(userSettings.language, { 
       style: 'currency', 
       currency: userSettings.currency 
-    }).format(value);
+    }).format(normalizedVal);
   };
 
   const sensors = useSensors(

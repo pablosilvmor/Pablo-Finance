@@ -31,16 +31,27 @@ export const Transactions = () => {
   const getCategory = (id: string) => categories.find(c => c.id === id);
   const getTag = (id: string) => tags.find(t => t.id === id);
   const { t } = useTranslation(userSettings.language);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const location = useLocation();
+  const [selectedDate, setSelectedDate] = useState(() => {
+    if (location.state && (location.state as any).date) {
+      return new Date((location.state as any).date);
+    }
+    return new Date();
+  });
   const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState<FilterConfig>({
-    startDate: startOfMonth(new Date()),
-    endDate: endOfMonth(new Date()),
-    categories: [],
-    tags: [],
-    accounts: [],
-    statuses: [],
-    type: 'all'
+  const [filters, setFilters] = useState<FilterConfig>(() => {
+    const defaultDate = location.state && (location.state as any).date 
+      ? new Date((location.state as any).date) 
+      : new Date();
+    return {
+      startDate: startOfMonth(defaultDate),
+      endDate: endOfMonth(defaultDate),
+      categories: [],
+      tags: [],
+      accounts: [],
+      statuses: [],
+      type: 'all'
+    };
   });
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -80,7 +91,6 @@ export const Transactions = () => {
   const [transactionToDelete, setTransactionToDelete] = useState<any>(null);
   const [isImportCsvOpen, setIsImportCsvOpen] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
   const [editingTransactionId, setEditingTransactionId] = useState<string | undefined>(undefined);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -498,10 +508,12 @@ export const Transactions = () => {
 
   const formatCurrency = (value: number) => {
     if (!userSettings.showValues) return `${userSettings.currency === 'BRL' ? 'R$' : userSettings.currency === 'USD' ? '$' : '€'} •••••`;
+    // Prevent -R$ 0,00 by normalizing values very close to zero
+    const normalizedVal = Math.abs(value) < 0.005 ? 0 : value;
     return new Intl.NumberFormat(userSettings.language, { 
       style: 'currency', 
       currency: userSettings.currency 
-    }).format(value);
+    }).format(normalizedVal);
   };
 
   const dailyBalances = useMemo(() => {

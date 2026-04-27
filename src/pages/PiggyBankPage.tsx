@@ -114,10 +114,12 @@ export const PiggyBankPage = () => {
 
   const formatCurrency = (value: number) => {
     if (!userSettings.showValues) return `${userSettings.currency === 'BRL' ? 'R$' : userSettings.currency === 'USD' ? '$' : '€'} •••••`;
+    // Prevent -R$ 0,00 by normalizing values very close to zero
+    const normalizedVal = Math.abs(value) < 0.005 ? 0 : value;
     return new Intl.NumberFormat(userSettings.language, { 
       style: 'currency', 
       currency: userSettings.currency 
-    }).format(value);
+    }).format(normalizedVal);
   };
 
   const totalPiggyBank = useMemo(() => {

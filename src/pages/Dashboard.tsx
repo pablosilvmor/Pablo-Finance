@@ -32,10 +32,12 @@ const AnimatedValue = ({ value, userSettings }: { value: number, userSettings: a
 
   const format = (val: number) => {
     if (!userSettings.showValues) return `${userSettings.currency === 'BRL' ? 'R$' : userSettings.currency === 'USD' ? '$' : '€'} •••••`;
+    // Prevent -R$ 0,00 by normalizing values very close to zero
+    const normalizedVal = Math.abs(val) < 0.005 ? 0 : val;
     return new Intl.NumberFormat(userSettings.language, { 
       style: 'currency', 
       currency: userSettings.currency 
-    }).format(val);
+    }).format(normalizedVal);
   };
 
   return <span>{format(displayValue)}</span>;
@@ -55,6 +57,7 @@ export const Dashboard = () => {
   const currentYear = currentDate.getFullYear();
 
   const monthlyTransactions = transactions.filter(t => {
+    if (t.ignored) return false;
     const d = new Date(t.date);
     return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
   });
@@ -67,6 +70,7 @@ export const Dashboard = () => {
 
   const totalBalance = transactions
     .filter(t => {
+      if (t.ignored) return false;
       const d = new Date(t.date);
       const tYear = d.getFullYear();
       const tMonth = d.getMonth();
@@ -134,6 +138,7 @@ export const Dashboard = () => {
   const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
   const yearlyData = months.map((month, index) => {
     const monthTransactions = transactions.filter(t => {
+      if (t.ignored) return false;
       const d = new Date(t.date);
       return d.getMonth() === index && d.getFullYear() === currentYear;
     });
@@ -196,10 +201,12 @@ export const Dashboard = () => {
 
   const formatCurrency = (value: number) => {
     if (!userSettings.showValues) return `${userSettings.currency === 'BRL' ? 'R$' : userSettings.currency === 'USD' ? '$' : '€'} •••••`;
+    // Prevent -R$ 0,00 by normalizing values very close to zero
+    const normalizedVal = Math.abs(value) < 0.005 ? 0 : value;
     return new Intl.NumberFormat(userSettings.language, { 
       style: 'currency', 
       currency: userSettings.currency 
-    }).format(value);
+    }).format(normalizedVal);
   };
 
   const renderCard = (id: string) => {
@@ -623,14 +630,20 @@ export const Dashboard = () => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header Section */}
-      <div className="flex flex-col items-center justify-center py-6">
-        <div className="flex items-center gap-4 mb-4">
+      <div 
+        className="flex flex-col items-center justify-center py-6 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/50 rounded-2xl transition-colors"
+        onClick={() => navigate('/transactions', { state: { date: currentDate.toISOString() } })}
+      >
+        <div className="flex items-center gap-4 mb-4" onClick={(e) => e.stopPropagation()}>
           <button onClick={handlePrevMonth} className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">
             <ChevronLeft className="w-4 h-4" />
           </button>
           <div 
             className="text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-800/60 rounded-full font-medium text-sm px-6 py-2 min-w-[140px] text-center cursor-pointer select-none hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors"
-            onClick={() => setIsMonthPickerOpen(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMonthPickerOpen(true);
+            }}
           >
             {formattedMonth} {currentYear}
           </div>
@@ -657,7 +670,7 @@ export const Dashboard = () => {
       <div className="grid grid-cols-2 gap-4">
         <Card 
           className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm cursor-pointer hover:bg-secondary transition-all bg-card"
-          onClick={() => navigate('/incomes')}
+          onClick={() => navigate('/incomes', { state: { date: currentDate.toISOString() } })}
         >
           <CardContent className="p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#01bfa5]/10 dark:bg-[#01bfa5]/20 flex items-center justify-center text-[#01bfa5]">
@@ -674,7 +687,7 @@ export const Dashboard = () => {
 
         <Card 
           className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm cursor-pointer hover:bg-secondary transition-all bg-card"
-          onClick={() => navigate('/expenses')}
+          onClick={() => navigate('/expenses', { state: { date: currentDate.toISOString() } })}
         >
           <CardContent className="p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#ee5350]/10 dark:bg-[#ee5350]/20 flex items-center justify-center text-[#ee5350]">
