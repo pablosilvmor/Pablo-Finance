@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useAppStore } from '../lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowDownIcon, ArrowUpIcon, CreditCardIcon, WalletIcon, Sparkles, Loader2, Eye, EyeOff, Plus, ChevronLeft, ChevronRight, Activity, BellRing, Trophy, Target } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Label } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { getSpendingInsights } from '../lib/gemini';
@@ -273,10 +273,42 @@ export const Dashboard = () => {
                         outerRadius={80}
                         paddingAngle={5}
                         dataKey="value"
+                        stroke="none"
                       >
                         {pieDataExpenses.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
+                        <Label 
+                          position="center"
+                          content={({ viewBox }) => {
+                            const cx = (viewBox as any)?.cx;
+                            const cy = (viewBox as any)?.cy;
+                            if (typeof cx !== 'number' || typeof cy !== 'number' || isNaN(cx) || isNaN(cy)) return null;
+                            const total = pieDataExpenses.reduce((acc, cur) => acc + cur.value, 0);
+                            return (
+                              <g>
+                                <text
+                                  x={cx}
+                                  y={cy - 5}
+                                  textAnchor="middle"
+                                  dominantBaseline="central"
+                                  className="fill-zinc-900 dark:fill-white text-lg font-bold"
+                                >
+                                  {formatCurrency(total)}
+                                </text>
+                                <text
+                                  x={cx}
+                                  y={cy + 15}
+                                  textAnchor="middle"
+                                  dominantBaseline="central"
+                                  className="fill-zinc-400 text-[10px] uppercase font-bold"
+                                >
+                                  Total
+                                </text>
+                              </g>
+                            );
+                          }}
+                        />
                       </Pie>
                       <Tooltip 
                         trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
@@ -373,6 +405,7 @@ export const Dashboard = () => {
                         outerRadius={80}
                         paddingAngle={5}
                         dataKey="value"
+                        stroke="none"
                       >
                         {pieDataIncomes.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
@@ -575,10 +608,42 @@ export const Dashboard = () => {
                         outerRadius={80}
                         paddingAngle={5}
                         dataKey="value"
+                        stroke="none"
                       >
                         {pieDataTags.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
+                        <Label 
+                          position="center"
+                          content={({ viewBox }) => {
+                            const cx = (viewBox as any)?.cx;
+                            const cy = (viewBox as any)?.cy;
+                            if (typeof cx !== 'number' || typeof cy !== 'number' || isNaN(cx) || isNaN(cy)) return null;
+                            const total = pieDataTags.reduce((acc, cur) => acc + cur.value, 0);
+                            return (
+                              <g>
+                                <text
+                                  x={cx}
+                                  y={cy - 5}
+                                  textAnchor="middle"
+                                  dominantBaseline="central"
+                                  className="fill-zinc-900 dark:fill-white text-lg font-bold"
+                                >
+                                  {formatCurrency(total)}
+                                </text>
+                                <text
+                                  x={cx}
+                                  y={cy + 15}
+                                  textAnchor="middle"
+                                  dominantBaseline="central"
+                                  className="fill-zinc-400 text-[10px] uppercase font-bold"
+                                >
+                                  Total
+                                </text>
+                              </g>
+                            );
+                          }}
+                        />
                       </Pie>
                       <Tooltip 
                         trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
