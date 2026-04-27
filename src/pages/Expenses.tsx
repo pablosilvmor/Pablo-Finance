@@ -500,11 +500,11 @@ export const Expenses = () => {
         </div>
         
         <div className="flex items-center gap-2 self-center">
-          <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="rounded-full h-8 w-8 hover:bg-red-500/10 hover:text-red-500">
-            <ChevronLeft className="w-5 h-5 text-red-500" />
+          <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="rounded-full h-8 w-8 hover:bg-[#EE5350]/10 hover:text-[#EE5350]">
+            <ChevronLeft className="w-5 h-5 text-[#EE5350]" />
           </Button>
           <span 
-            className="text-red-500 font-semibold text-sm min-w-[120px] text-center capitalize cursor-pointer select-none hover:bg-red-500/10 transition-colors border-[1.5px] border-red-500 rounded-full px-4 py-1.5"
+            className="text-[#EE5350] font-semibold text-sm min-w-[120px] text-center capitalize cursor-pointer select-none hover:bg-[#EE5350]/10 transition-colors border-[1.5px] border-[#EE5350] rounded-full px-4 py-1.5"
             onClick={() => setIsMonthPickerOpen(true)}
           >
             {(() => {
@@ -512,8 +512,8 @@ export const Expenses = () => {
               return formatted.charAt(0).toUpperCase() + formatted.slice(1);
             })()}
           </span>
-          <Button variant="ghost" size="icon" onClick={handleNextMonth} className="rounded-full h-8 w-8 hover:bg-red-500/10 hover:text-red-500">
-            <ChevronRight className="w-5 h-5 text-red-500" />
+          <Button variant="ghost" size="icon" onClick={handleNextMonth} className="rounded-full h-8 w-8 hover:bg-[#EE5350]/10 hover:text-[#EE5350]">
+            <ChevronRight className="w-5 h-5 text-[#EE5350]" />
           </Button>
         </div>
 

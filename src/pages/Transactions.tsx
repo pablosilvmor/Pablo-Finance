@@ -557,14 +557,6 @@ export const Transactions = () => {
         </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button 
-            variant="default" 
-            className="bg-purple-600 hover:bg-purple-700 text-white rounded-full h-9 px-4"
-            onClick={() => setIsMenuOpen(true)}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            {t('newTransaction')}
-          </Button>
           <NewTransactionDialog 
             open={isNewDialogOpen} 
             onOpenChange={(open) => {
