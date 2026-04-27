@@ -195,7 +195,7 @@ const SortableRow = ({
 };
 
 export const Expenses = () => {
-  const { transactions, categories, updateTransaction, deleteTransaction, bulkDeleteTransactions, bulkUpdateTransactions, addTransaction, setTransactions, userSettings, tags } = useAppStore();
+  const { transactions, categories, updateTransaction, deleteTransaction, bulkDeleteTransactions, bulkUpdateTransactions, addTransaction, setTransactions, userSettings, tags, viewDate: currentDate, setViewDate: setCurrentDate } = useAppStore();
   const getCategory = (id: string) => categories.find(c => c.id === id);
   const navigate = useNavigate();
   const getTag = (id: string) => tags.find(t => t.id === id);
@@ -224,12 +224,16 @@ export const Expenses = () => {
     }
   };
   const location = useLocation();
-  const [currentDate, setCurrentDate] = useState(() => {
+
+  useEffect(() => {
     if (location.state && location.state.date) {
-      return new Date(location.state.date);
+      const stateDate = new Date(location.state.date);
+      if (stateDate.getMonth() !== currentDate.getMonth() || stateDate.getFullYear() !== currentDate.getFullYear()) {
+        setCurrentDate(stateDate);
+      }
     }
-    return new Date();
-  });
+  }, [location.state]);
+
   const [editingTransactionId, setEditingTransactionId] = useState<string | undefined>(undefined);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);

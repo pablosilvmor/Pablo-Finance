@@ -12,8 +12,7 @@ import { cn } from '@/lib/utils';
 
 export const CalendarView = () => {
   const navigate = useNavigate();
-  const { activeTransactions: transactions, userSettings, tags } = useAppStore();
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const { activeTransactions: transactions, userSettings, tags, viewDate: currentDate, setViewDate: setCurrentDate } = useAppStore();
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
   const [filterType, setFilterType] = useState<string>('Todos');
 

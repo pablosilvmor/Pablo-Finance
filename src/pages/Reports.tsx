@@ -13,8 +13,7 @@ import { CategoryBadge } from '@/components/CategoryBadge';
 
 export const Reports = () => {
   const location = useLocation();
-  const { activeTransactions: transactions, categories, tags, userSettings } = useAppStore();
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const { activeTransactions: transactions, categories, tags, userSettings, viewDate: currentDate, setViewDate: setCurrentDate } = useAppStore();
   
   const initialData = location.state as { tab?: string } | null;
   const initialReportType = initialData?.tab === 'tags' ? 'tags_expense' : 'expenses';

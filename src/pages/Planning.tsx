@@ -22,7 +22,7 @@ import { CategoryBadge } from '@/components/CategoryBadge';
 
 export const Planning = () => {
   const navigate = useNavigate();
-  const { categories, monthlyPlan, updateMonthlyPlan, activeTransactions: transactions, userSettings } = useAppStore();
+  const { categories, monthlyPlan, updateMonthlyPlan, activeTransactions: transactions, userSettings, viewDate: selectedDate, setViewDate: setSelectedDate } = useAppStore();
   const [viewMode, setViewMode] = useState<'view' | 'edit'>('view');
   const [step, setStep] = useState(1);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
@@ -34,7 +34,6 @@ export const Planning = () => {
   const [tableSearch, setTableSearch] = useState('');
   const [isTableSearchOpen, setIsTableSearchOpen] = useState(false);
 
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
 
   const savingsAmount = (monthlyPlan.income * monthlyPlan.savingsPercentage) / 100;

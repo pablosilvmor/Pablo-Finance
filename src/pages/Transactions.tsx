@@ -27,31 +27,30 @@ import { cn } from '@/lib/utils';
 import { TransactionFilterDialog, FilterConfig } from '@/components/TransactionFilterDialog';
 
 export const Transactions = () => {
-  const { transactions, activeTransactions, categories, deleteTransaction, bulkDeleteTransactions, updateTransaction, userSettings, tags, piggyBank } = useAppStore();
+  const { transactions, activeTransactions, categories, deleteTransaction, bulkDeleteTransactions, updateTransaction, userSettings, tags, piggyBank, viewDate: selectedDate, setViewDate: setSelectedDate } = useAppStore();
   const getCategory = (id: string) => categories.find(c => c.id === id);
   const getTag = (id: string) => tags.find(t => t.id === id);
   const { t } = useTranslation(userSettings.language);
   const location = useLocation();
-  const [selectedDate, setSelectedDate] = useState(() => {
+
+  useEffect(() => {
     if (location.state && (location.state as any).date) {
-      return new Date((location.state as any).date);
+      const stateDate = new Date((location.state as any).date);
+      if (stateDate.getMonth() !== selectedDate.getMonth() || stateDate.getFullYear() !== selectedDate.getFullYear()) {
+        setSelectedDate(stateDate);
+      }
     }
-    return new Date();
-  });
+  }, [location.state]);
+
   const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState<FilterConfig>(() => {
-    const defaultDate = location.state && (location.state as any).date 
-      ? new Date((location.state as any).date) 
-      : new Date();
-    return {
-      startDate: startOfMonth(defaultDate),
-      endDate: endOfMonth(defaultDate),
-      categories: [],
-      tags: [],
-      accounts: [],
-      statuses: [],
-      type: 'all'
-    };
+  const [filters, setFilters] = useState<FilterConfig>({
+    startDate: startOfMonth(selectedDate),
+    endDate: endOfMonth(selectedDate),
+    categories: [],
+    tags: [],
+    accounts: [],
+    statuses: [],
+    type: 'all'
   });
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);

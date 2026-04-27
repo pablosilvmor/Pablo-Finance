@@ -60,6 +60,8 @@ interface AppState {
   userSettings: UserSettings;
   isTipsOpen: boolean;
   isDataLoaded: boolean;
+  viewDate: Date;
+  setViewDate: (date: Date) => void;
   setIsTipsOpen: (open: boolean) => void;
   addTransaction: (t: Omit<Transaction, 'id'>) => Promise<void>;
   addGoal: (g: Omit<Goal, 'id'>) => Promise<void>;
@@ -181,6 +183,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [userSettings, setUserSettingsState] = useState<UserSettings>(initialUserSettings);
   const [isTipsOpen, setIsTipsOpen] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [viewDate, setViewDate] = useState(new Date());
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -526,6 +529,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       transactions,
       activeTransactions: transactions.filter(t => !t.ignored),
       categories, tags, goals, monthlyPlan, piggyBank, piggyBankHistory, userSettings,
+      viewDate, setViewDate,
       isTipsOpen, setIsTipsOpen, isDataLoaded,
       addTransaction, addGoal, updateGoal, deleteGoal, bulkDeleteGoals, addCategory,
       updateCategory, deleteCategory, bulkDeleteCategories, addTag, updateTag, deleteTag, bulkDeleteTags, updateTransaction, bulkUpdateTransactions, bulkDeleteTransactions, bulkUpsertTransactions, upsertTransaction, findTransaction, removeDuplicateTransactions, deleteTransaction,

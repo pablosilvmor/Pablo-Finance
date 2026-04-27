@@ -44,14 +44,12 @@ const AnimatedValue = ({ value, userSettings }: { value: number, userSettings: a
 };
 
 export const Dashboard = () => {
-  const { activeTransactions: transactions, categories, tags, userSettings, monthlyPlan } = useAppStore();
+  const { activeTransactions: transactions, categories, tags, userSettings, monthlyPlan, viewDate: currentDate, setViewDate: setCurrentDate } = useAppStore();
   const { t } = useTranslation(userSettings.language);
   const [insights, setInsights] = useState<string>('');
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
   const navigate = useNavigate();
-
-  const [currentDate, setCurrentDate] = useState(new Date());
 
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
@@ -632,7 +630,7 @@ export const Dashboard = () => {
       {/* Header Section */}
       <div 
         className="flex flex-col items-center justify-center py-6 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/50 rounded-2xl transition-colors"
-        onClick={() => navigate('/transactions', { state: { date: currentDate.toISOString() } })}
+        onClick={() => navigate('/transactions')}
       >
         <div className="flex items-center gap-4 mb-4" onClick={(e) => e.stopPropagation()}>
           <button onClick={handlePrevMonth} className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">
@@ -666,11 +664,10 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* Income / Expense summary */}
-      <div className="grid grid-cols-2 gap-4">
+           <div className="grid grid-cols-2 gap-4">
         <Card 
           className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm cursor-pointer hover:bg-secondary transition-all bg-card"
-          onClick={() => navigate('/incomes', { state: { date: currentDate.toISOString() } })}
+          onClick={() => navigate('/incomes')}
         >
           <CardContent className="p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#01bfa5]/10 dark:bg-[#01bfa5]/20 flex items-center justify-center text-[#01bfa5]">
@@ -687,7 +684,7 @@ export const Dashboard = () => {
 
         <Card 
           className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm cursor-pointer hover:bg-secondary transition-all bg-card"
-          onClick={() => navigate('/expenses', { state: { date: currentDate.toISOString() } })}
+          onClick={() => navigate('/expenses')}
         >
           <CardContent className="p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#ee5350]/10 dark:bg-[#ee5350]/20 flex items-center justify-center text-[#ee5350]">
