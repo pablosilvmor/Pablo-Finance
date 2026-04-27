@@ -90,11 +90,11 @@ export const Dashboard = () => {
   const formattedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
   const handlePrevMonth = () => {
-    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   };
 
   const handleNextMonth = () => {
-    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
 
   const today = new Date();
@@ -369,7 +369,7 @@ export const Dashboard = () => {
                         data={pieDataIncomes}
                         cx="50%"
                         cy="50%"
-                        innerRadius={60}
+                        innerRadius={0}
                         outerRadius={80}
                         paddingAngle={5}
                         dataKey="value"
@@ -700,56 +700,66 @@ export const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Gamification and Alerts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {activeAlerts.length > 0 && (
-          <Card className="rounded-2xl border-none shadow-sm bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2 text-red-600 dark:text-red-400 font-semibold">
-                <BellRing className="w-4 h-4 animate-bounce" />
-                <span>Alertas Inteligentes (IA)</span>
-              </div>
-              <ul className="space-y-2">
-                {activeAlerts.map((alert, i) => (
-                  <li key={i} className="text-xs text-red-800 dark:text-red-300 leading-snug">
-                    {alert}
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        )}
-
-        {achievements.length > 0 && (
-          <Card className="rounded-2xl border-none shadow-sm bg-card">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3 text-secondary-foreground font-semibold">
-                <Trophy className="w-4 h-4 text-yellow-500" />
-                <span>Suas Conquistas</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {achievements.map((ach) => (
-                  <div key={ach.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${ach.bg} shadow-sm border border-black/5 dark:border-white/5`}>
-                    <Target className="w-3 h-3" />
-                    <div>
-                      <p className="text-xs font-bold leading-none">{ach.title}</p>
-                      <p className="text-[10px] opacity-80 mt-0.5">{ach.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      {/* Alertas Region */}
+      {activeAlerts.length > 0 && (
+        <Card className="rounded-2xl border-none shadow-sm bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2 text-red-600 dark:text-red-400 font-semibold">
+              <BellRing className="w-4 h-4 animate-bounce" />
+              <span>Alertas Inteligentes (IA)</span>
+            </div>
+            <ul className="space-y-2">
+              {activeAlerts.map((alert, i) => (
+                <li key={i} className="text-xs text-red-800 dark:text-red-300 leading-snug">
+                  {alert}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Dynamic Cards Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-6">
-          {userSettings.dashboard.leftCards.map(id => renderCard(id))}
+          {userSettings.dashboard.leftCards
+            .filter(id => id !== 'pending-transactions')
+            .map(id => renderCard(id))}
         </div>
         <div className="space-y-6">
-          {userSettings.dashboard.rightCards.map(id => renderCard(id))}
+          {userSettings.dashboard.rightCards
+            .filter(id => id !== 'pending-transactions')
+            .map(id => renderCard(id))}
+        </div>
+      </div>
+
+      {/* Footer Cards Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-6">
+          {renderCard('pending-transactions')}
+        </div>
+        <div className="space-y-6">
+          {achievements.length > 0 && (
+            <Card className="rounded-2xl border-none shadow-sm bg-card h-full">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-3 text-secondary-foreground font-semibold">
+                  <Trophy className="w-4 h-4 text-yellow-500" />
+                  <span>Suas Conquistas</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {achievements.map((ach) => (
+                    <div key={ach.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${ach.bg} shadow-sm border border-black/5 dark:border-white/5`}>
+                      <Target className="w-3 h-3" />
+                      <div>
+                        <p className="text-xs font-bold leading-none">{ach.title}</p>
+                        <p className="text-[10px] opacity-80 mt-0.5">{ach.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 
