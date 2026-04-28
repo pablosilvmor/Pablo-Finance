@@ -760,12 +760,12 @@ export const Expenses = () => {
           <CardHeader className="pb-2 shrink-0">
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
               <Card className="rounded-2xl border border-transparent shadow-sm bg-zinc-50 dark:bg-zinc-900/50">
-                <CardContent className="p-4 flex items-center gap-3">
+                <CardContent className="p-2 flex items-center gap-3">
                   <div className="w-10 h-10 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-full flex items-center justify-center">
                     <TrendingDown className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">Receitas</p>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">Receitas ({monthlyIncomes.filter(t => !t.ignored).length})</p>
                     <p className="font-bold text-zinc-900 dark:text-white">
                       {formatCurrency(totalIncome)}
                     </p>
@@ -773,12 +773,12 @@ export const Expenses = () => {
                 </CardContent>
               </Card>
               <Card className="rounded-2xl border border-transparent shadow-sm bg-red-50 dark:bg-red-900/10">
-                <CardContent className="p-4 flex items-center gap-3">
+                <CardContent className="p-2 flex items-center gap-3">
                   <div className="w-10 h-10 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center">
                     <TrendingDown className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-sm text-[#ee5350]">Despesas</p>
+                    <p className="text-sm text-[#ee5350]">Despesas ({monthlyExpenses.filter(t => !t.ignored).length})</p>
                     <p className="font-bold text-[#ee5350]">
                       {formatCurrency(totalExpense)}
                     </p>
@@ -786,12 +786,12 @@ export const Expenses = () => {
                 </CardContent>
               </Card>
               <Card className="rounded-2xl border border-transparent shadow-sm bg-green-50 dark:bg-green-900/10">
-                <CardContent className="p-4 flex items-center gap-3">
+                <CardContent className="p-2 flex items-center gap-3">
                   <div className="w-10 h-10 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center">
                     <CheckCircle2 className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-sm text-[#01bfa5]">Pago</p>
+                    <p className="text-sm text-[#01bfa5]">Pago ({monthlyExpenses.filter(t => t.status === 'paid' && !t.ignored).length})</p>
                     <p className="font-bold text-[#01bfa5]">
                       {formatCurrency(totalPaid)}
                     </p>
@@ -799,12 +799,12 @@ export const Expenses = () => {
                 </CardContent>
               </Card>
               <Card className="rounded-2xl border border-transparent shadow-sm bg-orange-50 dark:bg-orange-900/10">
-                <CardContent className="p-4 flex items-center gap-3">
+                <CardContent className="p-2 flex items-center gap-3">
                   <div className="w-10 h-10 bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded-full flex items-center justify-center">
                     <AlertTriangle className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-sm text-orange-600 dark:text-orange-400">Pendente</p>
+                    <p className="text-sm text-orange-600 dark:text-orange-400">Pendente ({monthlyExpenses.filter(t => t.status === 'pending' && !t.ignored).length})</p>
                     <p className="font-bold text-orange-600 dark:text-orange-400">
                       {formatCurrency(totalPending)}
                     </p>
@@ -812,7 +812,7 @@ export const Expenses = () => {
                 </CardContent>
               </Card>
               <Card className="col-span-2 md:col-span-4 lg:col-span-1 rounded-2xl border border-transparent shadow-sm bg-purple-50 dark:bg-purple-900/20">
-                <CardContent className="p-4 flex items-center gap-3">
+                <CardContent className="p-2 flex items-center gap-3">
                     <div className="w-10 h-10 bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-full flex items-center justify-center">
                         <ArrowUpDown className="w-5 h-5" />
                     </div>
