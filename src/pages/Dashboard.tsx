@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useAppStore } from '../lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowDownIcon, ArrowUpIcon, CreditCardIcon, WalletIcon, Sparkles, Loader2, Eye, EyeOff, Plus, ChevronLeft, ChevronRight, Activity, BellRing, Trophy, Target } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Label } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Label, LineChart, Line, CartesianGrid } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { getSpendingInsights } from '../lib/gemini';
@@ -12,6 +12,7 @@ import { MonthPicker } from '@/components/MonthPicker';
 import { useTranslation } from '@/lib/i18n';
 import { PrivacyPasswordDialog } from '@/components/PrivacyPasswordDialog';
 import { motion, animate } from 'motion/react';
+import { parseISO } from 'date-fns';
 
 const AnimatedValue = ({ value, userSettings }: { value: number, userSettings: any }) => {
   const [displayValue, setDisplayValue] = useState(0);
@@ -22,6 +23,7 @@ const AnimatedValue = ({ value, userSettings }: { value: number, userSettings: a
       return;
     }
     
+    // Animate from displayValue to value
     const controls = animate(displayValue, value, {
       duration: 1.2,
       ease: [0.16, 1, 0.3, 1], // Custom ease out for a "natural" count feel
@@ -56,7 +58,7 @@ export const Dashboard = () => {
 
   const monthlyTransactions = transactions.filter(t => {
     if (t.ignored) return false;
-    const d = new Date(t.date);
+    const d = parseISO(t.date);
     return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
   });
 
@@ -69,7 +71,7 @@ export const Dashboard = () => {
   const totalBalance = transactions
     .filter(t => {
       if (t.ignored) return false;
-      const d = new Date(t.date);
+      const d = parseISO(t.date);
       const tYear = d.getFullYear();
       const tMonth = d.getMonth();
       
@@ -213,7 +215,12 @@ export const Dashboard = () => {
         return (
           <Card key={id} className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm bg-card transition-all">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">{t('expensesByCategory')}</CardTitle>
+              <div>
+                <CardTitle className="text-sm font-medium">{t('expensesByCategory')}</CardTitle>
+                <p className="text-2xl font-bold mt-1 text-[#ee5350]">
+                  <AnimatedValue value={totalExpense} userSettings={userSettings} />
+                </p>
+              </div>
               <button 
                 onClick={() => navigate('/reports', { state: { tab: 'categories' } })}
                 className="text-[10px] uppercase font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors tracking-wider"
@@ -350,58 +357,24 @@ export const Dashboard = () => {
       case 'category-incomes':
         return (
           <Card key={id} className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm bg-card transition-all">
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">{t('incomesByCategory')}</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle className="text-sm font-medium">{t('incomesByCategory')}</CardTitle>
+                <p className="text-2xl font-bold mt-1 text-[#01bfa5]">
+                  <AnimatedValue value={totalIncome} userSettings={userSettings} />
+                </p>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="h-64 w-full min-h-[256px] min-w-0">
-                {pieDataIncomes.length > 5 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={pieDataIncomes} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
-                      <XAxis type="number" hide />
-                      <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
-                      <Tooltip 
-                        trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
-                        cursor={{ fill: 'transparent' }}
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const data = payload[0].payload;
-                            const value = payload[0].value as number;
-                            const total = pieDataIncomes.reduce((acc, cur) => acc + cur.value, 0);
-                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
-                            return (
-                              <div style={{ 
-                                backgroundColor: 'rgba(0, 0, 0, 0.9)', 
-                                borderRadius: '12px', 
-                                border: '1px solid #333',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                                padding: '12px'
-                              }}>
-                                <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
-                                <p style={{ color: data.color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
-                                  {formatCurrency(value)} {userSettings.showValues ? `(${percentage}%)` : ''}
-                                </p>
-                              </div>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-                      <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                        {pieDataIncomes.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : pieDataIncomes.length > 0 ? (
+                {pieDataIncomes.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={pieDataIncomes}
                         cx="50%"
                         cy="50%"
-                        innerRadius={0}
+                        innerRadius={60}
                         outerRadius={80}
                         paddingAngle={5}
                         dataKey="value"
@@ -410,6 +383,37 @@ export const Dashboard = () => {
                         {pieDataIncomes.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
+                        <Label 
+                          position="center"
+                          content={({ viewBox }) => {
+                            const cx = (viewBox as any)?.cx;
+                            const cy = (viewBox as any)?.cy;
+                            if (typeof cx !== 'number' || typeof cy !== 'number' || isNaN(cx) || isNaN(cy)) return null;
+                            const total = pieDataIncomes.reduce((acc, cur) => acc + cur.value, 0);
+                            return (
+                              <g>
+                                <text
+                                  x={cx}
+                                  y={cy - 5}
+                                  textAnchor="middle"
+                                  dominantBaseline="central"
+                                  className="fill-zinc-900 dark:fill-white text-lg font-bold"
+                                >
+                                  {formatCurrency(total)}
+                                </text>
+                                <text
+                                  x={cx}
+                                  y={cy + 15}
+                                  textAnchor="middle"
+                                  dominantBaseline="central"
+                                  className="fill-zinc-400 text-[10px] uppercase font-bold"
+                                >
+                                  Total
+                                </text>
+                              </g>
+                            );
+                          }}
+                        />
                       </Pie>
                       <Tooltip 
                         trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
@@ -451,48 +455,46 @@ export const Dashboard = () => {
       case 'balance-monthly':
         return (
           <Card key={id} className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm bg-card transition-all">
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">{t('monthlyBalance')}</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle className="text-sm font-medium">{t('monthlyBalance')}</CardTitle>
+                <p className={`text-2xl font-bold mt-1 ${monthlyBalance >= 0 ? 'text-[#01bfa5]' : 'text-[#ee5350]'}`}>
+                  <AnimatedValue value={monthlyBalance} userSettings={userSettings} />
+                </p>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="h-64 w-full min-h-[256px] min-w-0">
-                {totalIncome > 0 || totalExpense > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={barData}>
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                      <YAxis hide />
-                      <Tooltip 
-                        trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
-                        cursor={{ fill: 'transparent' }}
-                        labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: '4px' }}
-                        contentStyle={{ 
-                          backgroundColor: 'rgba(0, 0, 0, 0.9)', 
-                          borderRadius: '12px', 
-                          border: '1px solid #333',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                          padding: '12px'
-                        }}
-                        itemStyle={{ fontWeight: '600' }}
-                        formatter={(value: number, name: string, props: any) => {
-                          const color = props.payload?.color || props.color;
-                          return [
-                            <span style={{ color }}>{formatCurrency(value)}</span>,
-                            <span style={{ color }}>{name}</span>
-                          ];
-                        }}
-                      />
-                      <Bar dataKey="value" radius={[8, 8, 0, 0]}>
-                        {barData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-full text-zinc-400 text-sm">
-                    Não há transações neste mês.
-                  </div>
-                )}
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={barData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
+                    <YAxis hide />
+                    <Tooltip 
+                      trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
+                      cursor={{ fill: 'transparent' }}
+                      contentStyle={{ 
+                        backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                        borderRadius: '12px', 
+                        border: '1px solid #333',
+                        padding: '12px'
+                      }}
+                      labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: '4px' }}
+                      itemStyle={{ fontWeight: '600' }}
+                      formatter={(value: number, name: string, props: any) => {
+                        const color = props.payload?.color || props.color;
+                        return [
+                          <span style={{ color, fontWeight: 'bold' }}>{formatCurrency(value)}</span>,
+                          <span style={{ color }}>{name}</span>
+                        ];
+                      }}
+                    />
+                    <Bar dataKey="value" radius={[8, 8, 0, 0]} barSize={40}>
+                      {barData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
@@ -548,7 +550,12 @@ export const Dashboard = () => {
         return (
           <Card key={id} className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm bg-card transition-all">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Despesas por Tags</CardTitle>
+              <div>
+                <CardTitle className="text-sm font-medium">Despesas por Tags</CardTitle>
+                <p className="text-2xl font-bold mt-1 text-[#ee5350]">
+                  <AnimatedValue value={pieDataTags.reduce((acc, cur) => acc + cur.value, 0)} userSettings={userSettings} />
+                </p>
+              </div>
               <button 
                 onClick={() => navigate('/reports', { state: { tab: 'tags' } })}
                 className="text-[10px] uppercase font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors tracking-wider"
@@ -694,7 +701,7 @@ export const Dashboard = () => {
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header Section */}
       <div 
-        className="flex flex-col items-center justify-center py-6 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/50 rounded-2xl transition-colors"
+        className="flex flex-col items-center justify-center py-6 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/50 rounded-2xl transition-colors md:sticky top-0 z-20 bg-background/80 backdrop-blur-md -mx-4 md:-mx-6 px-4 md:px-6"
         onClick={() => navigate('/transactions')}
       >
         <div className="flex items-center gap-4 mb-4" onClick={(e) => e.stopPropagation()}>

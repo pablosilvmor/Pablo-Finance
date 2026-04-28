@@ -485,9 +485,9 @@ export const Incomes = () => {
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6 max-w-7xl mx-auto pb-20 md:pb-0"
+      className="max-w-7xl mx-auto pb-20 md:pb-0 md:h-full md:flex md:flex-col md:overflow-hidden space-y-6"
     >
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full">
             <ArrowLeft className="w-5 h-5" />
@@ -731,9 +731,9 @@ export const Incomes = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 rounded-3xl border-none shadow-sm bg-white dark:bg-[#2c2c2e] overflow-hidden">
-          <CardHeader className="pb-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:flex-1 md:min-h-0">
+        <Card className="lg:col-span-2 rounded-3xl border-none shadow-sm bg-white dark:bg-[#2c2c2e] md:flex md:flex-col md:h-full overflow-hidden">
+          <CardHeader className="pb-2 shrink-0">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50">
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">Total do mês ({monthlyIncomes.length} itens)</p>
@@ -755,14 +755,14 @@ export const Incomes = () => {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4 mt-4">
+          <CardContent className="md:flex-1 md:overflow-y-auto p-0">
+            <div className="space-y-4 p-6 pt-4">
               {filteredIncomes.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-zinc-500">Nenhuma receita encontrada para este mês.</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto md:overflow-visible">
                   <DndContext 
                     sensors={sensors}
                     collisionDetection={closestCenter}
@@ -772,8 +772,8 @@ export const Incomes = () => {
                       items={filteredIncomes.map(t => t.id)}
                       strategy={verticalListSortingStrategy}
                     >
-                      <table className="w-full text-sm text-left">
-                        <thead className="text-xs text-zinc-500 dark:text-zinc-400 uppercase">
+                      <table className="w-full text-sm text-left border-separate border-spacing-0">
+                        <thead className="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-zinc-50 dark:bg-[#1A1A1A] border-b border-zinc-200 dark:border-zinc-800 md:sticky md:top-0 z-20">
                           <tr>
                             {isSelectionMode && (
                               <th className="px-4 py-3 font-medium w-12 text-center">
@@ -862,13 +862,13 @@ export const Incomes = () => {
           </CardContent>
         </Card>
 
-        <div className="space-y-6">
-          <Card className="rounded-3xl border-none shadow-sm bg-white dark:bg-[#2c2c2e]">
-            <CardHeader>
+        <div className="space-y-6 md:h-full md:flex md:flex-col md:min-h-0">
+          <Card className="rounded-3xl border-none shadow-sm bg-white dark:bg-[#2c2c2e] md:flex-1 md:flex md:flex-col md:min-h-0">
+            <CardHeader className="shrink-0">
               <CardTitle className="text-base">Distribuição por Categoria</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="h-[250px] w-full min-w-0 min-h-0">
+            <CardContent className="md:flex-1 md:min-h-0">
+              <div className="h-[250px] md:h-full w-full min-w-0 min-h-0">
                   {categoryData.length > 5 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={categoryData} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>

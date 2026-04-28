@@ -529,43 +529,44 @@ export const Transactions = () => {
   }, [transactions, filteredTransactions]);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-20 md:pb-0">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">{t('transactions')}</h1>
-        <div className="flex items-center gap-2">
-          <button onClick={() => {
-            const prev = new Date(selectedDate);
-            prev.setMonth(prev.getMonth() - 1);
-            setSelectedDate(prev);
-          }} className="p-2 hover:bg-[#8B5CF6]/10 rounded-full transition-colors">
-            <ChevronLeft className="w-5 h-5 text-[#8B5CF6]" />
-          </button>
-          
-          <div 
-            className="text-[#8B5CF6] font-semibold text-base min-w-[120px] text-center cursor-pointer select-none hover:bg-[#8B5CF6]/10 transition-colors border-[1.5px] border-[#8B5CF6] rounded-full px-4 py-1.5"
-            onClick={() => setIsMonthPickerOpen(true)}
-          >
-            {isSameMonth(filters.startDate, filters.endDate) && 
-             filters.startDate.getTime() === startOfMonth(filters.startDate).getTime() && 
-             filters.endDate.getTime() === endOfMonth(filters.endDate).getTime() ? (
-              (() => {
-                const formatted = format(filters.startDate, 'MMMM yyyy', { locale: userSettings.language === 'en' ? enUS : userSettings.language === 'es' ? es : ptBR });
-                return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-              })()
-            ) : (
-              <span className="text-sm">{`${format(filters.startDate, 'dd/MM/yyyy')} a ${format(filters.endDate, 'dd/MM/yyyy')}`}</span>
-            )}
-          </div>
+    <div className="max-w-7xl mx-auto pb-20 md:pb-0 md:h-full md:flex md:flex-col md:overflow-hidden space-y-6">
+      <div className="shrink-0 space-y-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-4 -mt-4 -mx-4 md:-mx-0 px-4 md:px-0">
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white shrink-0">{t('transactions')}</h1>
+          <div className="flex items-center gap-2">
+            <button onClick={() => {
+              const prev = new Date(selectedDate);
+              prev.setMonth(prev.getMonth() - 1);
+              setSelectedDate(prev);
+            }} className="p-2 hover:bg-[#8B5CF6]/10 rounded-full transition-colors">
+              <ChevronLeft className="w-5 h-5 text-[#8B5CF6]" />
+            </button>
+            
+            <div 
+              className="text-[#8B5CF6] font-semibold text-base min-w-[120px] text-center cursor-pointer select-none hover:bg-[#8B5CF6]/10 transition-colors border-[1.5px] border-[#8B5CF6] rounded-full px-4 py-1.5"
+              onClick={() => setIsMonthPickerOpen(true)}
+            >
+              {isSameMonth(filters.startDate, filters.endDate) && 
+               filters.startDate.getTime() === startOfMonth(filters.startDate).getTime() && 
+               filters.endDate.getTime() === endOfMonth(filters.endDate).getTime() ? (
+                (() => {
+                  const formatted = format(filters.startDate, 'MMMM yyyy', { locale: userSettings.language === 'en' ? enUS : userSettings.language === 'es' ? es : ptBR });
+                  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+                })()
+              ) : (
+                <span className="text-sm">{`${format(filters.startDate, 'dd/MM/yyyy')} a ${format(filters.endDate, 'dd/MM/yyyy')}`}</span>
+              )}
+            </div>
 
-          <button onClick={() => {
-            const next = new Date(selectedDate);
-            next.setMonth(next.getMonth() + 1);
-            setSelectedDate(next);
-          }} className="p-2 hover:bg-[#8B5CF6]/10 rounded-full transition-colors">
-            <ChevronRight className="w-5 h-5 text-[#8B5CF6]" />
-          </button>
-        </div>
+            <button onClick={() => {
+              const next = new Date(selectedDate);
+              next.setMonth(next.getMonth() + 1);
+              setSelectedDate(next);
+            }} className="p-2 hover:bg-[#8B5CF6]/10 rounded-full transition-colors">
+              <ChevronRight className="w-5 h-5 text-[#8B5CF6]" />
+            </button>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <NewTransactionDialog 
@@ -761,11 +762,12 @@ export const Transactions = () => {
           </CardContent>
         </Card>
       </div>
+      </div>
 
-      <Card className="rounded-2xl border-none shadow-sm bg-white dark:bg-[#1A1A1A] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800">
+      <Card className="rounded-2xl border-none shadow-sm bg-white dark:bg-[#1A1A1A] md:flex-1 md:min-h-0 md:flex md:flex-col">
+        <div className="overflow-x-auto md:overflow-auto md:flex-1">
+          <table className="w-full text-sm text-left border-separate border-spacing-0">
+            <thead className="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-zinc-50 dark:bg-[#1A1A1A] border-b border-zinc-200 dark:border-zinc-800 md:sticky md:top-0 z-20">
               <tr>
                 {isSelectionMode && (
                   <th className="px-6 py-4 font-medium w-12">
