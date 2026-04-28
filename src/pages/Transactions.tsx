@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppStore } from '../lib/store';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, MoreVertical, Search, Filter, ArrowUpRight, ArrowDownRight, CheckCircle2, Circle, X, Trash2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Tag, FileX } from 'lucide-react';
+import { Plus, MoreVertical, Search, Filter, ArrowUpRight, ArrowDownRight, CheckCircle2, Circle, X, Trash2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Tag, FileX, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format, parseISO, isSameMonth, endOfMonth, startOfMonth, isWithinInterval } from 'date-fns';
@@ -27,7 +27,7 @@ import { cn } from '@/lib/utils';
 import { TransactionFilterDialog, FilterConfig } from '@/components/TransactionFilterDialog';
 
 export const Transactions = () => {
-  const { transactions, activeTransactions, categories, deleteTransaction, bulkDeleteTransactions, updateTransaction, userSettings, tags, piggyBank, viewDate: selectedDate, setViewDate: setSelectedDate } = useAppStore();
+  const { transactions, activeTransactions, categories, deleteTransaction, bulkDeleteTransactions, bulkUpsertTransactions, updateTransaction, userSettings, tags, piggyBank, viewDate: selectedDate, setViewDate: setSelectedDate } = useAppStore();
   const getCategory = (id: string) => categories.find(c => c.id === id);
   const getTag = (id: string) => tags.find(t => t.id === id);
   const { t } = useTranslation(userSettings.language);
@@ -533,8 +533,8 @@ export const Transactions = () => {
       <div className="shrink-0 space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-4 -mt-4 -mx-4 md:-mx-0 px-4 md:px-0">
         <div className="flex flex-col md:flex-row md:items-center gap-4">
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white shrink-0">{t('transactions')}</h1>
-          <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white shrink-0 text-center md:text-left">{t('transactions')}</h1>
+          <div className="flex items-center justify-center gap-2">
             <button onClick={() => {
               const prev = new Date(selectedDate);
               prev.setMonth(prev.getMonth() - 1);
@@ -568,72 +568,113 @@ export const Transactions = () => {
             </button>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <NewTransactionDialog 
-            open={isNewDialogOpen} 
-            onOpenChange={(open) => {
-              setIsNewDialogOpen(open);
-              if (!open) setEditingTransactionId(undefined);
-            }}
-            initialDate={(location.state as any)?.date}
-            initialType={newTransactionType}
-            transactionId={editingTransactionId}
-          />
-          <div className="relative flex-1 md:w-64 shrink-0">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
-            <Input
-              placeholder="Buscar"
-              className="pl-9 pr-9 rounded-full bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+        <div className="flex flex-col md:flex-row flex-wrap items-center justify-center md:justify-end gap-3 w-full lg:w-auto">
+          <div className="order-4 md:order-0 w-full md:w-auto flex justify-center">
+            <NewTransactionDialog 
+              open={isNewDialogOpen} 
+              onOpenChange={(open) => {
+                setIsNewDialogOpen(open);
+                if (!open) setEditingTransactionId(undefined);
+              }}
+              initialDate={(location.state as any)?.date}
+              initialType={newTransactionType}
+              transactionId={editingTransactionId}
             />
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-2.5"
+          </div>
+          <div className="flex items-center justify-center gap-2 w-full md:w-auto order-2 md:order-1">
+            <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-full border border-zinc-200 dark:border-zinc-800 overflow-x-auto max-w-full no-scrollbar shrink-0">
+              <Button 
+                variant={filters.type === 'all' ? 'secondary' : 'ghost'} 
+                size="sm" 
+                className="rounded-full h-8 px-3 text-xs shrink-0"
+                onClick={() => setFilters(prev => ({ ...prev, type: 'all' }))}
               >
-                <X className="h-4 w-4 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100" />
-              </button>
-            )}
+                {t('all')}
+              </Button>
+              <Button 
+                variant={filters.type === 'income' ? 'secondary' : 'ghost'} 
+                size="sm" 
+                className="rounded-full h-8 px-3 text-xs shrink-0"
+                onClick={() => setFilters(prev => ({ ...prev, type: 'income' }))}
+              >
+                {t('incomes')}
+              </Button>
+              <Button 
+                variant={filters.type === 'expense' ? 'secondary' : 'ghost'} 
+                size="sm" 
+                className="rounded-full h-8 px-3 text-xs shrink-0"
+                onClick={() => setFilters(prev => ({ ...prev, type: 'expense' }))}
+              >
+                {t('expenses')}
+              </Button>
+            </div>
+            
+            <div className="flex items-center gap-1 shrink-0">
+              <TransactionFilterDialog 
+                categories={categories}
+                tags={tags}
+                accounts={piggyBank}
+                currentFilters={filters}
+                onApply={(newFilters) => setFilters(newFilters)}
+              />
+            </div>
           </div>
-          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-full border border-zinc-200 dark:border-zinc-800 overflow-x-auto max-w-full no-scrollbar shrink-0">
-            <Button 
-              variant={filters.type === 'all' ? 'secondary' : 'ghost'} 
-              size="sm" 
-              className="rounded-full h-8 px-3 text-xs shrink-0"
-              onClick={() => setFilters(prev => ({ ...prev, type: 'all' }))}
-            >
-              {t('all')}
-            </Button>
-            <Button 
-              variant={filters.type === 'income' ? 'secondary' : 'ghost'} 
-              size="sm" 
-              className="rounded-full h-8 px-3 text-xs shrink-0"
-              onClick={() => setFilters(prev => ({ ...prev, type: 'income' }))}
-            >
-              {t('incomes')}
-            </Button>
-            <Button 
-              variant={filters.type === 'expense' ? 'secondary' : 'ghost'} 
-              size="sm" 
-              className="rounded-full h-8 px-3 text-xs shrink-0"
-              onClick={() => setFilters(prev => ({ ...prev, type: 'expense' }))}
-            >
-              {t('expenses')}
-            </Button>
-          </div>
-          
-          <div className="flex items-center gap-1 shrink-0">
-            <TransactionFilterDialog 
-              categories={categories}
-              tags={tags}
-              accounts={piggyBank}
-              currentFilters={filters}
-              onApply={(newFilters) => setFilters(newFilters)}
-            />
+          <div className="flex flex-col md:flex-row items-center justify-end gap-2 w-full md:w-auto order-3 md:order-2">
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <div className="relative flex-1 md:w-64">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+                <Input
+                  placeholder="Buscar"
+                  className="pl-9 pr-9 rounded-full bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 w-full"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-2.5"
+                  >
+                    <X className="h-4 w-4 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100" />
+                  </button>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <ImportCsvDialog open={isImportCsvOpen} onOpenChange={setIsImportCsvOpen} />
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="rounded-full gap-2 border-zinc-200 dark:border-zinc-800 h-9"
+                  onClick={() => setIsImportCsvOpen(true)}
+                >
+                  <ArrowUpRight className="w-4 h-4" />
+                  <span className="hidden sm:inline">Importar .csv</span>
+                </Button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger render={
+                    <Button variant="outline" size="sm" className="rounded-full gap-2 border-zinc-200 dark:border-zinc-800 h-9">
+                      <Download className="w-4 h-4" />
+                      <span className="hidden sm:inline">Exportar</span>
+                    </Button>
+                  } />
+                  <DropdownMenuContent align="end" className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+                    <DropdownMenuItem onClick={handleExportPDF} className="gap-2 focus:bg-zinc-100 dark:focus:bg-zinc-800">
+                      <FileText className="w-4 h-4 text-red-500" />
+                      Exportar PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportCSV} className="gap-2 focus:bg-zinc-100 dark:focus:bg-zinc-800">
+                      <FileSpreadsheet className="w-4 h-4 text-green-500" />
+                      Exportar CSV
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
           </div>
           {isSelectionMode && selectedTransactionIds.length > 0 && (
-            <div className="shrink-0 flex items-center gap-2">
+            <div className="shrink-0 flex items-center justify-center gap-2 order-4">
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -656,39 +697,10 @@ export const Transactions = () => {
               </Button>
             </div>
           )}
-          <div className="flex items-center gap-1 shrink-0">
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="rounded-full"
-              onClick={() => setIsImportCsvOpen(true)}
-              title="Importar CSV"
-            >
-              <ArrowUpRight className="w-4 h-4" />
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className="inline-flex shrink-0 items-center justify-center rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400 h-9 w-9"
-                title="Exportar"
-              >
-                <Download className="w-4 h-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleExportCSV}>
-                  <FileSpreadsheet className="w-4 h-4 mr-2" />
-                  Exportar formato CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleExportPDF}>
-                  <FileText className="w-4 h-4 mr-2" />
-                  Exportar relatório PDF
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <Card 
           className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm bg-card cursor-pointer hover:bg-secondary transition-all"
           onClick={() => navigate('/')}
@@ -765,7 +777,74 @@ export const Transactions = () => {
       </div>
 
       <Card className="rounded-2xl border-none shadow-sm bg-white dark:bg-[#1A1A1A] md:flex-1 md:min-h-0 md:flex md:flex-col">
-        <div className="overflow-x-auto md:overflow-auto md:flex-1">
+        {/* Mobile List View */}
+        <div className="md:hidden p-4 space-y-6">
+          {filteredTransactions.map((t, index) => {
+            const prevT = filteredTransactions[index - 1];
+            const isNewDate = !prevT || prevT.date !== t.date;
+            const category = getCategory(t.categoryId);
+            const Icon = category ? iconMap[category.icon || 'tag'] || Tag : Tag;
+            
+            return (
+              <React.Fragment key={t.id}>
+                {isNewDate && (
+                  <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-100 mb-2 flex items-center justify-between">
+                    <span>
+                      {format(parseISO(t.date), "EEEE, dd", { locale: ptBR }).split('-')[0].charAt(0).toUpperCase() + format(parseISO(t.date), "EEEE, dd", { locale: ptBR }).split('-')[0].slice(1)}
+                    </span>
+                    <span className="text-sm font-medium text-zinc-500">
+                      {formatCurrency(dailyBalances[t.date] || 0)}
+                    </span>
+                  </h3>
+                )}
+                <div 
+                  className="flex items-center gap-4 p-4 bg-white dark:bg-[#1A1A1A] rounded-2xl border border-zinc-100 dark:border-[#1A1A1A] mb-4"
+                  onClick={() => setSelectedTransaction({ ...t, category })}
+                >
+                  <div className={cn("w-12 h-12 rounded-full flex items-center justify-center shrink-0", t.type === 'income' ? 'bg-[#01bfa5]/10 text-[#01bfa5]' : 'bg-[#ee5350]/10 text-[#ee5350]')}>
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-zinc-900 dark:text-zinc-100 truncate">{t.description}</p>
+                    <p className="text-sm text-zinc-500">{category?.name || 'Sem categoria'} | {t.type === 'income' ? 'Receita' : 'Despesa'}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <p className={cn("font-bold text-sm", t.type === 'income' ? 'text-[#01bfa5]' : 'text-[#ee5350]')}>
+                      {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      {t.status === 'paid' && <CheckCircle2 className="w-5 h-5 text-[#01bfa5]" />}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger render={
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={(e) => e.stopPropagation()}>
+                            <MoreVertical className="w-4 h-4 text-zinc-500" />
+                          </Button>
+                        } />
+                        <DropdownMenuContent align="end" className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleStatus(t.id); }} className="gap-2">
+                            {t.status === 'paid' ? <Circle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+                            Marcar como {t.status === 'paid' ? 'Pendente' : 'Pago'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleIgnore(t.id); }} className="gap-2">
+                            <EyeOff className="w-4 h-4" />
+                            {t.ignored ? 'Considerar' : 'Ignorar'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDelete(t.id); }} className="gap-2 text-red-500 focus:text-red-500">
+                            <Trash2 className="w-4 h-4" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </div>
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto md:overflow-auto md:flex-1">
           <table className="w-full text-sm text-left border-separate border-spacing-0">
             <thead className="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-zinc-50 dark:bg-[#1A1A1A] border-b border-zinc-200 dark:border-zinc-800 md:sticky md:top-0 z-20">
               <tr>
@@ -782,46 +861,46 @@ export const Transactions = () => {
                   </th>
                 )}
                 <th 
-                  className="px-6 py-4 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+                  className="px-6 py-4 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors text-center"
                   onClick={() => handleSort('status')}
                 >
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center justify-center gap-1">
                     {t('status')}
                     {sortBy === 'status' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
                   </div>
                 </th>
                 <th 
-                  className="px-6 py-4 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+                  className="px-6 py-4 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors text-center"
                   onClick={() => handleSort('date')}
                 >
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center justify-center gap-1">
                     {t('date')}
                     {sortBy === 'date' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
                   </div>
                 </th>
                 <th 
-                  className="px-6 py-4 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+                  className="px-6 py-4 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors text-center"
                   onClick={() => handleSort('description')}
                 >
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center justify-center gap-1">
                     {t('description')}
                     {sortBy === 'description' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
                   </div>
                 </th>
                 <th 
-                  className="px-6 py-4 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+                  className="px-6 py-4 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors text-center"
                   onClick={() => handleSort('category')}
                 >
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center justify-center gap-1">
                     {t('category')}
                     {sortBy === 'category' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
                   </div>
                 </th>
                 <th 
-                  className="px-6 py-4 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors text-right"
+                  className="px-6 py-4 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors text-center"
                   onClick={() => handleSort('amount')}
                 >
-                  <div className="flex items-center justify-end gap-1">
+                  <div className="flex items-center justify-center gap-1">
                     {sortBy === 'amount' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
                     {t('value')}
                   </div>
@@ -1219,7 +1298,6 @@ export const Transactions = () => {
         onClose={() => setIsMenuOpen(false)} 
         onSelect={handleMenuSelect} 
       />
-      <ImportCsvDialog open={isImportCsvOpen} onOpenChange={setIsImportCsvOpen} />
 
       {/* Container Oculto para exportação PDF */}
       <div 

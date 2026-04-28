@@ -438,10 +438,10 @@ export const Categories = () => {
                     />
                   </th>
                 )}
-                <th className="px-6 py-4 font-medium">Nome</th>
-                <th className="px-6 py-4 font-medium">Ícone</th>
-                <th className="px-6 py-4 font-medium">Cor</th>
-                <th className="px-6 py-4 font-medium text-right">Ações</th>
+                <th className="px-6 py-4 font-medium text-center">Nome</th>
+                <th className="px-6 py-4 font-medium text-center">Ícone</th>
+                <th className="px-6 py-4 font-medium text-center">Cor</th>
+                <th className="px-6 py-4 font-medium text-center">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">

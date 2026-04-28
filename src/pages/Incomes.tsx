@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { ArrowUpRight, Filter, Search, MoreVertical, CheckCircle2, Circle, TrendingUp, Calendar, ArrowLeft, ChevronLeft, ChevronRight, Edit2, Trash2, AlertTriangle, X, ArrowUp, ArrowDown, ArrowUpDown, Download, Tag, ChevronDown, FileText, FileX } from 'lucide-react';
+import { ArrowUpRight, Filter, Search, MoreVertical, CheckCircle2, Circle, TrendingUp, Calendar, ArrowLeft, ChevronLeft, ChevronRight, Edit2, Trash2, AlertTriangle, X, ArrowUp, ArrowDown, ArrowUpDown, Download, Tag, ChevronDown, FileText, FileX, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format, parseISO, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
@@ -487,15 +487,16 @@ export const Incomes = () => {
       animate={{ opacity: 1, y: 0 }}
       className="max-w-7xl mx-auto pb-20 md:pb-0 md:h-full md:flex md:flex-col md:overflow-hidden space-y-6"
     >
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Minhas Receitas</h1>
-        </div>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 shrink-0">
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <div className="flex items-center justify-center md:justify-start gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-white text-center md:text-left">Minhas Receitas</h1>
+          </div>
 
-        <div className="flex items-center gap-2 self-center">
+          <div className="flex items-center justify-center gap-2">
           <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="rounded-full h-8 w-8 hover:bg-[#01BFA5]/10 hover:text-[#01BFA5]">
             <ChevronLeft className="w-5 h-5 text-[#01BFA5]" />
           </Button>
@@ -512,29 +513,12 @@ export const Incomes = () => {
             <ChevronRight className="w-5 h-5 text-[#01BFA5]" />
           </Button>
         </div>
+        </div>
 
-        <div className="flex items-center gap-2">
-          <div className="relative hidden md:block">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
-            <input
-              type="text"
-              placeholder="Buscar receita..."
-              className="h-9 pl-9 pr-9 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 w-64"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-2.5"
-              >
-                <X className="h-4 w-4 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100" />
-              </button>
-            )}
-          </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger
+        <div className="flex flex-col md:flex-row flex-wrap items-center justify-center md:justify-end gap-3 w-full lg:w-auto">
+          <div className="flex items-center justify-center gap-2 w-full md:w-auto order-2 md:order-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger
               className={cn(
                 "flex items-center justify-center rounded-full h-9 w-9 border transition-colors cursor-pointer",
                 (statusFilter !== 'all' || tagFilter !== 'all' || categoryIdFilter !== 'all') 
@@ -693,6 +677,40 @@ export const Incomes = () => {
               Manual
             </Button>
           </div>
+          </div>
+          <div className="flex flex-col md:flex-row items-center justify-end gap-2 w-full md:w-auto order-3 md:order-2">
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <div className="relative flex-1 md:w-64">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+                <input
+                  type="text"
+                  placeholder="Buscar receita..."
+                  className="h-9 pl-9 pr-9 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 w-full"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-2.5"
+                  >
+                    <X className="h-4 w-4 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100" />
+                  </button>
+                )}
+              </div>
+
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="rounded-full shrink-0 gap-2 border-zinc-200 dark:border-zinc-800 h-9"
+                onClick={handleExportCSV}
+                title="Exportar CSV"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Exportar .csv</span>
+              </Button>
+            </div>
+          </div>
           {isSelectionMode && (
             <div className="flex items-center gap-2">
               <Button 
@@ -719,22 +737,13 @@ export const Incomes = () => {
               )}
             </div>
           )}
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="rounded-full shrink-0 h-9 w-9"
-            onClick={handleExportCSV}
-            title="Exportar CSV"
-          >
-            <Download className="h-4 w-4" />
-          </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:flex-1 md:min-h-0">
         <Card className="lg:col-span-2 rounded-3xl border-none shadow-sm bg-white dark:bg-[#2c2c2e] md:flex md:flex-col md:h-full overflow-hidden">
           <CardHeader className="pb-2 shrink-0">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50">
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">Total do mês ({monthlyIncomes.length} itens)</p>
                 <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
@@ -762,7 +771,68 @@ export const Incomes = () => {
                   <p className="text-zinc-500">Nenhuma receita encontrada para este mês.</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto md:overflow-visible">
+                <>
+                  {/* Mobile List View */}
+                  <div className="md:hidden space-y-4">
+                    {filteredIncomes.map((t, index) => {
+                      const category = getCategory(t.categoryId);
+                      const Icon = category ? iconMap[category.icon || 'tag'] || Tag : Tag;
+                      const isNewDate = index === 0 || t.date !== filteredIncomes[index - 1].date;
+                      return (
+                        <React.Fragment key={t.id}>
+                          {isNewDate && (
+                            <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-100 mb-2 mt-4 first:mt-0 flex items-center justify-between">
+                              <span>
+                                {format(parseISO(t.date), "EEEE, dd", { locale: ptBR }).split('-')[0].charAt(0).toUpperCase() + format(parseISO(t.date), "EEEE, dd", { locale: ptBR }).split('-')[0].slice(1)}
+                              </span>
+                              <span className="text-sm font-medium text-zinc-500">
+                                {formatCurrency(dailyTotals[t.date] || 0)}
+                              </span>
+                            </h3>
+                          )}
+                          <div className="flex items-center gap-4 p-4 bg-white dark:bg-[#2C2C2E] rounded-2xl border border-zinc-100 dark:border-[#2C2C2E] mb-4" onClick={(e) => handleEdit(t.id, e)}>
+                            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#01BFA5]/10 text-[#01BFA5] shrink-0">
+                               <Icon className="w-6 h-6" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-zinc-900 dark:text-zinc-100 truncate">{t.description}</p>
+                              <p className="text-sm text-zinc-500">{category?.name || 'Sem categoria'} • {format(parseISO(t.date), "dd/MM/yy")}</p>
+                            </div>
+                            <div className="flex flex-col items-end gap-2 shrink-0">
+                               <p className="font-bold text-[#01bfa5] text-sm">{formatCurrency(t.amount)}</p>
+                               <div className="flex items-center gap-2">
+                                 {t.status === 'paid' && <CheckCircle2 className="w-5 h-5 text-[#01bfa5]" />}
+                                 <DropdownMenu>
+                                   <DropdownMenuTrigger render={
+                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={(e) => e.stopPropagation()}>
+                                       <MoreVertical className="w-4 h-4 text-zinc-500" />
+                                     </Button>
+                                   } />
+                                   <DropdownMenuContent align="end" className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleStatus(t.id); }} className="gap-2">
+                                       {t.status === 'paid' ? <Circle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+                                       Marcar como {t.status === 'paid' ? 'Pendente' : 'Pago'}
+                                     </DropdownMenuItem>
+                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleIgnore(t.id); }} className="gap-2">
+                                       <EyeOff className="w-4 h-4" />
+                                       {t.ignored ? 'Considerar' : 'Ignorar'}
+                                     </DropdownMenuItem>
+                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDelete(t.id); }} className="gap-2 text-red-500 focus:text-red-500">
+                                       <Trash2 className="w-4 h-4" />
+                                       Excluir
+                                     </DropdownMenuItem>
+                                   </DropdownMenuContent>
+                                 </DropdownMenu>
+                               </div>
+                            </div>
+                          </div>
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto md:overflow-visible">
                   <DndContext 
                     sensors={sensors}
                     collisionDetection={closestCenter}
@@ -785,32 +855,32 @@ export const Incomes = () => {
                                 />
                               </th>
                             )}
-                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" onClick={() => handleSort('status')}>
-                              <div className="flex items-center gap-1">
+                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center" onClick={() => handleSort('status')}>
+                              <div className="flex items-center justify-center gap-1">
                                 Situação
                                 {sortBy === 'status' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
                               </div>
                             </th>
-                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" onClick={() => handleSort('date')}>
-                              <div className="flex items-center gap-1">
+                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center" onClick={() => handleSort('date')}>
+                              <div className="flex items-center justify-center gap-1">
                                 Data
                                 {sortBy === 'date' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
                               </div>
                             </th>
-                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" onClick={() => handleSort('description')}>
-                              <div className="flex items-center gap-1">
+                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center" onClick={() => handleSort('description')}>
+                              <div className="flex items-center justify-center gap-1">
                                 Descrição
                                 {sortBy === 'description' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
                               </div>
                             </th>
-                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" onClick={() => handleSort('category')}>
-                              <div className="flex items-center gap-1">
+                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center" onClick={() => handleSort('category')}>
+                              <div className="flex items-center justify-center gap-1">
                                 Categoria
                                 {sortBy === 'category' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
                               </div>
                             </th>
-                            <th className="px-4 py-3 font-medium text-right cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" onClick={() => handleSort('amount')}>
-                              <div className="flex items-center justify-end gap-1">
+                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center" onClick={() => handleSort('amount')}>
+                              <div className="flex items-center justify-center gap-1">
                                 {sortBy === 'amount' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
                                 Valor
                               </div>
@@ -857,7 +927,8 @@ export const Incomes = () => {
                     </SortableContext>
                   </DndContext>
                 </div>
-              )}
+              </>
+            )}
             </div>
           </CardContent>
         </Card>

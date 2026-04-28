@@ -334,13 +334,13 @@ export const Planning = () => {
                   <table className="w-full text-sm text-left">
                     <thead>
                       <tr className="text-muted-foreground border-b border-border">
-                        <th className="pb-3 font-medium">Categoria</th>
-                        <th className="pb-3 font-medium">Meta planejada</th>
-                        <th className="pb-3 font-medium">Despesas pagas</th>
-                        <th className="pb-3 font-medium">Despesas previstas</th>
-                        <th className="pb-3 font-medium">Total gasto</th>
+                        <th className="pb-3 font-medium text-center">Categoria</th>
+                        <th className="pb-3 font-medium text-center">Meta planejada</th>
+                        <th className="pb-3 font-medium text-center">Despesas pagas</th>
+                        <th className="pb-3 font-medium text-center">Despesas previstas</th>
+                        <th className="pb-3 font-medium text-center">Total gasto</th>
                         <th className="pb-3 font-medium"></th>
-                        <th className="pb-3 font-medium text-right">Ações</th>
+                        <th className="pb-3 font-medium text-center">Ações</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
