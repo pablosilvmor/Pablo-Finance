@@ -662,7 +662,7 @@ export const Expenses = () => {
             <Button 
               variant={sortBy === 'date' ? 'default' : 'ghost'} 
               size="sm" 
-              className="rounded-full h-7 text-[10px] px-3"
+              className="rounded-full h-7 text-xs px-3"
               onClick={() => handleSort('date')}
             >
               Data
@@ -670,7 +670,7 @@ export const Expenses = () => {
             <Button 
               variant={sortBy === 'description' ? 'default' : 'ghost'} 
               size="sm" 
-              className="rounded-full h-7 text-[10px] px-3"
+              className="rounded-full h-7 text-xs px-3"
               onClick={() => handleSort('description')}
             >
               Nome
@@ -678,7 +678,7 @@ export const Expenses = () => {
             <Button 
               variant={sortBy === 'amount' ? 'default' : 'ghost'} 
               size="sm" 
-              className="rounded-full h-7 text-[10px] px-3"
+              className="rounded-full h-7 text-xs px-3"
               onClick={() => handleSort('amount')}
             >
               Valor
@@ -686,7 +686,7 @@ export const Expenses = () => {
             <Button 
               variant={sortBy === 'manual' ? 'default' : 'ghost'} 
               size="sm" 
-              className="rounded-full h-7 text-[10px] px-3"
+              className="rounded-full h-7 text-xs px-3"
               onClick={() => handleSort('manual')}
             >
               Manual
@@ -755,10 +755,10 @@ export const Expenses = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:flex-1 md:min-h-0">
-        <Card className="lg:col-span-2 rounded-3xl border-none shadow-sm bg-white dark:bg-[#2c2c2e] md:flex md:flex-col md:h-full overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 md:flex-1 md:min-h-0">
+        <Card className="lg:col-span-3 rounded-3xl border-none shadow-sm bg-white dark:bg-[#2c2c2e] md:flex md:flex-col md:h-full overflow-hidden">
           <CardHeader className="pb-2 shrink-0">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
               <Card className="rounded-2xl border border-transparent shadow-sm bg-zinc-50 dark:bg-zinc-900/50">
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className="w-10 h-10 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-full flex items-center justify-center">
@@ -811,7 +811,7 @@ export const Expenses = () => {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="col-span-2 md:col-span-4 rounded-2xl border border-transparent shadow-sm bg-purple-50 dark:bg-purple-900/20">
+              <Card className="col-span-2 md:col-span-4 lg:col-span-1 rounded-2xl border border-transparent shadow-sm bg-purple-50 dark:bg-purple-900/20">
                 <CardContent className="p-4 flex items-center gap-3">
                     <div className="w-10 h-10 bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-full flex items-center justify-center">
                         <ArrowUpDown className="w-5 h-5" />
