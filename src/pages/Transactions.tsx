@@ -700,7 +700,7 @@ export const Transactions = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card 
           className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm bg-card cursor-pointer hover:bg-secondary transition-all"
           onClick={() => navigate('/')}
@@ -711,7 +711,7 @@ export const Transactions = () => {
                 <WalletIcon className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm text-[#9F9FA9]">{t('monthBalance')} ({filteredTransactions.length} itens)</p>
+                <p className="text-sm text-[#9F9FA9]">{t('monthBalance')}</p>
                 <p className="font-bold text-[#50A2FF]">
                   {formatCurrency(balance)}
                 </p>
@@ -729,7 +729,7 @@ export const Transactions = () => {
                 <ArrowUpRight className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm text-zinc-400">{t('incomes')} ({filteredTransactions.filter(t => t.type === 'income').length})</p>
+                <p className="text-sm text-zinc-400">{t('incomes')}</p>
                 <p className="font-bold text-[#01bfa5]">
                   {formatCurrency(totalIncome)}
                 </p>
@@ -747,7 +747,7 @@ export const Transactions = () => {
                 <ArrowDownRight className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm text-zinc-400">{t('expenses')} ({filteredTransactions.filter(t => t.type === 'expense').length})</p>
+                <p className="text-sm text-zinc-400">{t('expenses')}</p>
                 <p className="font-bold text-[#ee5350]">
                   {formatCurrency(totalExpense)}
                 </p>

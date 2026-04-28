@@ -489,11 +489,11 @@ export const Incomes = () => {
     >
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 shrink-0">
         <div className="flex flex-col md:flex-row md:items-center gap-4">
-          <div className="flex items-center justify-center md:justify-start gap-4">
+          <div className="flex items-center justify-start gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full">
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-white text-center md:text-left">Minhas Receitas</h1>
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Minhas Receitas</h1>
           </div>
 
           <div className="flex items-center justify-center gap-2">
@@ -743,25 +743,46 @@ export const Incomes = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:flex-1 md:min-h-0">
         <Card className="lg:col-span-2 rounded-3xl border-none shadow-sm bg-white dark:bg-[#2c2c2e] md:flex md:flex-col md:h-full overflow-hidden">
           <CardHeader className="pb-2 shrink-0">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50">
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">Total do mês ({monthlyIncomes.length} itens)</p>
-                <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
-                  {formatCurrency(totalIncome)}
-                </h2>
-              </div>
-              <div className="p-4 rounded-2xl bg-green-50 dark:bg-green-900/20">
-                <p className="text-xs text-[#01bfa5] mb-1">Total recebido ({monthlyIncomes.filter(t => t.status === 'paid').length})</p>
-                <h2 className="text-xl font-bold text-[#01bfa5]">
-                  {formatCurrency(totalReceived)}
-                </h2>
-              </div>
-              <div className="p-4 rounded-2xl bg-orange-50 dark:bg-orange-900/20">
-                <p className="text-xs text-orange-600 dark:text-orange-400 mb-1">Pendente ({monthlyIncomes.filter(t => t.status === 'pending').length})</p>
-                <h2 className="text-xl font-bold text-orange-600 dark:text-orange-400">
-                  {formatCurrency(totalPending)}
-                </h2>
-              </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <Card className="rounded-2xl border border-transparent shadow-sm bg-zinc-50 dark:bg-zinc-900/50">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-full flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">Total do mês ({monthlyIncomes.length})</p>
+                    <p className="font-bold text-zinc-900 dark:text-white">
+                      {formatCurrency(totalIncome)}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="rounded-2xl border border-transparent shadow-sm bg-green-50 dark:bg-green-900/10">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-[#01bfa5]">Recebido ({monthlyIncomes.filter(t => t.status === 'paid').length})</p>
+                    <p className="font-bold text-[#01bfa5]">
+                      {formatCurrency(totalReceived)}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="rounded-2xl border border-transparent shadow-sm bg-orange-50 dark:bg-orange-900/10">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded-full flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-orange-600 dark:text-orange-400">Pendente ({monthlyIncomes.filter(t => t.status === 'pending').length})</p>
+                    <p className="font-bold text-orange-600 dark:text-orange-400">
+                      {formatCurrency(totalPending)}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </CardHeader>
           <CardContent className="md:flex-1 md:overflow-y-auto p-0">
