@@ -15,6 +15,7 @@ export interface Transaction {
   sortOrder?: number;
   tags?: string[];
   ignored?: boolean;
+  observation?: string;
 }
 
 export interface Account {

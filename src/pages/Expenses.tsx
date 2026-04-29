@@ -982,7 +982,7 @@ export const Expenses = () => {
                                       <td colSpan={isSelectionMode ? 5 : 4} className="px-4 py-2.5 text-zinc-500 dark:text-zinc-400 font-medium italic text-xs">
                                         Saldo do Final do Dia
                                       </td>
-                                      <td className="px-4 py-2.5 text-right font-bold text-zinc-500 dark:text-zinc-400">
+                                      <td className="px-4 py-2.5 text-right text-zinc-500 dark:text-zinc-400">
                                         {formatCurrency(dailyTotals[t.date])}
                                       </td>
                                       <td></td>

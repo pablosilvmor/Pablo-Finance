@@ -59,6 +59,7 @@ export const NewTransactionDialog = ({
   const [date, setDate] = useState(initialDate || new Date().toISOString().split('T')[0]);
   const [status, setStatus] = useState<'paid' | 'pending'>('pending');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [observation, setObservation] = useState('');
 
   useEffect(() => {
     if (!transactionId && type === 'expense') {
@@ -95,6 +96,7 @@ export const NewTransactionDialog = ({
         setDate(parseISO(t.date).toISOString().split('T')[0]);
         setStatus(t.status);
         setSelectedTags(t.tags || []);
+        setObservation(t.observation || '');
         setIsFixed(t.isFixed || false);
         setRepeatPrevious(false);
         setRepeatFuture(false);
@@ -108,6 +110,7 @@ export const NewTransactionDialog = ({
       setDate(initialDate || new Date().toISOString().split('T')[0]);
       setStatus('paid');
       setSelectedTags([]);
+      setObservation('');
       setIsFixed(false);
       setRepeatPrevious(false);
       setRepeatFuture(false);
@@ -243,6 +246,7 @@ export const NewTransactionDialog = ({
         status,
         isFixed,
         tags: selectedTags,
+        observation: observation,
         date: new Date(date + 'T12:00:00').toISOString()
       };
 
@@ -423,7 +427,7 @@ export const NewTransactionDialog = ({
       />
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto dark:bg-[#3A3A3C]">
         <DialogHeader>
           <DialogTitle>{transactionId ? 'Editar Transação' : 'Adicionar Transação'}</DialogTitle>
         </DialogHeader>
@@ -614,10 +618,11 @@ export const NewTransactionDialog = ({
                     );
                   }}
                   className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                    selectedTags.includes(tag.id) ? 'bg-purple-100 dark:bg-purple-900/40 border-purple-300 dark:border-purple-600' : 'bg-transparent border-zinc-200 dark:border-zinc-800 opacity-60 hover:opacity-100'
+                    selectedTags.includes(tag.id) ? '' : 'bg-transparent border-zinc-200 dark:border-zinc-800 opacity-60 hover:opacity-100'
                   }`}
-                  style={{ 
-                    color: selectedTags.includes(tag.id) ? tag.color : 'inherit',
+                  style={{
+                    backgroundColor: selectedTags.includes(tag.id) ? tag.color : undefined,
+                    color: selectedTags.includes(tag.id) ? '#FFFFFF' : undefined,
                     borderColor: selectedTags.includes(tag.id) ? tag.color : undefined
                   }}
                 >
@@ -638,6 +643,16 @@ export const NewTransactionDialog = ({
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="observation">Observação</Label>
+            <Input 
+              id="observation" 
+              placeholder="Ex: Comentário sobre a fatura" 
+              value={observation}
+              onChange={(e) => setObservation(e.target.value)}
             />
           </div>
 

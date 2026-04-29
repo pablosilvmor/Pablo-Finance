@@ -1077,7 +1077,7 @@ export const Transactions = () => {
       </Card>
 
       <Dialog open={!!selectedTransaction} onOpenChange={(open) => !open && setSelectedTransaction(null)}>
-        <DialogContent className="sm:max-w-[425px] bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 p-0 overflow-hidden flex flex-col max-h-[90vh]">
+        <DialogContent className="sm:max-w-[425px] bg-white dark:bg-[#2C2C2E] border-zinc-200 dark:border-zinc-800 p-0 overflow-hidden flex flex-col max-h-[90vh]">
           <DialogHeader className="p-6 pb-2">
             <DialogTitle className="text-zinc-900 dark:text-white">{t('transactionDetails')}</DialogTitle>
           </DialogHeader>
@@ -1095,7 +1095,7 @@ export const Transactions = () => {
                   <p className="text-zinc-500 dark:text-zinc-400 font-medium text-center">{selectedTransaction.description}</p>
                 </div>
 
-                <div className="space-y-4 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                <div className="space-y-4 bg-zinc-50 dark:bg-[#1C1C1E] p-4 rounded-xl border border-zinc-100 dark:border-zinc-800">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-zinc-500 dark:text-zinc-400">{t('date')}</span>
                     <span className="font-medium text-zinc-900 dark:text-white">{format(parseISO(selectedTransaction.date), "dd 'de' MMMM 'de' yyyy", { locale: userSettings.language === 'en' ? enUS : userSettings.language === 'es' ? es : ptBR })}</span>
@@ -1114,6 +1114,12 @@ export const Transactions = () => {
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-zinc-500 dark:text-zinc-400">Tipo</span>
                       <span className="font-medium text-zinc-900 dark:text-white">{t('fixedTransaction')}</span>
+                    </div>
+                  )}
+                  {selectedTransaction.observation && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-zinc-500 dark:text-zinc-400">Observação</span>
+                      <span className="font-medium text-zinc-900 dark:text-white text-sm text-right break-words max-w-[60%]">{selectedTransaction.observation}</span>
                     </div>
                   )}
                   {selectedTransaction.tags && selectedTransaction.tags.length > 0 && (

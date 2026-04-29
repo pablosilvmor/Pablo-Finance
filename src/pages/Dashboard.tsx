@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAppStore } from '../lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowDownIcon, ArrowUpIcon, CreditCardIcon, WalletIcon, Sparkles, Loader2, Eye, EyeOff, Plus, ChevronLeft, ChevronRight, Activity, BellRing, Trophy, Target } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, CreditCardIcon, WalletIcon, Sparkles, Loader2, Eye, EyeOff, Plus, ChevronLeft, ChevronRight, ChevronDown, Activity, BellRing, Trophy, Target } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Label, LineChart, Line, CartesianGrid } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -217,9 +217,6 @@ export const Dashboard = () => {
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
                 <CardTitle className="text-sm font-medium">{t('expensesByCategory')}</CardTitle>
-                <p className="text-2xl font-bold mt-1 text-[#ee5350]">
-                  <AnimatedValue value={totalExpense} userSettings={userSettings} />
-                </p>
               </div>
               <button 
                 onClick={() => navigate('/reports', { state: { tab: 'categories' } })}
@@ -229,7 +226,7 @@ export const Dashboard = () => {
               </button>
             </CardHeader>
             <CardContent>
-              <div className="h-64 w-full min-h-[256px] min-w-0">
+              <div className="h-80 w-full min-h-[320px] min-w-0">
                 {pieDataExpenses.length > 5 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={pieDataExpenses} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
@@ -270,81 +267,85 @@ export const Dashboard = () => {
                     </BarChart>
                   </ResponsiveContainer>
                 ) : pieDataExpenses.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={pieDataExpenses}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={5}
-                        dataKey="value"
-                        stroke="none"
-                      >
-                        {pieDataExpenses.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                        <Label 
-                          position="center"
-                          content={({ viewBox }) => {
-                            const cx = (viewBox as any)?.cx;
-                            const cy = (viewBox as any)?.cy;
-                            if (typeof cx !== 'number' || typeof cy !== 'number' || isNaN(cx) || isNaN(cy)) return null;
-                            const total = pieDataExpenses.reduce((acc, cur) => acc + cur.value, 0);
-                            return (
-                              <g>
-                                <text
-                                  x={cx}
-                                  y={cy - 5}
-                                  textAnchor="middle"
-                                  dominantBaseline="central"
-                                  className="fill-zinc-900 dark:fill-white text-lg font-bold"
-                                >
-                                  {formatCurrency(total)}
-                                </text>
-                                <text
-                                  x={cx}
-                                  y={cy + 15}
-                                  textAnchor="middle"
-                                  dominantBaseline="central"
-                                  className="fill-zinc-400 text-[10px] uppercase font-bold"
-                                >
-                                  Total
-                                </text>
-                              </g>
-                            );
+                  <div className="relative w-full h-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieDataExpenses}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={80}
+                          outerRadius={110}
+                          paddingAngle={5}
+                          dataKey="value"
+                          stroke="none"
+                        >
+                          {pieDataExpenses.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          offset={10}
+                          allowEscapeViewBox={{ x: true, y: true }}
+                          trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
+                          content={({ active, payload, coordinate, viewBox }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              const value = payload[0].value as number;
+                              const total = pieDataExpenses.reduce((acc, cur) => acc + cur.value, 0);
+                              const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                              
+                              const vw = viewBox?.width || 300;
+                              const vh = viewBox?.height || 280;
+                              const cx = viewBox?.cx ?? vw / 2;
+                              const cy = viewBox?.cy ?? vh / 2;
+                              const coordX = coordinate?.x ?? cx;
+                              const coordY = coordinate?.y ?? cy;
+                              
+                              const isLeft = coordX < cx;
+                              const isTop = coordY < cy;
+                              
+                              const translateX = isLeft 
+                                ? `max(calc(-100% - 20px), -${Math.max(0, coordX - 10)}px)` 
+                                : `min(0px, calc(${Math.max(0, vw - 20 - coordX)}px - 100%))`;
+                                
+                              const translateY = isTop 
+                                ? `max(calc(-100% - 20px), -${Math.max(0, coordY - 10)}px)` 
+                                : `min(0px, calc(${Math.max(0, vh - 20 - coordY)}px - 100%))`;
+
+                              return (
+                                <div style={{
+                                  transform: `translate(${translateX}, ${translateY})`,
+                                  backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                                  borderRadius: '12px', 
+                                  border: '1px solid #333',
+                                  boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                  padding: '12px',
+                                  width: 'max-content',
+                                  pointerEvents: 'none',
+                                  zIndex: 1000
+                                }}>
+                                  <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
+                                  <p style={{ color: data.color || (payload[0] as any).color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
+                                    {formatCurrency(value)} {userSettings.showValues ? `(${percentage}%)` : ''}
+                                  </p>
+                                </div>
+                              );
+                            }
+                            return null;
                           }}
                         />
-                      </Pie>
-                      <Tooltip 
-                        trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const data = payload[0].payload;
-                            const value = payload[0].value as number;
-                            const total = pieDataExpenses.reduce((acc, cur) => acc + cur.value, 0);
-                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
-                            return (
-                              <div style={{ 
-                                backgroundColor: 'rgba(0, 0, 0, 0.9)', 
-                                borderRadius: '12px', 
-                                border: '1px solid #333',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                                padding: '12px'
-                              }}>
-                                <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
-                                <p style={{ color: data.color || (payload[0] as any).color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
-                                  {formatCurrency(value)} {userSettings.showValues ? `(${percentage}%)` : ''}
-                                </p>
-                              </div>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-lg font-bold text-[#ee5350]">
+                        {formatCurrency(pieDataExpenses.reduce((acc, cur) => acc + cur.value, 0))}
+                      </span>
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 mt-1">
+                        Total <ChevronDown className="w-3 h-3 inline-block" />
+                      </span>
+                    </div>
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center h-full text-zinc-400 text-sm">
                     {t('noExpenses')}
@@ -360,89 +361,90 @@ export const Dashboard = () => {
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
                 <CardTitle className="text-sm font-medium">{t('incomesByCategory')}</CardTitle>
-                <p className="text-2xl font-bold mt-1 text-[#01bfa5]">
-                  <AnimatedValue value={totalIncome} userSettings={userSettings} />
-                </p>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="h-64 w-full min-h-[256px] min-w-0">
+              <div className="h-80 w-full min-h-[320px] min-w-0">
                 {pieDataIncomes.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={pieDataIncomes}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={5}
-                        dataKey="value"
-                        stroke="none"
-                      >
-                        {pieDataIncomes.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                        <Label 
-                          position="center"
-                          content={({ viewBox }) => {
-                            const cx = (viewBox as any)?.cx;
-                            const cy = (viewBox as any)?.cy;
-                            if (typeof cx !== 'number' || typeof cy !== 'number' || isNaN(cx) || isNaN(cy)) return null;
-                            const total = pieDataIncomes.reduce((acc, cur) => acc + cur.value, 0);
-                            return (
-                              <g>
-                                <text
-                                  x={cx}
-                                  y={cy - 5}
-                                  textAnchor="middle"
-                                  dominantBaseline="central"
-                                  className="fill-zinc-900 dark:fill-white text-lg font-bold"
-                                >
-                                  {formatCurrency(total)}
-                                </text>
-                                <text
-                                  x={cx}
-                                  y={cy + 15}
-                                  textAnchor="middle"
-                                  dominantBaseline="central"
-                                  className="fill-zinc-400 text-[10px] uppercase font-bold"
-                                >
-                                  Total
-                                </text>
-                              </g>
-                            );
+                  <div className="relative w-full h-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieDataIncomes}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={80}
+                          outerRadius={110}
+                          paddingAngle={5}
+                          dataKey="value"
+                          stroke="none"
+                        >
+                          {pieDataIncomes.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          offset={10}
+                          allowEscapeViewBox={{ x: true, y: true }}
+                          trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
+                          content={({ active, payload, coordinate, viewBox }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              const value = payload[0].value as number;
+                              const total = pieDataIncomes.reduce((acc, cur) => acc + cur.value, 0);
+                              const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                              
+                              const vw = viewBox?.width || 300;
+                              const vh = viewBox?.height || 280;
+                              const cx = viewBox?.cx ?? vw / 2;
+                              const cy = viewBox?.cy ?? vh / 2;
+                              const coordX = coordinate?.x ?? cx;
+                              const coordY = coordinate?.y ?? cy;
+                              
+                              const isLeft = coordX < cx;
+                              const isTop = coordY < cy;
+                              
+                              const translateX = isLeft 
+                                ? `max(calc(-100% - 20px), -${Math.max(0, coordX - 10)}px)` 
+                                : `min(0px, calc(${Math.max(0, vw - 20 - coordX)}px - 100%))`;
+                                
+                              const translateY = isTop 
+                                ? `max(calc(-100% - 20px), -${Math.max(0, coordY - 10)}px)` 
+                                : `min(0px, calc(${Math.max(0, vh - 20 - coordY)}px - 100%))`;
+
+                              return (
+                                <div style={{
+                                  transform: `translate(${translateX}, ${translateY})`,
+                                  backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                                  borderRadius: '12px', 
+                                  border: '1px solid #333',
+                                  boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                  padding: '12px',
+                                  width: 'max-content',
+                                  pointerEvents: 'none',
+                                  zIndex: 1000
+                                }}>
+                                  <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
+                                  <p style={{ color: data.color || (payload[0] as any).color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
+                                    {formatCurrency(value)} {userSettings.showValues ? `(${percentage}%)` : ''}
+                                  </p>
+                                </div>
+                              );
+                            }
+                            return null;
                           }}
                         />
-                      </Pie>
-                      <Tooltip 
-                        trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const data = payload[0].payload;
-                            const value = payload[0].value as number;
-                            const total = pieDataIncomes.reduce((acc, cur) => acc + cur.value, 0);
-                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
-                            return (
-                              <div style={{ 
-                                backgroundColor: 'rgba(0, 0, 0, 0.9)', 
-                                borderRadius: '12px', 
-                                border: '1px solid #333',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                                padding: '12px'
-                              }}>
-                                <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
-                                <p style={{ color: data.color || (payload[0] as any).color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
-                                  {formatCurrency(value)} {userSettings.showValues ? `(${percentage}%)` : ''}
-                                </p>
-                              </div>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-lg font-bold text-[#01bfa5]">
+                        {formatCurrency(pieDataIncomes.reduce((acc, cur) => acc + cur.value, 0))}
+                      </span>
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 mt-1">
+                        Total <ChevronDown className="w-3 h-3 inline-block" />
+                      </span>
+                    </div>
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center h-full text-zinc-400 text-sm">
                     {t('noIncomes')}
@@ -552,9 +554,6 @@ export const Dashboard = () => {
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
                 <CardTitle className="text-sm font-medium">Despesas por Tags</CardTitle>
-                <p className="text-2xl font-bold mt-1 text-[#ee5350]">
-                  <AnimatedValue value={pieDataTags.reduce((acc, cur) => acc + cur.value, 0)} userSettings={userSettings} />
-                </p>
               </div>
               <button 
                 onClick={() => navigate('/reports', { state: { tab: 'tags' } })}
@@ -564,124 +563,88 @@ export const Dashboard = () => {
               </button>
             </CardHeader>
             <CardContent>
-              <div className="h-64 w-full min-h-[256px] min-w-0">
-                {pieDataTags.length > 5 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={pieDataTags} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
-                      <XAxis type="number" hide />
-                      <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
-                      <Tooltip 
-                        trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
-                        cursor={{ fill: 'transparent' }}
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const data = payload[0].payload;
-                            const value = payload[0].value as number;
-                            const total = pieDataTags.reduce((acc, cur) => acc + cur.value, 0);
-                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
-                            return (
-                              <div style={{ 
-                                backgroundColor: 'rgba(0, 0, 0, 0.9)', 
-                                borderRadius: '12px', 
-                                border: '1px solid #333',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                                padding: '12px'
-                              }}>
-                                <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
-                                <p style={{ color: data.color, margin: 0, fontWeight: 'bold', fontSize: '13px' }}>
-                                  {formatCurrency(value)} <span style={{ opacity: 0.8, fontWeight: 'normal', fontSize: '11px' }}>({percentage}%)</span>
-                                </p>
-                              </div>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-                      <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                        {pieDataTags.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : pieDataTags.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={pieDataTags}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={5}
-                        dataKey="value"
-                        stroke="none"
-                      >
-                        {pieDataTags.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                        <Label 
-                          position="center"
-                          content={({ viewBox }) => {
-                            const cx = (viewBox as any)?.cx;
-                            const cy = (viewBox as any)?.cy;
-                            if (typeof cx !== 'number' || typeof cy !== 'number' || isNaN(cx) || isNaN(cy)) return null;
-                            const total = pieDataTags.reduce((acc, cur) => acc + cur.value, 0);
-                            return (
-                              <g>
-                                <text
-                                  x={cx}
-                                  y={cy - 5}
-                                  textAnchor="middle"
-                                  dominantBaseline="central"
-                                  className="fill-zinc-900 dark:fill-white text-lg font-bold"
-                                >
-                                  {formatCurrency(total)}
-                                </text>
-                                <text
-                                  x={cx}
-                                  y={cy + 15}
-                                  textAnchor="middle"
-                                  dominantBaseline="central"
-                                  className="fill-zinc-400 text-[10px] uppercase font-bold"
-                                >
-                                  Total
-                                </text>
-                              </g>
-                            );
+              <div className="h-80 w-full min-h-[320px] min-w-0">
+                {pieDataTags.length > 0 ? (
+                  <div className="relative w-full h-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieDataTags}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={80}
+                          outerRadius={110}
+                          paddingAngle={5}
+                          dataKey="value"
+                          stroke="none"
+                        >
+                          {pieDataTags.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          offset={10}
+                          allowEscapeViewBox={{ x: true, y: true }}
+                          trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
+                          content={({ active, payload, coordinate, viewBox }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              const value = payload[0].value as number;
+                              const total = pieDataTags.reduce((acc, cur) => acc + cur.value, 0);
+                              const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                              
+                              const vw = viewBox?.width || 300;
+                              const vh = viewBox?.height || 280;
+                              const cx = viewBox?.cx ?? vw / 2;
+                              const cy = viewBox?.cy ?? vh / 2;
+                              const coordX = coordinate?.x ?? cx;
+                              const coordY = coordinate?.y ?? cy;
+                              
+                              const isLeft = coordX < cx;
+                              const isTop = coordY < cy;
+                              
+                              const translateX = isLeft 
+                                ? `max(calc(-100% - 20px), -${Math.max(0, coordX - 10)}px)` 
+                                : `min(0px, calc(${Math.max(0, vw - 20 - coordX)}px - 100%))`;
+                                
+                              const translateY = isTop 
+                                ? `max(calc(-100% - 20px), -${Math.max(0, coordY - 10)}px)` 
+                                : `min(0px, calc(${Math.max(0, vh - 20 - coordY)}px - 100%))`;
+
+                              return (
+                                <div style={{
+                                  transform: `translate(${translateX}, ${translateY})`,
+                                  backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                                  borderRadius: '12px', 
+                                  border: '1px solid #333',
+                                  boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                  padding: '12px',
+                                  width: 'max-content',
+                                  pointerEvents: 'none',
+                                  zIndex: 1000
+                                }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: data.color }} />
+                                    <p style={{ color: '#fff', fontWeight: 'bold', margin: 0, fontSize: '14px' }}>{data.name}</p>
+                                  </div>
+                                  <p style={{ color: '#fff', margin: 0, fontSize: '15px', fontWeight: 'bold' }}>{formatCurrency(value)} {userSettings.showValues ? `(${percentage}%)` : ''}</p>
+                                </div>
+                              );
+                            }
+                            return null;
                           }}
                         />
-                      </Pie>
-                      <Tooltip 
-                        trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const data = payload[0].payload;
-                            const value = payload[0].value as number;
-                            const total = pieDataTags.reduce((acc, cur) => acc + cur.value, 0);
-                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
-                            return (
-                              <div style={{ 
-                                backgroundColor: 'rgba(0, 0, 0, 0.9)', 
-                                borderRadius: '12px', 
-                                border: '1px solid #333',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                                padding: '12px'
-                              }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: data.color }} />
-                                  <p style={{ color: '#fff', fontWeight: 'bold', margin: 0, fontSize: '14px' }}>{data.name}</p>
-                                </div>
-                                <p style={{ color: '#fff', margin: 0, fontSize: '15px', fontWeight: 'bold' }}>{formatCurrency(value)}</p>
-                                <p style={{ color: 'rgba(255,255,255,0.6)', margin: '4px 0 0 0', fontSize: '12px' }}>{percentage}% do total</p>
-                              </div>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-lg font-bold text-[#ee5350]">
+                        {formatCurrency(pieDataTags.reduce((acc, cur) => acc + cur.value, 0))}
+                      </span>
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 mt-1">
+                        Total <ChevronDown className="w-3 h-3 inline-block" />
+                      </span>
+                    </div>
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center h-full text-zinc-400 text-sm font-medium">
                     {t('noTransactionsFound')}
