@@ -24,13 +24,15 @@ export const NewTransactionDialog = ({
   onOpenChange: setExternalOpen,
   initialDate,
   transactionId,
-  initialType
+  initialType,
+  isCollapsed
 }: { 
   open?: boolean; 
   onOpenChange?: (open: boolean) => void;
   initialDate?: string;
   transactionId?: string;
   initialType?: 'expense' | 'income';
+  isCollapsed?: boolean;
 }) => {
   const { addTransaction, updateTransaction, bulkUpdateTransactions, bulkUpsertTransactions, upsertTransaction, findTransaction, transactions, categories, addCategory, tags: storeTags, addTag } = useAppStore();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -412,11 +414,15 @@ export const NewTransactionDialog = ({
       {!transactionId && externalOpen === undefined && (
         <Button 
           variant="default" 
-          className={`${buttonColorClass} text-white rounded-full h-9 px-4`}
+          className={
+            isCollapsed 
+              ? `${buttonColorClass} text-white rounded-full w-12 h-12 p-0 flex items-center justify-center shrink-0` 
+              : `${buttonColorClass} text-white rounded-full h-9 px-4 w-full`
+          }
           onClick={() => setIsMenuOpen(true)}
         >
-          <Plus className="w-4 h-4 mr-2" />
-          Nova Transação
+          <Plus className={isCollapsed ? "w-6 h-6" : "w-4 h-4 mr-2"} />
+          {!isCollapsed && "Nova Transação"}
         </Button>
       )}
 
@@ -424,6 +430,7 @@ export const NewTransactionDialog = ({
         isOpen={isMenuOpen} 
         onClose={() => setIsMenuOpen(false)} 
         onSelect={handleMenuSelect} 
+        isCollapsed={isCollapsed}
       />
 
       <Dialog open={open} onOpenChange={setOpen}>

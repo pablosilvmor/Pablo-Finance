@@ -46,7 +46,9 @@ export const Layout = () => {
         "flex-1 flex flex-col w-full h-screen transition-all duration-300 ease-in-out relative overflow-hidden",
         isSidebarCollapsed ? "md:ml-20" : "md:ml-64"
       )}>
-        <Header />
+        <div className="md:hidden">
+          <Header />
+        </div>
         <main className="flex-1 p-4 md:p-6 pb-24 md:pb-6 relative overflow-y-auto overflow-x-hidden">
           <motion.div
             key={location.pathname}

@@ -6,9 +6,10 @@ interface TransactionMenuOverlayProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (type: 'expense' | 'income' | 'piggy-bank') => void;
+  isCollapsed?: boolean;
 }
 
-export const TransactionMenuOverlay = ({ isOpen, onClose, onSelect }: TransactionMenuOverlayProps) => {
+export const TransactionMenuOverlay = ({ isOpen, onClose, onSelect, isCollapsed }: TransactionMenuOverlayProps) => {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -16,7 +17,7 @@ export const TransactionMenuOverlay = ({ isOpen, onClose, onSelect }: Transactio
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] bg-black/80 flex items-end sm:items-start justify-center pb-8 sm:pt-24"
+          className={`fixed inset-0 z-[100] bg-black/80 flex items-end sm:items-start justify-center sm:justify-start pb-8 sm:pt-24 ${isCollapsed ? 'sm:pl-10' : 'sm:pl-32'}`}
           onClick={onClose}
         >
           <div className="relative w-full max-w-md h-80 sm:h-80" onClick={e => e.stopPropagation()}>

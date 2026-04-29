@@ -1,13 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router';
-import { LayoutDashboard, ArrowRightLeft, Wallet, CreditCard, PieChart, Target, Settings, LogOut, Calculator, ShieldAlert, Calendar, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Tags, Hash, TrendingUp, UploadCloud, DownloadCloud, Bookmark, Tag, BarChart3, Coins, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, ArrowRightLeft, Wallet, CreditCard, PieChart, Target, Settings, LogOut, Calculator, ShieldAlert, Calendar, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Tags, Hash, TrendingUp, UploadCloud, DownloadCloud, Bookmark, Tag, BarChart3, Coins, ClipboardList, Info, Sun, Moon, Lightbulb, Eye, EyeOff, Bell, Search, User, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { auth } from '../lib/firebase';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useTranslation } from '@/lib/i18n';
 import { useAppStore } from '@/lib/store';
 import { useTheme } from './ThemeProvider';
+import { NewTransactionDialog } from './NewTransactionDialog';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useNavigate } from 'react-router';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -17,9 +21,11 @@ interface SidebarProps {
 export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
   const location = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);
-  const { userSettings } = useAppStore();
+  const { userSettings, setIsTipsOpen, updateUserSettings } = useAppStore();
   const { t } = useTranslation(userSettings.language);
-  const { theme } = useTheme();
+  const { theme, setTheme } = useTheme();
+
+  const isFemale = userSettings.gender === 'female' || (!userSettings.gender && userSettings.userName?.trim().split(' ')[0].toLowerCase().endsWith('a'));
 
   const mainNavItems = [
     { icon: LayoutDashboard, label: t('dashboard'), path: '/' },
@@ -115,13 +121,111 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
           <img 
             src={theme === 'light' ? "https://i.imgur.com/6n9cYhs.png" : "https://i.imgur.com/kJHoB4m.png"} 
             alt="Dindin" 
-            className="h-10 object-contain"
+            className="h-10 object-contain mx-auto"
             referrerPolicy="no-referrer"
           />
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto py-4">
+      {/* Welcome Message */}
+      {!isCollapsed && userSettings.userName && (
+        <div className="px-6 pb-4 text-center">
+          <span className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">
+            {isFemale ? 'Bem-vinda, ' : 'Bem-vindo, '}
+            <span className="text-purple-600">{userSettings.userName.split(' ')[0]}</span>
+          </span>
+        </div>
+      )}
+
+      {/* Action Buttons: New Transaction, 4 small buttons, Search */}
+      <div className="px-6 pb-6 space-y-4">
+        <div className={cn(isCollapsed ? "flex justify-center" : "flex justify-center w-full [&>button]:w-full")}>
+          <NewTransactionDialog isCollapsed={isCollapsed} />
+        </div>
+        
+        {!isCollapsed && (
+          <>
+            {/* 4 buttons on the same line */}
+            <div className="flex items-center justify-between px-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full h-8 w-8 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4 text-zinc-400" /> : <Moon className="w-4 h-4 text-zinc-600" />}
+              </Button>
+
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full h-8 w-8 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-purple-600 dark:text-purple-400"
+                onClick={() => {
+                  setIsTipsOpen(true);
+                }}
+                title="Ideias e Dicas (IA)"
+              >
+                <Lightbulb className="w-4 h-4" />
+              </Button>
+
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full h-8 w-8 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-600 dark:text-zinc-400"
+                onClick={() => {
+                  if (userSettings.showValues) {
+                    updateUserSettings({ showValues: false });
+                  } else {
+                    document.dispatchEvent(new CustomEvent('open-privacy-password'));
+                  }
+                }}
+                title={userSettings.showValues ? 'Ocultar Valores' : 'Mostrar Valores'}
+              >
+                {userSettings.showValues ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger className="rounded-full relative h-8 w-8 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" title="Notificações">
+                  <Bell className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                  {/* Notifications dot indicator logic placeholder, full logic will be moved here or kept simple */}
+                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-80 rounded-2xl p-2 bg-white dark:bg-[#1A1A1A] border-zinc-200 dark:border-zinc-800" align="start">
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="font-bold text-zinc-900 dark:text-white px-3 py-2">
+                      Notificações
+                    </DropdownMenuLabel>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator className="bg-zinc-100 dark:bg-zinc-800" />
+                  <div className="p-8 text-center">
+                    <Info className="w-8 h-8 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
+                    <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Notificações movidas em breve!</p>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative w-full">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Explorar..."
+                onClick={() => document.dispatchEvent(new CustomEvent('open-global-search'))}
+                readOnly
+                className="w-full h-9 pl-9 pr-4 rounded-full bg-zinc-100 dark:bg-zinc-800/50 border-none text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer text-zinc-900 dark:text-white"
+              />
+            </div>
+            
+            <div className="pt-2">
+               <div className="border-b border-zinc-200 dark:border-zinc-800 w-full" />
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-y-auto pb-4">
         <nav className="space-y-1 px-3">
           {mainNavItems.map((item) => (
             <NavItem key={item.path} item={item} />
@@ -146,7 +250,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
                   </div>
                 }
               />
-              <DropdownMenuContent side="right" align="start" className="w-56 rounded-2xl p-2 bg-white dark:bg-[#1A1A1A] border-zinc-200 dark:border-zinc-800">
+              <DropdownMenuContent side="right" align="start" className="w-56 rounded-2xl p-2 bg-white dark:bg-[#2C2C2E] border-zinc-200 dark:border-zinc-800">
                 {moreItems.map((item) => (
                   <DropdownMenuItem key={item.path} render={
                     <Link
@@ -162,59 +266,87 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
             </DropdownMenu>
           </div>
 
-          {isAdmin && (
-            <>
-              <div className="pt-4 pb-2">
-                {!isCollapsed && (
-                  <p className="px-3 text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-                    Administração
-                  </p>
-                )}
-              </div>
-              <NavItem item={{ icon: ShieldAlert, label: 'Painel Admin', path: '/admin' }} />
-            </>
-          )}
-        </nav>
+          </nav>
       </div>
 
       <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
-        {isCollapsed ? (
-          <TooltipProvider delay={0}>
-            <Tooltip>
-              <TooltipTrigger render={
-                <button 
-                  onClick={handleLogout}
-                  className="flex items-center justify-center p-2.5 rounded-lg text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-[#3d3d3e] w-full transition-colors"
-                >
-                  <LogOut className="w-5 h-5 shrink-0" />
-                </button>
-              } />
-              <TooltipContent side="right">{t('logout')}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        ) : (
-          <div className="space-y-4">
-            <button 
-              onClick={handleLogout}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-[#3d3d3e] w-full transition-colors"
-            >
-              <LogOut className="w-5 h-5 shrink-0" />
-              {t('logout')}
-            </button>
-            
-            <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800/50 text-center">
-              <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                Desenvolvido por{" "}
-                <a 
-                  href="https://pablosilvmor.github.io/site/1" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-purple-600 hover:underline font-medium"
-                >
-                  Pablo Moreira
-                </a>
-              </p>
+        <DropdownMenu>
+          <DropdownMenuTrigger className="w-full flex items-center justify-between p-2.5 rounded-lg text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-[#3d3d3e] transition-colors" title="Perfil do Usuário">
+            <div className="flex items-center gap-3 w-full">
+              <Avatar className="h-8 w-8 shrink-0">
+                <AvatarImage src={auth.currentUser?.photoURL || "https://github.com/shadcn.png"} alt="@user" />
+                <AvatarFallback>{auth.currentUser?.displayName?.charAt(0) || 'U'}</AvatarFallback>
+              </Avatar>
+              {!isCollapsed && (
+                <div className="flex flex-col text-left overflow-hidden">
+                  <span className="text-sm font-medium truncate text-zinc-900 dark:text-white">
+                    {auth.currentUser?.displayName || 'Usuário'}
+                  </span>
+                  <span className="text-xs truncate text-zinc-500">
+                    {auth.currentUser?.email || 'email@exemplo.com'}
+                  </span>
+                </div>
+              )}
             </div>
+            {!isCollapsed && <Settings className="w-4 h-4 shrink-0 text-zinc-400" />}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56 rounded-2xl p-2 bg-white dark:bg-[#2C2C2E] border-zinc-200 dark:border-zinc-800" align={isCollapsed ? "start" : "end"} side="right" sideOffset={16}>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="font-normal px-3 py-2">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{auth.currentUser?.displayName || 'Usuário'}</p>
+                  <p className="text-xs leading-none text-zinc-500 dark:text-zinc-400">
+                    {auth.currentUser?.email || 'email@exemplo.com'}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <div className="space-y-1">
+              <DropdownMenuItem onClick={() => document.dispatchEvent(new CustomEvent('open-subscription'))} className="rounded-xl cursor-pointer">
+                <CreditCard className="w-4 h-4 mr-2 text-zinc-500" />
+                Assinatura
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => document.dispatchEvent(new CustomEvent('open-share'))} className="rounded-xl cursor-pointer">
+                <Share2 className="w-4 h-4 mr-2 text-zinc-500" />
+                Compartilhar
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => window.location.href = '/settings'} className="rounded-xl cursor-pointer">
+                <Settings className="w-4 h-4 mr-2 text-zinc-500" />
+                {t('settings')}
+              </DropdownMenuItem>
+              {auth.currentUser?.email === 'pablo.silvmor@gmail.com' && (
+                <DropdownMenuItem onClick={() => window.location.href = '/admin'} className="rounded-xl cursor-pointer">
+                  <ShieldAlert className="w-4 h-4 mr-2 text-zinc-500" />
+                  Painel Admin
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => document.dispatchEvent(new CustomEvent('open-profile'))} className="rounded-xl cursor-pointer">
+                <User className="w-4 h-4 mr-2 text-zinc-500" />
+                Perfil
+              </DropdownMenuItem>
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} className="rounded-xl cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20">
+              <LogOut className="w-4 h-4 mr-2" />
+              {t('logout')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        {!isCollapsed && (
+          <div className="pt-4 mt-2 border-t border-zinc-100 dark:border-zinc-800/50 text-center">
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+              Desenvolvido por{" "}
+              <a 
+                href="https://pablosilvmor.github.io/site/1" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-purple-600 hover:underline font-medium"
+              >
+                Pablo Moreira
+              </a>
+            </p>
           </div>
         )}
       </div>
