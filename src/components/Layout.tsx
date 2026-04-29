@@ -10,15 +10,51 @@ import { TipsOverlay } from './TipsOverlay';
 import { MobileMoreMenu } from './MobileMoreMenu';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
+import { GlobalSearchDialog } from './GlobalSearchDialog';
+import { PrivacyPasswordDialog } from './PrivacyPasswordDialog';
+import { ProfileDialog } from './ProfileDialog';
+import { ShareDialog } from './ShareDialog';
+import { SubscriptionDialog } from './SubscriptionDialog';
+import { useAppStore } from '@/lib/store';
 
 export const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { updateUserSettings } = useAppStore();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNewTransactionOpen, setIsNewTransactionOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [newTransactionType, setNewTransactionType] = useState<'expense' | 'income'>('expense');
+
+  // Global Dialog States
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
+
+  React.useEffect(() => {
+    const handleOpenSearch = () => setIsSearchOpen(true);
+    const handleOpenPrivacy = () => setIsPrivacyOpen(true);
+    const handleOpenProfile = () => setIsProfileOpen(true);
+    const handleOpenShare = () => setIsShareOpen(true);
+    const handleOpenSubscription = () => setIsSubscriptionOpen(true);
+
+    window.addEventListener('open-global-search', handleOpenSearch);
+    window.addEventListener('open-privacy-password', handleOpenPrivacy);
+    window.addEventListener('open-profile', handleOpenProfile);
+    window.addEventListener('open-share', handleOpenShare);
+    window.addEventListener('open-subscription', handleOpenSubscription);
+
+    return () => {
+      window.removeEventListener('open-global-search', handleOpenSearch);
+      window.removeEventListener('open-privacy-password', handleOpenPrivacy);
+      window.removeEventListener('open-profile', handleOpenProfile);
+      window.removeEventListener('open-share', handleOpenShare);
+      window.removeEventListener('open-subscription', handleOpenSubscription);
+    };
+  }, []);
 
   const handleMenuSelect = (type: 'expense' | 'income' | 'piggy-bank') => {
     setIsMenuOpen(false);
@@ -147,6 +183,32 @@ export const Layout = () => {
         open={isNewTransactionOpen} 
         onOpenChange={setIsNewTransactionOpen} 
         initialType={newTransactionType}
+      />
+
+      <GlobalSearchDialog 
+        open={isSearchOpen} 
+        onOpenChange={setIsSearchOpen} 
+      />
+
+      <PrivacyPasswordDialog 
+        open={isPrivacyOpen} 
+        onOpenChange={setIsPrivacyOpen}
+        onSuccess={() => updateUserSettings({ showValues: true })}
+      />
+
+      <ProfileDialog 
+        open={isProfileOpen} 
+        onOpenChange={setIsProfileOpen} 
+      />
+
+      <ShareDialog 
+        open={isShareOpen} 
+        onOpenChange={setIsShareOpen} 
+      />
+
+      <SubscriptionDialog 
+        open={isSubscriptionOpen} 
+        onOpenChange={setIsSubscriptionOpen} 
       />
 
       <TipsOverlay />

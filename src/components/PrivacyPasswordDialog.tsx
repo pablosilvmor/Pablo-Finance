@@ -87,7 +87,7 @@ export const PrivacyPasswordDialog = ({ open, onOpenChange, onSuccess }: Privacy
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className="sm:max-w-[360px] p-0 bg-white dark:bg-[#1C1C1E] border-none rounded-[2.5rem] overflow-hidden">
+      <DialogContent showCloseButton={false} className="sm:max-w-[360px] p-0 bg-[#2C2C2E] text-white border-none rounded-[2.5rem] overflow-hidden">
         <div className="p-8 space-y-8">
           <div className="flex flex-col items-center gap-4">
             <button 

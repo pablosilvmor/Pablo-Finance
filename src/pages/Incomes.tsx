@@ -864,10 +864,10 @@ export const Incomes = () => {
                       strategy={verticalListSortingStrategy}
                     >
                       <table className="w-full text-sm text-left border-separate border-spacing-0">
-                        <thead className="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-zinc-50 dark:bg-[#2C2C2E] border-b border-zinc-200 dark:border-zinc-800 md:sticky md:top-0 z-20">
-                          <tr>
+                        <thead className="text-xs text-zinc-500 dark:text-zinc-400 uppercase sticky top-0 z-30 shadow-sm">
+                          <tr className="bg-white dark:bg-[#2C2C2E]">
                             {isSelectionMode && (
-                              <th className="px-4 py-3 font-medium w-12 text-center">
+                              <th className="px-4 py-3 font-medium w-12 text-center bg-inherit">
                                 <input 
                                   type="checkbox" 
                                   className="rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-purple-600 focus:ring-purple-500"
@@ -876,37 +876,37 @@ export const Incomes = () => {
                                 />
                               </th>
                             )}
-                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center" onClick={() => handleSort('status')}>
+                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center bg-inherit" onClick={() => handleSort('status')}>
                               <div className="flex items-center justify-center gap-1">
                                 Situação
                                 {sortBy === 'status' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
                               </div>
                             </th>
-                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center" onClick={() => handleSort('date')}>
+                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center bg-inherit" onClick={() => handleSort('date')}>
                               <div className="flex items-center justify-center gap-1">
                                 Data
                                 {sortBy === 'date' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
                               </div>
                             </th>
-                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center" onClick={() => handleSort('description')}>
+                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center bg-inherit" onClick={() => handleSort('description')}>
                               <div className="flex items-center justify-center gap-1">
                                 Descrição
                                 {sortBy === 'description' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
                               </div>
                             </th>
-                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center" onClick={() => handleSort('category')}>
+                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center bg-inherit" onClick={() => handleSort('category')}>
                               <div className="flex items-center justify-center gap-1">
                                 Categoria
                                 {sortBy === 'category' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
                               </div>
                             </th>
-                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center" onClick={() => handleSort('amount')}>
+                            <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center bg-inherit" onClick={() => handleSort('amount')}>
                               <div className="flex items-center justify-center gap-1">
                                 {sortBy === 'amount' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
                                 Valor
                               </div>
                             </th>
-                            <th className="px-4 py-3 font-medium text-center">Ações</th>
+                            <th className="px-4 py-3 font-medium text-center bg-inherit">Ações</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">

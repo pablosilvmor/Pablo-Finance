@@ -216,7 +216,7 @@ export const Dashboard = () => {
           <Card key={id} className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm bg-card transition-all">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
-                <CardTitle className="text-sm font-medium">{t('expensesByCategory')}</CardTitle>
+                <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-300">{t('expensesByCategory')}</CardTitle>
               </div>
               <button 
                 onClick={() => navigate('/reports', { state: { tab: 'categories' } })}
@@ -360,7 +360,7 @@ export const Dashboard = () => {
           <Card key={id} className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm bg-card transition-all">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
-                <CardTitle className="text-sm font-medium">{t('incomesByCategory')}</CardTitle>
+                <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-300">{t('incomesByCategory')}</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
@@ -459,7 +459,7 @@ export const Dashboard = () => {
           <Card key={id} className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm bg-card transition-all">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
-                <CardTitle className="text-sm font-medium">{t('monthlyBalance')}</CardTitle>
+                <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-300">{t('monthlyBalance')}</CardTitle>
                 <p className={`text-2xl font-bold mt-1 ${monthlyBalance >= 0 ? 'text-[#01bfa5]' : 'text-[#ee5350]'}`}>
                   <AnimatedValue value={monthlyBalance} userSettings={userSettings} />
                 </p>
@@ -504,9 +504,13 @@ export const Dashboard = () => {
       case 'pending-transactions':
         const pending = monthlyTransactions.filter(t => t.status === 'pending');
         return (
-          <Card key={id} className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm bg-card transition-all">
+          <Card 
+            key={id} 
+            className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm bg-card transition-all cursor-pointer"
+            onClick={() => navigate('/expenses')}
+          >
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('pendingTransactions')} ({pending.length})</CardTitle>
+              <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-300">{t('pendingTransactions')} ({pending.length})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -553,7 +557,7 @@ export const Dashboard = () => {
           <Card key={id} className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm bg-card transition-all">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
-                <CardTitle className="text-sm font-medium">Despesas por Tags</CardTitle>
+                <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-300">Despesas por Tags</CardTitle>
               </div>
               <button 
                 onClick={() => navigate('/reports', { state: { tab: 'tags' } })}
@@ -709,7 +713,7 @@ export const Dashboard = () => {
               <ArrowUpIcon className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">{t('incomes')} ({incomeCount})</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">{t('incomes')} ({incomeCount})</p>
               <p className="font-semibold text-[#01bfa5]">
                 <AnimatedValue value={totalIncome} userSettings={userSettings} />
               </p>
@@ -726,7 +730,7 @@ export const Dashboard = () => {
               <ArrowDownIcon className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">{t('expenses')} ({expenseCount})</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">{t('expenses')} ({expenseCount})</p>
               <p className="font-semibold text-[#ee5350]">
                 <AnimatedValue value={totalExpense} userSettings={userSettings} />
               </p>
@@ -739,7 +743,7 @@ export const Dashboard = () => {
       {activeAlerts.length > 0 && (
         <Card className="rounded-2xl border-none shadow-sm bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2 text-red-600 dark:text-red-400 font-semibold">
+            <div className="flex items-center gap-2 mb-2 text-[#01bfa5] font-semibold">
               <BellRing className="w-4 h-4 animate-bounce" />
               <span>Alertas Inteligentes (IA)</span>
             </div>
@@ -777,7 +781,7 @@ export const Dashboard = () => {
           {achievements.length > 0 && (
             <Card className="rounded-2xl border-none shadow-sm bg-card h-full">
               <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-3 text-secondary-foreground font-semibold">
+                <div className="flex items-center gap-2 mb-3 text-[#01bfa5] font-semibold">
                   <Trophy className="w-4 h-4 text-yellow-500" />
                   <span>Suas Conquistas</span>
                 </div>

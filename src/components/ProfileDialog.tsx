@@ -46,7 +46,7 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] rounded-[2rem]">
+      <DialogContent className="sm:max-w-[425px] rounded-[2rem] bg-[#2C2C2E] text-white border-zinc-800">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
             <User className="w-6 h-6 text-purple-600" />

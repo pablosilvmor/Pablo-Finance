@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router';
-import { LayoutDashboard, ArrowRightLeft, Wallet, CreditCard, PieChart, Target, Settings, LogOut, Calculator, ShieldAlert, Calendar, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Tags, Hash, TrendingUp, UploadCloud, DownloadCloud, Bookmark, Tag, BarChart3, Coins, ClipboardList, Info, Sun, Moon, Lightbulb, Eye, EyeOff, Bell, Search, User, Share2 } from 'lucide-react';
+import { LayoutDashboard, ArrowRightLeft, Wallet, CreditCard, PieChart, Target, Settings, LogOut, Calculator, ShieldAlert, Calendar, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Tags, Hash, TrendingUp, UploadCloud, DownloadCloud, Bookmark, Tag, BarChart3, Coins, ClipboardList, Info, Sun, Moon, Lightbulb, Eye, EyeOff, Bell, Search, User, Share2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { auth } from '../lib/firebase';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useTranslation } from '@/lib/i18n';
 import { useAppStore } from '@/lib/store';
 import { useTheme } from './ThemeProvider';
@@ -20,8 +21,10 @@ interface SidebarProps {
 
 export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
-  const { userSettings, setIsTipsOpen, updateUserSettings } = useAppStore();
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+  const { userSettings, setIsTipsOpen, updateUserSettings, activeTransactions } = useAppStore();
   const { t } = useTranslation(userSettings.language);
   const { theme, setTheme } = useTheme();
 
@@ -56,8 +59,21 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
   }, []);
 
   const handleLogout = () => {
-    auth.signOut();
+    auth.signOut().then(() => {
+      navigate('/login');
+    }).catch((err) => {
+      console.error('Erro no logout', err);
+    });
   };
+
+  const pendingAlerts = useMemo(() => {
+    if (!activeTransactions) return 0;
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    return activeTransactions.filter(t => 
+      t.status === 'pending' && new Date(t.date) <= today
+    ).length;
+  }, [activeTransactions]);
 
   const NavItem = ({ item, isSubmenu = false }: { item: any, isSubmenu?: boolean }) => {
     const isActive = location.pathname === item.path;
@@ -177,7 +193,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
                   if (userSettings.showValues) {
                     updateUserSettings({ showValues: false });
                   } else {
-                    document.dispatchEvent(new CustomEvent('open-privacy-password'));
+                    window.dispatchEvent(new CustomEvent('open-privacy-password'));
                   }
                 }}
                 title={userSettings.showValues ? 'Ocultar Valores' : 'Mostrar Valores'}
@@ -188,34 +204,58 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
               <DropdownMenu>
                 <DropdownMenuTrigger className="rounded-full relative h-8 w-8 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" title="Notificações">
                   <Bell className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-                  {/* Notifications dot indicator logic placeholder, full logic will be moved here or kept simple */}
-                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                  {pendingAlerts > 0 && (
+                    <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                  )}
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-80 rounded-2xl p-2 bg-white dark:bg-[#1A1A1A] border-zinc-200 dark:border-zinc-800" align="start">
+                  <DropdownMenuContent className="w-80 rounded-2xl p-2 bg-white dark:bg-[#2C2C2E] border-zinc-200 dark:border-zinc-800" align="start">
                   <DropdownMenuGroup>
                     <DropdownMenuLabel className="font-bold text-zinc-900 dark:text-white px-3 py-2">
                       Notificações
                     </DropdownMenuLabel>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator className="bg-zinc-100 dark:bg-zinc-800" />
-                  <div className="p-8 text-center">
-                    <Info className="w-8 h-8 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
-                    <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Notificações movidas em breve!</p>
+                  <div className="max-h-[300px] overflow-y-auto">
+                    {activeTransactions.filter(t => t.status === 'pending' && new Date(t.date) <= (new Date(new Date().setHours(23, 59, 59, 999)))).length > 0 ? (
+                      activeTransactions
+                        .filter(t => t.status === 'pending' && new Date(t.date) <= (new Date(new Date().setHours(23, 59, 59, 999))))
+                        .slice(0, 5)
+                        .map((t, idx) => (
+                          <DropdownMenuItem 
+                            key={t.id} 
+                            onSelect={() => navigate('/expenses')}
+                            className="flex flex-col items-start gap-1 p-3 rounded-xl cursor-pointer"
+                          >
+                            <div className="flex items-center justify-between w-full">
+                              <span className="text-sm font-semibold text-red-600 dark:text-red-400">Pendente</span>
+                              <span className="text-[10px] text-zinc-500">{new Date(t.date).toLocaleDateString()}</span>
+                            </div>
+                            <p className="text-sm font-medium text-zinc-900 dark:text-white line-clamp-1">{t.description}</p>
+                            <p className="text-xs text-zinc-500">Valor: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.amount)}</p>
+                          </DropdownMenuItem>
+                        ))
+                    ) : (
+                      <div className="p-8 text-center text-zinc-500 dark:text-zinc-400">
+                        <Info className="w-8 h-8 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
+                        <p className="text-sm font-medium">Sem novas notificações!</p>
+                      </div>
+                    )}
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
 
             {/* Search Input */}
-            <div className="relative w-full">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Explorar..."
-                onClick={() => document.dispatchEvent(new CustomEvent('open-global-search'))}
-                readOnly
-                className="w-full h-9 pl-9 pr-4 rounded-full bg-zinc-100 dark:bg-zinc-800/50 border-none text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer text-zinc-900 dark:text-white"
-              />
+            <div 
+              className="relative w-full cursor-pointer"
+              onClick={() => window.dispatchEvent(new CustomEvent('open-global-search'))}
+            >
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <div 
+                className="w-full h-9 pl-9 pr-4 rounded-full bg-zinc-100 dark:bg-zinc-800/50 border-none text-sm flex items-center text-zinc-500 dark:text-zinc-400 select-none hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+              >
+                Explorar...
+              </div>
             </div>
             
             <div className="pt-2">
@@ -303,37 +343,97 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <div className="space-y-1">
-              <DropdownMenuItem onClick={() => document.dispatchEvent(new CustomEvent('open-subscription'))} className="rounded-xl cursor-pointer">
+              <DropdownMenuItem 
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('open-subscription'));
+                }} 
+                className="rounded-xl cursor-pointer"
+              >
                 <CreditCard className="w-4 h-4 mr-2 text-zinc-500" />
                 Assinatura
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => document.dispatchEvent(new CustomEvent('open-share'))} className="rounded-xl cursor-pointer">
+              <DropdownMenuItem 
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('open-share'));
+                }} 
+                className="rounded-xl cursor-pointer"
+              >
                 <Share2 className="w-4 h-4 mr-2 text-zinc-500" />
                 Compartilhar
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.location.href = '/settings'} className="rounded-xl cursor-pointer">
+              <DropdownMenuItem 
+                onClick={() => {
+                  navigate('/settings');
+                }} 
+                className="rounded-xl cursor-pointer"
+              >
                 <Settings className="w-4 h-4 mr-2 text-zinc-500" />
                 {t('settings')}
               </DropdownMenuItem>
               {auth.currentUser?.email === 'pablo.silvmor@gmail.com' && (
-                <DropdownMenuItem onClick={() => window.location.href = '/admin'} className="rounded-xl cursor-pointer">
+                <DropdownMenuItem 
+                  onClick={() => {
+                    navigate('/admin');
+                  }} 
+                  className="rounded-xl cursor-pointer"
+                >
                   <ShieldAlert className="w-4 h-4 mr-2 text-zinc-500" />
                   Painel Admin
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem onClick={() => document.dispatchEvent(new CustomEvent('open-profile'))} className="rounded-xl cursor-pointer">
+              <DropdownMenuItem 
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('open-profile'));
+                }} 
+                className="rounded-xl cursor-pointer"
+              >
                 <User className="w-4 h-4 mr-2 text-zinc-500" />
                 Perfil
               </DropdownMenuItem>
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="rounded-xl cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20">
-              <LogOut className="w-4 h-4 mr-2" />
+            <DropdownMenuItem 
+              onClick={() => setIsLogoutDialogOpen(true)}
+              className="rounded-xl cursor-pointer"
+            >
+              <LogOut className="w-4 h-4 mr-2 text-zinc-500" />
               {t('logout')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        
+
+        <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+          <DialogContent className="sm:max-w-[400px] rounded-[2rem] bg-white dark:bg-[#1A1A1A] text-zinc-900 dark:text-white border-zinc-200 dark:border-zinc-800">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                <AlertTriangle className="w-6 h-6 text-amber-500" />
+                Confirmar Saída
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-6">
+              <p className="text-zinc-600 dark:text-zinc-300">Você realmente deseja sair do DINDIN? Sua sessão será encerrada agora.</p>
+            </div>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <Button 
+                variant="ghost" 
+                className="flex-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 border-0" 
+                onClick={() => setIsLogoutDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                className="flex-1 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold border-0" 
+                onClick={() => {
+                  setIsLogoutDialogOpen(false);
+                  handleLogout();
+                }}
+              >
+                Sair agora
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {!isCollapsed && (
           <div className="pt-4 mt-2 border-t border-zinc-100 dark:border-zinc-800/50 text-center">
             <p className="text-[10px] text-zinc-500 dark:text-zinc-400">

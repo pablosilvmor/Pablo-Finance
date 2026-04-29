@@ -756,7 +756,7 @@ export const Expenses = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 md:flex-1 md:min-h-0">
-        <Card className="lg:col-span-3 rounded-3xl border-none shadow-sm bg-white dark:bg-[#2c2c2e] md:flex md:flex-col md:h-full overflow-hidden">
+        <Card className="lg:col-span-3 rounded-3xl border-none shadow-sm bg-white dark:bg-[#393943] md:flex md:flex-col md:h-full overflow-hidden">
           <CardHeader className="pb-2 shrink-0">
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
               <Card className="rounded-2xl border border-transparent shadow-sm bg-zinc-50 dark:bg-zinc-900/50">
@@ -852,7 +852,7 @@ export const Expenses = () => {
                               </span>
                             </h3>
                           )}
-                          <div className="flex items-center gap-4 p-4 bg-white dark:bg-[#2C2C2E] rounded-2xl border border-zinc-100 dark:border-[#2C2C2E] mb-4" onClick={(e) => handleEdit(t.id, e)}>
+                          <div className="flex items-center gap-4 p-4 bg-white dark:bg-[#393943] rounded-2xl border border-zinc-100 dark:border-[#393943] mb-4" onClick={(e) => handleEdit(t.id, e)}>
                             <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#ee5350]/10 text-[#ee5350] shrink-0">
                                <Icon className="w-6 h-6" />
                             </div>
@@ -905,7 +905,7 @@ export const Expenses = () => {
                         strategy={verticalListSortingStrategy}
                       >
                         <table className="w-full text-sm text-left border-separate border-spacing-0">
-                          <thead className="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-zinc-50 dark:bg-[#2C2C2E] border-b border-zinc-200 dark:border-zinc-800 md:sticky md:top-0 z-20">
+                          <thead className="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-zinc-50 dark:bg-[#393943] border-b border-zinc-200 dark:border-zinc-800 md:sticky md:top-0 z-20">
                             <tr>
                               {isSelectionMode && (
                                 <th className="px-4 py-3 font-medium w-12 text-center">
@@ -917,44 +917,47 @@ export const Expenses = () => {
                                   />
                                 </th>
                               )}
-                              <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center" onClick={() => handleSort('status')}>
-                                <div className="flex items-center justify-center gap-1">
-                                  <button onClick={(e) => { e.stopPropagation(); handleToggleAllStatus(); }} className="focus:outline-none mr-1">
+                              <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" onClick={() => handleSort('status')}>
+                                <div className="flex items-center gap-2">
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); handleToggleAllStatus(); }} 
+                                    className="focus:outline-none shrink-0"
+                                  >
                                     {filteredExpenses.length > 0 && filteredExpenses.every(t => t.status === 'paid') ? (
                                       <CheckCircle2 className="w-5 h-5 text-[#01bfa5]" />
                                     ) : (
                                       <Circle className="w-5 h-5 text-zinc-300 dark:text-zinc-600" />
                                     )}
                                   </button>
-                                  Situação
-                                  {sortBy === 'status' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                                  <span>SITUAÇÃO</span>
+                                  {sortBy === 'status' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-30" />}
                                 </div>
                               </th>
-                              <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center" onClick={() => handleSort('date')}>
-                                <div className="flex items-center justify-center gap-1">
-                                  Data
-                                  {sortBy === 'date' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                              <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" onClick={() => handleSort('date')}>
+                                <div className="flex items-center gap-2">
+                                  <span>DATA</span>
+                                  {sortBy === 'date' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-30" />}
                                 </div>
                               </th>
-                              <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center" onClick={() => handleSort('description')}>
-                                <div className="flex items-center justify-center gap-1">
-                                  Descrição
-                                  {sortBy === 'description' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                              <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" onClick={() => handleSort('description')}>
+                                <div className="flex items-center gap-2">
+                                  <span>DESCRIÇÃO</span>
+                                  {sortBy === 'description' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-30" />}
                                 </div>
                               </th>
-                              <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center" onClick={() => handleSort('category')}>
-                                <div className="flex items-center justify-center gap-1">
-                                  Categoria
-                                  {sortBy === 'category' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                              <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" onClick={() => handleSort('category')}>
+                                <div className="flex items-center gap-2">
+                                  <span>CATEGORIA</span>
+                                  {sortBy === 'category' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-30" />}
                                 </div>
                               </th>
-                              <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-center" onClick={() => handleSort('amount')}>
-                                <div className="flex items-center justify-center gap-1">
-                                  {sortBy === 'amount' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                                  Valor
+                              <th className="px-4 py-3 font-medium cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-right" onClick={() => handleSort('amount')}>
+                                <div className="flex items-center justify-end gap-2">
+                                  {sortBy === 'amount' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-30" />}
+                                  <span>VALOR</span>
                                 </div>
                               </th>
-                              <th className="px-4 py-3 font-medium text-center">Ações</th>
+                              <th className="px-4 py-3 font-medium text-center uppercase">Ações</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">

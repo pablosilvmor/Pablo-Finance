@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Bell, Search, Moon, Sun, Lightbulb, Eye, EyeOff, User, Settings, CreditCard, ShieldAlert, LogOut, Share2, Info } from 'lucide-react';
+import { Bell, Search, Moon, Sun, Lightbulb, Eye, EyeOff, User, Settings, CreditCard, ShieldAlert, LogOut, Share2, Info, AlertTriangle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -8,6 +8,7 @@ import { ProfileDialog } from './ProfileDialog';
 import { ShareDialog } from './ShareDialog';
 import { SubscriptionDialog } from './SubscriptionDialog';
 import { GlobalSearchDialog } from './GlobalSearchDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useTheme } from './ThemeProvider';
 import { auth } from '../lib/firebase';
 import { useTranslation } from '@/lib/i18n';
@@ -26,6 +27,7 @@ export const Header = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
   const notifications = useMemo(() => {
     const list: { id: string; title: string; description: string; color: string }[] = [];
@@ -96,7 +98,11 @@ export const Header = () => {
   }, [transactions, monthlyPlan, categories, userSettings.language, userSettings.currency]);
 
   const handleLogout = () => {
-    auth.signOut();
+    auth.signOut().then(() => {
+      navigate('/login');
+    }).catch((err) => {
+      console.error('Erro no logout', err);
+    });
   };
 
   const handleToggleValues = () => {
@@ -244,13 +250,49 @@ export const Header = () => {
               </DropdownMenuItem>
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="rounded-xl cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20">
-              <LogOut className="w-4 h-4 mr-2" />
+            <DropdownMenuItem 
+              onClick={() => setIsLogoutDialogOpen(true)}
+              className="rounded-xl cursor-pointer"
+            >
+              <LogOut className="w-4 h-4 mr-2 text-zinc-500" />
               {t('logout')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+        <DialogContent className="sm:max-w-[400px] rounded-[2rem] bg-white dark:bg-[#1A1A1A] text-zinc-900 dark:text-white border-zinc-200 dark:border-zinc-800">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <AlertTriangle className="w-6 h-6 text-amber-500" />
+              Confirmar Saída
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-6">
+            <p className="text-zinc-600 dark:text-zinc-300">Você realmente deseja sair do DINDIN? Sua sessão será encerrada agora.</p>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button 
+              variant="ghost" 
+              className="flex-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 border-0" 
+              onClick={() => setIsLogoutDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              className="flex-1 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold border-0" 
+              onClick={() => {
+                setIsLogoutDialogOpen(false);
+                handleLogout();
+              }}
+            >
+              Sair agora
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <PrivacyPasswordDialog 
         open={isPasswordDialogOpen} 
         onOpenChange={setIsPasswordDialogOpen} 
