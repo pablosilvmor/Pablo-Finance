@@ -164,7 +164,7 @@ const SortableRow = ({
                     >
                       <Icon className="w-3.5 h-3.5 text-white" />
                     </div>
-                    <span className="text-sm font-bold text-zinc-900 dark:text-white tracking-wide">
+                    <span className="text-sm text-zinc-900 dark:text-white tracking-wide">
                       {tag.name}
                     </span>
                   </div>
@@ -177,7 +177,7 @@ const SortableRow = ({
       <td className="px-4 py-4">
         <CategoryBadge category={category} />
       </td>
-      <td className="px-4 py-4 text-right font-bold text-[#ee5350] whitespace-nowrap">
+      <td className="px-4 py-4 text-right text-[#ee5350] whitespace-nowrap">
         {formatCurrency(transaction.amount)}
       </td>
       <td className="px-4 py-4 text-center">
@@ -869,11 +869,11 @@ export const Expenses = () => {
                                <Icon className="w-6 h-6" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-bold text-zinc-900 dark:text-zinc-100 truncate">{t.description}</p>
+                              <p className="text-zinc-900 dark:text-zinc-100 truncate">{t.description}</p>
                               <p className="text-sm text-zinc-500">{category?.name || 'Sem categoria'} • {format(parseISO(t.date), "dd/MM/yy")}</p>
                             </div>
                             <div className="flex flex-col items-end gap-2 shrink-0">
-                               <p className="font-bold text-[#ee5350] text-sm">{formatCurrency(t.amount)}</p>
+                               <p className="text-[#ee5350] text-sm">{formatCurrency(t.amount)}</p>
                                <div className="flex items-center gap-2">
                                  {t.status === 'paid' && <CheckCircle2 className="w-5 h-5 text-[#01bfa5]" />}
                                  <DropdownMenu>
@@ -993,14 +993,15 @@ export const Expenses = () => {
                                     getTag={getTag}
                                   />
                                   {isLastOfDate && (
-                                    <tr className="bg-red-500/5 dark:bg-red-500/10 border-b border-zinc-100 dark:border-zinc-800/50">
-                                      <td colSpan={isSelectionMode ? 5 : 4} className="px-4 py-2.5 text-zinc-500 dark:text-zinc-400 font-medium italic text-xs">
-                                        Saldo do Final do Dia
+                                    <tr className="bg-[#2C2C2E] border-b border-zinc-700/50">
+                                      <td colSpan={isSelectionMode ? 5 : 4} className="px-4 py-2.5 text-center">
+                                        <div className="inline-flex items-center justify-center bg-[#3A3A3C] text-zinc-300 px-6 py-2 rounded-full text-xs font-medium">
+                                          Neste dia você gastou
+                                          <span className="text-[#ee5350] ml-2">
+                                            {formatCurrency(dailyTotals[t.date])}
+                                          </span>
+                                        </div>
                                       </td>
-                                      <td className="px-4 py-2.5 text-right text-zinc-500 dark:text-zinc-400">
-                                        {formatCurrency(dailyTotals[t.date])}
-                                      </td>
-                                      <td></td>
                                     </tr>
                                   )}
                                 </React.Fragment>

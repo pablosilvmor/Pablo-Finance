@@ -817,11 +817,11 @@ export const Transactions = () => {
                     <Icon className="w-6 h-6" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-zinc-900 dark:text-zinc-100 truncate">{t.description}</p>
+                    <p className="text-zinc-900 dark:text-zinc-100 truncate">{t.description}</p>
                     <p className="text-sm text-zinc-500">{category?.name || 'Sem categoria'} | {t.type === 'income' ? 'Receita' : 'Despesa'}</p>
                   </div>
                   <div className="flex flex-col items-end gap-2 shrink-0">
-                    <p className={cn("font-bold text-sm", t.type === 'income' ? 'text-[#01bfa5]' : 'text-[#ee5350]')}>
+                    <p className={cn("text-sm", t.type === 'income' ? 'text-[#01bfa5]' : 'text-[#ee5350]')}>
                       {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
                     </p>
                     <div className="flex items-center gap-2">
@@ -1015,7 +1015,7 @@ export const Transactions = () => {
                               >
                                 <Icon className="w-3.5 h-3.5 text-white" />
                               </div>
-                              <span className="text-sm font-bold text-zinc-900 dark:text-white tracking-wide">
+                              <span className="text-sm text-zinc-900 dark:text-white tracking-wide">
                                 {tag.name}
                               </span>
                             </div>
@@ -1063,14 +1063,15 @@ export const Transactions = () => {
                       </td>
                     </tr>
                     {isLastOfDate && (
-                      <tr className="bg-purple-500/5 dark:bg-purple-500/10 border-b border-zinc-100 dark:border-zinc-800/50">
-                        <td colSpan={isSelectionMode ? 5 : 4} className="px-6 py-3 text-zinc-500 dark:text-zinc-400 italic text-xs tracking-wider">
-                          Saldo do Final do Dia
+                      <tr className="bg-[#2C2C2E] border-b border-zinc-700/50">
+                        <td colSpan={isSelectionMode ? 5 : 4} className="px-4 py-2.5 text-center">
+                          <div className="inline-flex items-center justify-center bg-[#3A3A3C] text-zinc-300 px-6 py-2 rounded-full text-xs font-medium">
+                            Saldo do Final do Dia
+                            <span className="text-[#50A2FF] ml-2">
+                              {formatCurrency(dailyBalances[t.date])}
+                            </span>
+                          </div>
                         </td>
-                        <td className="px-6 py-3 text-right text-zinc-500 dark:text-zinc-400 text-sm">
-                          {formatCurrency(dailyBalances[t.date])}
-                        </td>
-                        <td></td>
                       </tr>
                     )}
                   </React.Fragment>
