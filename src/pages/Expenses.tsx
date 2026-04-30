@@ -543,7 +543,7 @@ export const Expenses = () => {
             >
               <Filter className="w-5 h-5" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64 max-h-[500px] overflow-y-auto">
+            <DropdownMenuContent align="end" className="w-64 max-h-[500px] overflow-y-auto bg-white dark:bg-[#2C2C2E] border-zinc-200 dark:border-zinc-800">
               <DropdownMenuGroup>
                 <DropdownMenuLabel>Filtros</DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -870,7 +870,7 @@ export const Expenses = () => {
                                        <MoreVertical className="w-4 h-4 text-zinc-500" />
                                      </Button>
                                    } />
-                                   <DropdownMenuContent align="end" className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+                                  <DropdownMenuContent align="end" className="bg-white dark:bg-[#2C2C2E] border-zinc-200 dark:border-zinc-800">
                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleStatus(t.id); }} className="gap-2">
                                        {t.status === 'paid' ? <Circle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
                                        Marcar como {t.status === 'paid' ? 'Pendente' : 'Pago'}
