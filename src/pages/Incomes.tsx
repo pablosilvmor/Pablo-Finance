@@ -528,7 +528,7 @@ export const Incomes = () => {
             >
               <Filter className="w-5 h-5" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64 max-h-[500px] overflow-y-auto bg-white dark:bg-[#2C2C2E] border-zinc-200 dark:border-zinc-800">
+            <DropdownMenuContent align="end" className="w-64 max-h-[500px] overflow-y-auto">
               <DropdownMenuGroup>
                 <DropdownMenuLabel>Filtros</DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -741,11 +741,11 @@ export const Incomes = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 md:flex-1 md:min-h-0">
-        <Card className="lg:col-span-3 rounded-3xl border-none shadow-sm bg-white dark:bg-[#393943] md:flex md:flex-col md:h-full overflow-hidden">
+        <Card className="lg:col-span-3 rounded-3xl border-none shadow-sm bg-white dark:bg-[#2c2c2e] md:flex md:flex-col md:h-full overflow-hidden">
           <CardHeader className="pb-2 shrink-0">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <Card className="rounded-2xl border border-transparent shadow-sm bg-zinc-50 dark:bg-zinc-900/50">
-                <CardContent className="p-4 flex items-center gap-3">
+                <CardContent className="p-2 flex items-center gap-3">
                   <div className="w-10 h-10 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-full flex items-center justify-center">
                     <TrendingUp className="w-5 h-5" />
                   </div>
@@ -758,7 +758,7 @@ export const Incomes = () => {
                 </CardContent>
               </Card>
               <Card className="rounded-2xl border border-transparent shadow-sm bg-green-50 dark:bg-green-900/10">
-                <CardContent className="p-4 flex items-center gap-3">
+                <CardContent className="p-2 flex items-center gap-3">
                   <div className="w-10 h-10 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center">
                     <CheckCircle2 className="w-5 h-5" />
                   </div>
@@ -811,7 +811,7 @@ export const Incomes = () => {
                               </span>
                             </h3>
                           )}
-                          <div className="flex items-center gap-4 p-4 bg-white dark:bg-[#393943] rounded-2xl border border-zinc-100 dark:border-[#393943] mb-4" onClick={(e) => handleEdit(t.id, e)}>
+                          <div className="flex items-center gap-4 p-4 bg-white dark:bg-[#2C2C2E] rounded-2xl border border-zinc-100 dark:border-[#2C2C2E] mb-4" onClick={(e) => handleEdit(t.id, e)}>
                             <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#01BFA5]/10 text-[#01BFA5] shrink-0">
                                <Icon className="w-6 h-6" />
                             </div>
@@ -829,7 +829,7 @@ export const Incomes = () => {
                                        <MoreVertical className="w-4 h-4 text-zinc-500" />
                                      </Button>
                                    } />
-                                  <DropdownMenuContent align="end" className="bg-white dark:bg-[#2C2C2E] border-zinc-200 dark:border-zinc-800">
+                                   <DropdownMenuContent align="end" className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleStatus(t.id); }} className="gap-2">
                                        {t.status === 'paid' ? <Circle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
                                        Marcar como {t.status === 'paid' ? 'Pendente' : 'Pago'}
@@ -865,7 +865,7 @@ export const Incomes = () => {
                     >
                       <table className="w-full text-sm text-left border-separate border-spacing-0">
                         <thead className="text-xs text-zinc-500 dark:text-zinc-400 uppercase sticky top-0 z-30 shadow-sm">
-                          <tr className="bg-white dark:bg-[#393943]">
+                          <tr className="bg-white dark:bg-[#2C2C2E]">
                             {isSelectionMode && (
                               <th className="px-4 py-3 font-medium w-12 text-center bg-inherit">
                                 <input 
@@ -955,7 +955,7 @@ export const Incomes = () => {
         </Card>
 
         <div className="space-y-6 md:h-full md:flex md:flex-col md:min-h-0">
-          <Card className="rounded-3xl border-none shadow-sm bg-white dark:bg-[#393943] md:flex-1 md:flex md:flex-col md:min-h-0">
+          <Card className="rounded-3xl border-none shadow-sm bg-white dark:bg-[#2c2c2e] md:flex-1 md:flex md:flex-col md:min-h-0">
             <CardHeader className="shrink-0">
               <CardTitle className="text-base">Distribuição por Categoria</CardTitle>
             </CardHeader>

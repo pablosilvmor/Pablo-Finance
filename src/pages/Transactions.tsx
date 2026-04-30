@@ -659,7 +659,7 @@ export const Transactions = () => {
                       <span className="hidden sm:inline">Exportar</span>
                     </Button>
                   } />
-                  <DropdownMenuContent align="end" className="bg-white dark:bg-[#2C2C2E] border-zinc-200 dark:border-zinc-800">
+                  <DropdownMenuContent align="end" className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
                     <DropdownMenuItem onClick={handleExportPDF} className="gap-2 focus:bg-zinc-100 dark:focus:bg-zinc-800">
                       <FileText className="w-4 h-4 text-red-500" />
                       Exportar PDF
@@ -820,7 +820,7 @@ export const Transactions = () => {
                             <MoreVertical className="w-4 h-4 text-zinc-500" />
                           </Button>
                         } />
-                        <DropdownMenuContent align="end" className="bg-white dark:bg-[#2C2C2E] border-zinc-200 dark:border-zinc-800">
+                        <DropdownMenuContent align="end" className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleStatus(t.id); }} className="gap-2">
                             {t.status === 'paid' ? <Circle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
                             Marcar como {t.status === 'paid' ? 'Pendente' : 'Pago'}
@@ -1023,7 +1023,7 @@ export const Transactions = () => {
                           <DropdownMenuTrigger onClick={(e) => e.stopPropagation()} title="Mais opções" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none hover:bg-muted hover:text-foreground">
                             <MoreVertical className="w-4 h-4 text-zinc-400" />
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-[#2C2C2E] border-zinc-200 dark:border-zinc-800">
+                          <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuItem onClick={(e) => {
                               e.stopPropagation();
                               setEditingTransactionId(t.id);
@@ -1095,7 +1095,7 @@ export const Transactions = () => {
                   <p className="text-zinc-500 dark:text-zinc-400 font-medium text-center">{selectedTransaction.description}</p>
                 </div>
 
-                <div className="space-y-4 bg-zinc-50 dark:bg-[#393943] p-4 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                <div className="space-y-4 bg-zinc-50 dark:bg-[#1C1C1E] p-4 rounded-xl border border-zinc-100 dark:border-zinc-800">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-zinc-500 dark:text-zinc-400">{t('date')}</span>
                     <span className="font-medium text-zinc-900 dark:text-white">{format(parseISO(selectedTransaction.date), "dd 'de' MMMM 'de' yyyy", { locale: userSettings.language === 'en' ? enUS : userSettings.language === 'es' ? es : ptBR })}</span>

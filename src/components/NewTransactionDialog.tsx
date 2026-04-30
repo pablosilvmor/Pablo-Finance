@@ -434,7 +434,7 @@ export const NewTransactionDialog = ({
       />
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto dark:bg-[#393943]">
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto dark:bg-[#3A3A3C]">
         <DialogHeader>
           <DialogTitle>{transactionId ? 'Editar Transação' : 'Adicionar Transação'}</DialogTitle>
         </DialogHeader>

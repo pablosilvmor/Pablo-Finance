@@ -543,7 +543,7 @@ export const Expenses = () => {
             >
               <Filter className="w-5 h-5" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64 max-h-[500px] overflow-y-auto bg-white dark:bg-[#2C2C2E] border-zinc-200 dark:border-zinc-800">
+            <DropdownMenuContent align="end" className="w-64 max-h-[500px] overflow-y-auto">
               <DropdownMenuGroup>
                 <DropdownMenuLabel>Filtros</DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -756,7 +756,7 @@ export const Expenses = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 md:flex-1 md:min-h-0">
-        <Card className="lg:col-span-3 rounded-3xl border-none shadow-sm bg-white dark:bg-[#393943] md:flex md:flex-col md:h-full overflow-hidden">
+        <Card className="lg:col-span-3 rounded-3xl border-none shadow-sm bg-white dark:bg-[#2c2c2e] md:flex md:flex-col md:h-full overflow-hidden">
           <CardHeader className="pb-2 shrink-0">
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
               <Card className="rounded-2xl border border-transparent shadow-sm bg-zinc-50 dark:bg-zinc-900/50">
@@ -870,7 +870,7 @@ export const Expenses = () => {
                                        <MoreVertical className="w-4 h-4 text-zinc-500" />
                                      </Button>
                                    } />
-                                  <DropdownMenuContent align="end" className="bg-white dark:bg-[#2C2C2E] border-zinc-200 dark:border-zinc-800">
+                                   <DropdownMenuContent align="end" className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleStatus(t.id); }} className="gap-2">
                                        {t.status === 'paid' ? <Circle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
                                        Marcar como {t.status === 'paid' ? 'Pendente' : 'Pago'}
