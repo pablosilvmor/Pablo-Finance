@@ -788,7 +788,7 @@ export const Transactions = () => {
       </div>
       </div>
 
-      <Card className="rounded-2xl border-none shadow-sm bg-white dark:bg-[#393943] md:flex-1 md:min-h-0 md:flex md:flex-col">
+      <Card className="rounded-2xl border-none shadow-sm bg-white dark:bg-[#2C2C2E] md:flex-1 md:min-h-0 md:flex md:flex-col">
         {/* Mobile List View */}
         <div className="md:hidden p-4 space-y-6">
           {filteredTransactions.map((t, index) => {
@@ -810,7 +810,7 @@ export const Transactions = () => {
                   </h3>
                 )}
                 <div 
-                  className="flex items-center gap-4 p-4 bg-white dark:bg-[#393943] rounded-2xl border border-zinc-100 dark:border-[#393943] mb-4"
+                  className="flex items-center gap-4 p-4 bg-white dark:bg-[#2C2C2E] rounded-2xl border border-zinc-100 dark:border-[#2C2C2E] mb-4"
                   onClick={() => setSelectedTransaction({ ...t, category })}
                 >
                   <div className={cn("w-12 h-12 rounded-full flex items-center justify-center shrink-0", t.type === 'income' ? 'bg-[#01bfa5]/10 text-[#01bfa5]' : 'bg-[#ee5350]/10 text-[#ee5350]')}>
@@ -858,7 +858,7 @@ export const Transactions = () => {
         {/* Desktop Table View */}
         <div className="hidden md:block overflow-x-auto md:overflow-auto md:flex-1">
           <table className="w-full text-sm text-left border-separate border-spacing-0">
-            <thead className="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-zinc-50 dark:bg-[#393943] border-b border-zinc-200 dark:border-zinc-800 md:sticky md:top-0 z-20">
+            <thead className="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-zinc-50 dark:bg-[#3A3A3C] border-b border-zinc-200 dark:border-zinc-800 md:sticky md:top-0 z-20">
               <tr>
                 {isSelectionMode && (
                   <th className="px-6 py-4 font-medium w-12">

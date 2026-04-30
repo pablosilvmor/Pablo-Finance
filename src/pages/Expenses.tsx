@@ -917,7 +917,7 @@ export const Expenses = () => {
                         strategy={verticalListSortingStrategy}
                       >
                         <table className="w-full text-sm text-left border-separate border-spacing-0">
-                          <thead className="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-zinc-50 dark:bg-[#393943] border-b border-zinc-200 dark:border-zinc-800 md:sticky md:top-0 z-20">
+                          <thead className="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-zinc-50 dark:bg-[#3A3A3C] border-b border-zinc-200 dark:border-zinc-800 md:sticky md:top-0 z-20">
                             <tr>
                               {isSelectionMode && (
                                 <th className="px-4 py-3 font-medium w-12 text-center">

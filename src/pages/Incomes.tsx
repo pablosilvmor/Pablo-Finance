@@ -877,7 +877,7 @@ export const Incomes = () => {
                     >
                       <table className="w-full text-sm text-left border-separate border-spacing-0">
                         <thead className="text-xs text-zinc-500 dark:text-zinc-400 uppercase sticky top-0 z-30 shadow-sm">
-                          <tr className="bg-white dark:bg-[#2C2C2E]">
+                          <tr className="bg-white dark:bg-[#3A3A3C]">
                             {isSelectionMode && (
                               <th className="px-4 py-3 font-medium w-12 text-center bg-inherit">
                                 <input 
