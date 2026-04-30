@@ -121,7 +121,18 @@ export const Transactions = () => {
       if (!isWithinDateRange) return false;
 
       // Search Term Filter
-      const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const searchLower = searchTerm.toLowerCase();
+      const category = categories.find(c => c.id === t.categoryId);
+      const matchesSearch = searchTerm === '' || (
+        t.description.toLowerCase().includes(searchLower) ||
+        (t.observation && t.observation.toLowerCase().includes(searchLower)) ||
+        (category && category.name.toLowerCase().includes(searchLower)) ||
+        t.amount.toString().includes(searchLower) ||
+        (t.tags && t.tags.some(tagId => {
+          const tag = tags.find(tg => tg.id === tagId);
+          return tag && tag.name.toLowerCase().includes(searchLower);
+        }))
+      );
       if (!matchesSearch) return false;
 
       // Type Filter
@@ -624,8 +635,9 @@ export const Transactions = () => {
               <div className="relative flex-1 md:w-64">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
                 <Input
-                  placeholder="Buscar"
-                  className="pl-9 pr-9 rounded-full bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 w-full"
+                  placeholder="Buscar transação, valor, tag, obs..."
+                  title="Busca avançada: descrição, categoria, tags, valor, observação"
+                  className="pl-9 pr-9 rounded-full bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 w-full transition-shadow duration-200"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />

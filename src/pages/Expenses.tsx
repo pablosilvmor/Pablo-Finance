@@ -294,7 +294,18 @@ export const Expenses = () => {
   const monthlyBalance = totalIncome - totalExpense;
 
   const filteredExpenses = monthlyExpenses.filter(t => {
-    const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const searchLower = searchTerm.toLowerCase();
+    const category = getCategory(t.categoryId);
+    const matchesSearch = searchTerm === '' || (
+      t.description.toLowerCase().includes(searchLower) ||
+      (t.observation && t.observation.toLowerCase().includes(searchLower)) ||
+      (category && category.name.toLowerCase().includes(searchLower)) ||
+      t.amount.toString().includes(searchLower) ||
+      (t.tags && t.tags.some(tagId => {
+        const tag = tags.find(tg => tg.id === tagId);
+        return tag && tag.name.toLowerCase().includes(searchLower);
+      }))
+    );
     const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
     const matchesTag = tagFilter === 'all' || (t.tags && t.tags.includes(tagFilter));
     const matchesCategory = categoryIdFilter === 'all' || t.categoryId === categoryIdFilter;
@@ -699,8 +710,9 @@ export const Expenses = () => {
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
                 <input
                   type="text"
-                  placeholder="Buscar despesa..."
-                  className="h-9 pl-9 pr-9 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 w-full"
+                  placeholder="Buscar despesa, valor, tag, obs..."
+                  title="Busca avançada: descrição, categoria, tags, valor, observação"
+                  className="h-9 pl-9 pr-9 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 w-full transition-shadow duration-200"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
