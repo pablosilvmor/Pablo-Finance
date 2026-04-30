@@ -46,6 +46,7 @@ export interface UserSettings {
   userName?: string;
   gender?: 'male' | 'female' | 'neutral';
   favoriteCalculators?: string[];
+  savedFilters?: { id: string; name: string; config: any }[];
 }
 
 interface AppState {

@@ -17,7 +17,7 @@ import { Filter, X, ChevronDown, Calendar, Check, Tag as TagIcon, FileText } fro
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Category, Tag, TransactionStatus } from '../types';
-import { PiggyBankEntry } from '../lib/store';
+import { PiggyBankEntry, useAppStore } from '../lib/store';
 import { iconMap } from '@/lib/icons';
 import { cn } from '@/lib/utils';
 import { 
@@ -55,15 +55,23 @@ export const TransactionFilterDialog = ({
   accounts,
   currentFilters 
 }: TransactionFilterDialogProps) => {
+  const { userSettings, updateUserSettings } = useAppStore();
+  const savedFilters = userSettings.savedFilters || [];
+  
   const [localFilters, setLocalFilters] = useState<FilterConfig>({ ...currentFilters });
   const [saveFilter, setSaveFilter] = useState(false);
+  const [filterName, setFilterName] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('new');
   const [catSearch, setCatSearch] = useState('');
   const [tagSearch, setTagSearch] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       setLocalFilters({ ...currentFilters });
+      setSaveFilter(false);
+      setFilterName('');
+      setActiveTab('new');
     }
   }, [isOpen, currentFilters]);
 
@@ -79,7 +87,17 @@ export const TransactionFilterDialog = ({
     });
   };
 
-  const handleApply = () => {
+  const handleApply = async () => {
+    if (saveFilter && filterName.trim() !== '') {
+      const newFilter = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: filterName.trim(),
+        config: localFilters
+      };
+      await updateUserSettings({
+        savedFilters: [...savedFilters, newFilter]
+      });
+    }
     onApply(localFilters);
     setIsOpen(false);
   };
@@ -131,13 +149,13 @@ export const TransactionFilterDialog = ({
           >
             <Filter className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
           </Button>
-        } 
+        }
       />
-      <DialogContent className="sm:max-w-[450px] bg-[#1C1C1C] text-white border-zinc-800 p-0 overflow-hidden gap-0">
+      <DialogContent className="sm:max-w-[450px] bg-[#2C2C2E] text-white border-zinc-800 p-0 overflow-hidden gap-0">
         <div className="p-6 pb-2">
           <DialogTitle className="text-xl font-bold text-white mb-4">Filtro de transações</DialogTitle>
           
-          <Tabs defaultValue="new" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="bg-transparent border-b border-zinc-800 rounded-none w-full justify-start p-0 h-auto gap-8 mb-6" variant="line">
               <TabsTrigger 
                 value="new" 
@@ -224,8 +242,8 @@ export const TransactionFilterDialog = ({
                       </div>
                     } 
                   />
-                  <DropdownMenuContent className="bg-[#1C1C1C] border-zinc-800 text-white w-[380px] max-h-60 flex flex-col">
-                    <div className="p-2 border-b border-zinc-800 sticky top-0 bg-[#1C1C1C] z-10">
+                  <DropdownMenuContent className="bg-[#2C2C2E] border-zinc-800 text-white w-[380px] max-h-60 flex flex-col">
+                    <div className="p-2 border-b border-zinc-800 sticky top-0 bg-[#2C2C2E] z-10">
                       <Input
                         placeholder="Buscar categoria..."
                         value={catSearch}
@@ -294,8 +312,8 @@ export const TransactionFilterDialog = ({
                       </div>
                     } 
                   />
-                  <DropdownMenuContent className="bg-[#1C1C1C] border-zinc-800 text-white w-[380px] max-h-60 flex flex-col">
-                    <div className="p-2 border-b border-zinc-800 sticky top-0 bg-[#1C1C1C] z-10">
+                  <DropdownMenuContent className="bg-[#2C2C2E] border-zinc-800 text-white w-[380px] max-h-60 flex flex-col">
+                    <div className="p-2 border-b border-zinc-800 sticky top-0 bg-[#2C2C2E] z-10">
                       <Input
                         placeholder="Buscar tag..."
                         value={tagSearch}
@@ -356,7 +374,7 @@ export const TransactionFilterDialog = ({
                     )}
                     <DropdownMenu>
                       <DropdownMenuTrigger render={<ChevronDown className="w-4 h-4 text-zinc-600 cursor-pointer" />} />
-                      <DropdownMenuContent className="bg-[#1C1C1C] border-zinc-800 text-white">
+                      <DropdownMenuContent className="bg-[#2C2C2E] border-zinc-800 text-white">
                         <DropdownMenuCheckboxItem 
                           checked={localFilters.statuses.includes('paid')} 
                           onCheckedChange={() => toggleStatus('paid')}
@@ -378,18 +396,72 @@ export const TransactionFilterDialog = ({
               </div>
 
               {/* Salvar Filtro */}
-              <div className="flex items-center justify-between pt-4">
-                <span className="text-sm text-zinc-300">Salvar filtro personalizado</span>
-                <Switch 
-                  checked={saveFilter} 
-                  onCheckedChange={setSaveFilter}
-                  className="data-[state=checked]:bg-[#F95F5F]" 
-                />
+              <div className="pt-4 border-t border-zinc-800/50">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-zinc-300">Salvar filtro personalizado</span>
+                  <Switch 
+                    checked={saveFilter} 
+                    onCheckedChange={setSaveFilter}
+                    className="data-[state=checked]:bg-[#F95F5F]" 
+                  />
+                </div>
+                {saveFilter && (
+                  <div className="mt-4 animate-in fade-in slide-in-from-top-2">
+                    <Input 
+                      placeholder="Deixe um nome para o filtro..." 
+                      value={filterName}
+                      onChange={(e) => setFilterName(e.target.value)}
+                      className="bg-transparent border-b border-zinc-700 rounded-none px-0 h-8 text-zinc-200 focus-visible:ring-0"
+                      autoFocus
+                    />
+                  </div>
+                )}
               </div>
             </TabsContent>
 
-            <TabsContent value="saved" className="h-[400px] flex items-center justify-center text-zinc-500">
-              Nenhum filtro salvo ainda.
+            <TabsContent value="saved" className="h-[440px] overflow-y-auto mt-0 pb-4 px-0">
+              {savedFilters.length === 0 ? (
+                <div className="flex h-full items-center justify-center text-zinc-500">
+                  Nenhum filtro salvo ainda.
+                </div>
+              ) : (
+                <div className="space-y-3 mt-4">
+                  {savedFilters.map((sf) => (
+                    <div key={sf.id} className="flex items-center justify-between bg-zinc-800/50 hover:bg-zinc-800 p-3 rounded-xl border border-zinc-700 transition-colors">
+                      <span className="text-sm font-medium text-zinc-200">{sf.name}</span>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => {
+                            const parsedConfig = {
+                                ...sf.config,
+                                startDate: sf.config.startDate ? new Date(sf.config.startDate) : startOfMonth(new Date()),
+                                endDate: sf.config.endDate ? new Date(sf.config.endDate) : endOfMonth(new Date())
+                            };
+                            setLocalFilters(parsedConfig);
+                            setActiveTab('new'); // Volta pra aba de filtro para ele ver
+                          }}
+                          className="text-white hover:bg-zinc-700 h-8 text-xs font-semibold"
+                        >
+                          USAR
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={async () => {
+                            const updated = savedFilters.filter(f => f.id !== sf.id);
+                            await updateUserSettings({ savedFilters: updated });
+                          }}
+                          className="text-red-400 hover:text-red-300 hover:bg-zinc-700 h-8 px-2"
+                        >
+                           <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>
@@ -398,22 +470,22 @@ export const TransactionFilterDialog = ({
           <div className="flex items-center gap-2">
             <DialogClose 
               render={
-                <Button variant="ghost" className="text-[#F95F5F] hover:text-[#F95F5F] hover:bg-zinc-800/50 uppercase text-[10px] font-bold transition-colors h-auto px-2">
+                <Button variant="ghost" className="text-[#F95F5F] hover:text-[#E54D4D] hover:bg-zinc-800/50 uppercase text-[10px] font-bold transition-colors h-auto px-2">
                   CANCELAR
                 </Button>
-              } 
+              }
             />
-            <Button 
+            <Button  
               variant="ghost" 
               onClick={handleClear}
-              className="text-[#F95F5F] hover:text-[#F95F5F] hover:bg-zinc-800/50 uppercase text-[10px] font-bold transition-colors h-auto px-2"
+              className="text-[#F95F5F] hover:text-[#E54D4D] hover:bg-zinc-800/50 uppercase text-[10px] font-bold transition-colors h-auto px-2"
             >
               LIMPAR FILTROS
             </Button>
           </div>
           <Button 
             onClick={handleApply}
-            className="bg-[#F95F5F] hover:bg-[#E54D4D] text-white uppercase text-xs font-bold rounded-full px-8 py-2.5 h-auto"
+            className="bg-[#F95F5F] hover:bg-[#E54D4D] text-white uppercase text-xs font-bold rounded-full px-8 py-2.5 h-auto transition-colors focus:ring-2 focus:ring-[#F95F5F] focus:ring-offset-2 focus:ring-offset-[#2C2C2E]"
           >
             APLICAR FILTROS
           </Button>
