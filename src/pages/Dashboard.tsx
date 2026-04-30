@@ -217,6 +217,9 @@ export const Dashboard = () => {
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
                 <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-300">{t('expensesByCategory')}</CardTitle>
+                <div className="text-sm text-[#ee5350] font-bold mt-1">
+                  {formatCurrency(pieDataExpenses.reduce((acc, cur) => acc + cur.value, 0))}
+                </div>
               </div>
               <button 
                 onClick={() => navigate('/reports', { state: { tab: 'categories' } })}
@@ -337,14 +340,6 @@ export const Dashboard = () => {
                         />
                       </PieChart>
                     </ResponsiveContainer>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                      <span className="text-lg font-bold text-[#ee5350]">
-                        {formatCurrency(pieDataExpenses.reduce((acc, cur) => acc + cur.value, 0))}
-                      </span>
-                      <span className="text-[10px] uppercase font-bold text-zinc-400 mt-1">
-                        Total <ChevronDown className="w-3 h-3 inline-block" />
-                      </span>
-                    </div>
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-full text-zinc-400 text-sm">
