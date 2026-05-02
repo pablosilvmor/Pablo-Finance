@@ -12,11 +12,9 @@ function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
   return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
 }
 
-function DropdownMenuTrigger({ render, children, ...props }: MenuPrimitive.Trigger.Props) {
+function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
   return (
-    <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" render={render} {...props}>
-      {children}
-    </MenuPrimitive.Trigger>
+    <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />
   )
 }
 

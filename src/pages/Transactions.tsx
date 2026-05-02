@@ -18,7 +18,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
 import { NewTransactionDialog } from '@/components/NewTransactionDialog';
 import { MonthPicker } from '@/components/MonthPicker';
 import { TransactionMenuOverlay } from '@/components/TransactionMenuOverlay';
-import { ImportCsvDialog } from '@/components/ImportCsvDialog';
+import { ImportDataDialog } from '@/components/ImportDataDialog';
 import { useTranslation } from '@/lib/i18n';
 import { CategoryBadge } from '@/components/CategoryBadge';
 import { iconMap } from '@/lib/icons';
@@ -118,7 +118,9 @@ export const Transactions = () => {
         start: filters.startDate,
         end: filters.endDate
       });
-      if (!isWithinDateRange) return false;
+      const isSearchActive = searchTerm.trim().length > 0;
+      
+      if (!isWithinDateRange && !isSearchActive) return false;
 
       // Search Term Filter
       const searchLower = searchTerm.toLowerCase();
@@ -212,8 +214,10 @@ export const Transactions = () => {
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsSelectionMode(true);
-    setSelectedTransactionIds([id]);
+    const transaction = transactions.find(t => t.id === id);
+    if (transaction) {
+      setTransactionToDelete(transaction);
+    }
   };
 
   const handleExportCSV = () => {
@@ -490,6 +494,16 @@ export const Transactions = () => {
   const handleToggleStatus = (id: string, currentStatus: 'paid' | 'pending', e: React.MouseEvent) => {
     e.stopPropagation();
     updateTransaction(id, { status: currentStatus === 'paid' ? 'pending' : 'paid' });
+    toast.success(currentStatus === 'paid' ? 'Transação marcada como pendente!' : 'Transação marcada como paga!');
+  };
+
+  const handleToggleIgnore = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const transaction = transactions.find(t => t.id === id);
+    if (transaction) {
+      updateTransaction(id, { ignored: !transaction.ignored });
+      toast.success(transaction.ignored ? 'Transação restaurada!' : 'Transação ignorada!');
+    }
   };
 
   const handleDeleteSelected = () => {
@@ -652,7 +666,7 @@ export const Transactions = () => {
               </div>
               
               <div className="flex items-center gap-2">
-                <ImportCsvDialog open={isImportCsvOpen} onOpenChange={setIsImportCsvOpen} />
+                <ImportDataDialog open={isImportCsvOpen} onOpenChange={setIsImportCsvOpen} />
                 
                 <Button 
                   variant="outline" 
@@ -661,7 +675,7 @@ export const Transactions = () => {
                   onClick={() => setIsImportCsvOpen(true)}
                 >
                   <ArrowUpRight className="w-4 h-4" />
-                  <span className="hidden sm:inline">Importar .csv</span>
+                  <span className="hidden sm:inline">Importar</span>
                 </Button>
 
                 <DropdownMenu>
@@ -833,15 +847,15 @@ export const Transactions = () => {
                           </Button>
                         } />
                         <DropdownMenuContent align="end" className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleStatus(t.id); }} className="gap-2">
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleStatus(t.id, t.status, e); }} className="gap-2">
                             {t.status === 'paid' ? <Circle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
                             Marcar como {t.status === 'paid' ? 'Pendente' : 'Pago'}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleIgnore(t.id); }} className="gap-2">
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleIgnore(t.id, e); }} className="gap-2">
                             <EyeOff className="w-4 h-4" />
                             {t.ignored ? 'Considerar' : 'Ignorar'}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDelete(t.id); }} className="gap-2 text-red-500 focus:text-red-500">
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDelete(t.id, e); }} className="gap-2 text-red-500 focus:text-red-500">
                             <Trash2 className="w-4 h-4" />
                             Excluir
                           </DropdownMenuItem>
@@ -1294,24 +1308,39 @@ export const Transactions = () => {
         <DialogContent className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-zinc-900 dark:text-white">
-              <Filter className="w-5 h-5 text-red-500" />
+              <Trash2 className="w-5 h-5 text-red-500" />
               Confirmar exclusão
             </DialogTitle>
             <DialogDescription className="text-zinc-500 dark:text-zinc-400">
-            Como você deseja excluir esta transação fixa?
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={() => confirmDelete('single')} className="flex-1">
-            Apenas esta
-          </Button>
-          <Button variant="outline" onClick={() => confirmDelete('future')} className="flex-1">
-            Esta e futuras
-          </Button>
-          <Button variant="destructive" onClick={() => confirmDelete('all')} className="flex-1">
-            Toda a série
-          </Button>
-        </DialogFooter>
+              {transactionToDelete?.isFixed || transactionToDelete?.groupId ? 
+                'Como você deseja excluir esta transação fixa?' : 
+                'Tem certeza que deseja excluir esta transação?'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            {transactionToDelete?.isFixed || transactionToDelete?.groupId ? (
+              <>
+                <Button variant="outline" onClick={() => confirmDelete('single')} className="flex-1">
+                  Apenas esta
+                </Button>
+                <Button variant="outline" onClick={() => confirmDelete('future')} className="flex-1">
+                  Esta e futuras
+                </Button>
+                <Button variant="destructive" onClick={() => confirmDelete('all')} className="flex-1">
+                  Toda a série
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setTransactionToDelete(null)} className="flex-1">
+                  Cancelar
+                </Button>
+                <Button variant="destructive" onClick={() => confirmDelete('single')} className="flex-1">
+                  Excluir
+                </Button>
+              </>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

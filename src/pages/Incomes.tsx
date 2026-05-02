@@ -423,9 +423,9 @@ export const Incomes = () => {
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsSelectionMode(true);
-    if (!selectedTransactionIds.includes(id)) {
-      setSelectedTransactionIds(prev => [...prev, id]);
+    const transaction = transactions.find(t => t.id === id);
+    if (transaction) {
+      setTransactionToDelete(transaction);
     }
   };
 
@@ -842,15 +842,15 @@ export const Incomes = () => {
                                      </Button>
                                    } />
                                    <DropdownMenuContent align="end" className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
-                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleStatus(t.id); }} className="gap-2">
+                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleStatus(t.id, t.status, e); }} className="gap-2">
                                        {t.status === 'paid' ? <Circle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
                                        Marcar como {t.status === 'paid' ? 'Pendente' : 'Pago'}
                                      </DropdownMenuItem>
-                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleIgnore(t.id); }} className="gap-2">
+                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleIgnore(t.id, e); }} className="gap-2">
                                        <EyeOff className="w-4 h-4" />
                                        {t.ignored ? 'Considerar' : 'Ignorar'}
                                      </DropdownMenuItem>
-                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDelete(t.id); }} className="gap-2 text-red-500 focus:text-red-500">
+                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDelete(t.id, e); }} className="gap-2 text-red-500 focus:text-red-500">
                                        <Trash2 className="w-4 h-4" />
                                        Excluir
                                      </DropdownMenuItem>
@@ -973,7 +973,7 @@ export const Incomes = () => {
               <CardTitle className="text-base">Distribuição por Categoria</CardTitle>
             </CardHeader>
             <CardContent className="md:flex-1 md:min-h-0">
-              <div className="h-[250px] md:h-full w-full min-w-0 min-h-0">
+              <div className="h-[250px] md:h-full w-full min-w-0 min-h-0 relative group">
                   {categoryData.length > 5 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={categoryData} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
@@ -1014,49 +1014,57 @@ export const Incomes = () => {
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={categoryData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={80}
-                          paddingAngle={5}
-                          dataKey="value"
-                        >
-                          {categoryData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip 
-                          trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const data = payload[0].payload;
-                              const value = payload[0].value as number;
-                              const total = categoryData.reduce((acc, cur) => acc + cur.value, 0);
-                              const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
-                              return (
-                                <div style={{ 
-                                  backgroundColor: 'rgba(0, 0, 0, 0.9)', 
-                                  borderRadius: '12px', 
-                                  border: '1px solid #333',
-                                  boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                                  padding: '12px'
-                                }}>
-                                  <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
-                                  <p style={{ color: data.color || (payload[0] as any).color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
-                                    Valor: {formatCurrency(value)} {userSettings.showValues ? `(${percentage}%)` : ''}
-                                  </p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider mb-0.5">Total</span>
+                        <span className="text-base font-bold text-zinc-900 dark:text-white">
+                          {formatCurrency(categoryData.reduce((acc, cur) => acc + cur.value, 0))}
+                        </span>
+                      </div>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={categoryData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={80}
+                            paddingAngle={5}
+                            dataKey="value"
+                          >
+                            {categoryData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload;
+                                const value = payload[0].value as number;
+                                const total = categoryData.reduce((acc, cur) => acc + cur.value, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                                return (
+                                  <div style={{ 
+                                    backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                                    borderRadius: '12px', 
+                                    border: '1px solid #333',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                    padding: '12px'
+                                  }}>
+                                    <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
+                                    <p style={{ color: data.color || (payload[0] as any).color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
+                                      Valor: {formatCurrency(value)} {userSettings.showValues ? `(${percentage}%)` : ''}
+                                    </p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </>
                   )}
               </div>
               <div className="space-y-2 mt-4">
@@ -1097,27 +1105,42 @@ export const Incomes = () => {
       />
 
       <Dialog open={!!transactionToDelete} onOpenChange={() => setTransactionToDelete(null)}>
-        <DialogContent>
+        <DialogContent className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-500" />
+            <DialogTitle className="flex items-center gap-2 text-zinc-900 dark:text-white">
+              <Trash2 className="w-5 h-5 text-red-500" />
               Confirmar exclusão
             </DialogTitle>
-          <DialogDescription>
-            Como você deseja excluir esta receita fixa?
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={() => confirmDelete('single')} className="flex-1">
-            Apenas esta
-          </Button>
-          <Button variant="outline" onClick={() => confirmDelete('future')} className="flex-1">
-            Esta e futuras
-          </Button>
-          <Button variant="destructive" onClick={() => confirmDelete('all')} className="flex-1">
-            Toda a série
-          </Button>
-        </DialogFooter>
+            <DialogDescription className="text-zinc-500 dark:text-zinc-400">
+              {transactionToDelete?.isFixed || transactionToDelete?.groupId ? 
+                'Como você deseja excluir esta receita fixa?' : 
+                'Tem certeza que deseja excluir esta receita?'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            {transactionToDelete?.isFixed || transactionToDelete?.groupId ? (
+              <>
+                <Button variant="outline" onClick={() => confirmDelete('single')} className="flex-1">
+                  Apenas esta
+                </Button>
+                <Button variant="outline" onClick={() => confirmDelete('future')} className="flex-1">
+                  Esta e futuras
+                </Button>
+                <Button variant="destructive" onClick={() => confirmDelete('all')} className="flex-1">
+                  Toda a série
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setTransactionToDelete(null)} className="flex-1">
+                  Cancelar
+                </Button>
+                <Button variant="destructive" onClick={() => confirmDelete('single')} className="flex-1">
+                  Excluir
+                </Button>
+              </>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

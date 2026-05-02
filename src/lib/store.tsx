@@ -4,6 +4,53 @@ import { isSameMonth, isSameYear } from 'date-fns';
 import { db, auth } from './firebase';
 import { collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query, writeBatch, getDoc } from 'firebase/firestore';
 
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || []
+    },
+    operationType,
+    path
+  }
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
 export interface PiggyBankEntry {
   bank: string;
   balance: number;
@@ -314,12 +361,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const bulkUpsertTransactions = async (ts: Transaction[]) => {
+    console.log("DEBUG bulkUpsertTransactions:", ts.length);
     if (!userId || !db || ts.length === 0) return;
-    const batch = writeBatch(db);
-    ts.forEach(t => {
-      batch.set(doc(db, `users/${userId}/transactions`, t.id), t);
-    });
-    await batch.commit();
+    
+    // Firestore allows maximum 500 writes per batch
+    const BATCH_LIMIT = 450;
+    const batches = [];
+    
+    for (let i = 0; i < ts.length; i += BATCH_LIMIT) {
+      const currentBatch = ts.slice(i, i + BATCH_LIMIT);
+      const batchRef = writeBatch(db);
+      
+      currentBatch.forEach(t => {
+        batchRef.set(doc(db, `users/${userId}/transactions`, t.id), t);
+      });
+      
+      batches.push(batchRef.commit());
+    }
+
+    try {
+      await Promise.all(batches);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, `users/${userId}/transactions`);
+    }
   };
 
   const upsertTransaction = async (t: Transaction) => {

@@ -131,6 +131,66 @@ export async function searchSystem(query: string, context: any): Promise<string>
   }
 }
 
+export async function parsePdfTransactions(base64Pdf: string, categories: Category[]): Promise<any[]> {
+  try {
+    const ai = getAI();
+    if (!ai) return [];
+
+    const prompt = `
+      Analise o documento PDF anexado, que é um extrato ou fatura financeira.
+      Extraia todas as transações financeiras e retorne-as em formato JSON array.
+      
+      Regras:
+      1. Extraia a data no formato YYYY-MM-DD.
+      2. Extraia a descrição da transação.
+      3. Extraia o valor como número (se for uma saída/despesa, use valor negativo ou positivo dependendo de como você mapeia, mas no nosso sistema usamos SEMPRE valor ABSOLUTO POSITIVO e o tipo indica se é receita ou despesa. Então retorne ABSOLUTE number). Ou melhor, retorne o valor positivo e indique o "type" ("income" ou "expense"). Pagamentos de faturas, transferências de saída, compras: "expense". Recebimentos, salários: "income".
+      4. Tente mapear para a categoria mais adequada (use o categoryId) com base no nome e tipo da categoria. Se nenhuma se aplicar, deixe null.
+      
+      Categorias disponíveis:
+      ${JSON.stringify(categories.map(c => ({ id: c.id, name: c.name, type: c.type })))}
+
+      Retorne um APENAS um array JSON de objetos:
+      [
+        { "date": "YYYY-MM-DD", "description": "string", "amount": número positivo, "type": "income" ou "expense", "categoryId": "string ou null" }
+      ]
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-pro-preview',
+      contents: [
+        { text: prompt },
+        { inlineData: { data: base64Pdf, mimeType: "application/pdf" } }
+      ],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              date: { type: Type.STRING },
+              description: { type: Type.STRING },
+              amount: { type: Type.NUMBER },
+              type: { type: Type.STRING, enum: ["income", "expense"] },
+              categoryId: { type: Type.STRING }
+            }
+          }
+        }
+      }
+    });
+
+    try {
+      const result = JSON.parse(response.text || "[]");
+      return Array.isArray(result) ? result : [];
+    } catch {
+      return [];
+    }
+  } catch (error) {
+    console.error("Error parsing PDF transactions:", error);
+    return [];
+  }
+}
+
 export async function detectGender(name: string): Promise<'male' | 'female' | 'neutral'> {
   try {
     const ai = getAI();

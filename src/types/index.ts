@@ -12,6 +12,7 @@ export interface Transaction {
   status: TransactionStatus;
   isFixed?: boolean;
   groupId?: string;
+  importId?: string;
   sortOrder?: number;
   tags?: string[];
   ignored?: boolean;

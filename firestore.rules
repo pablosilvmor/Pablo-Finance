@@ -99,6 +99,7 @@ service cloud.firestore {
              (!('accountId' in data) || isValidOptionalString(data.accountId, 1, 100)) &&
              (!('isFixed' in data) || data.isFixed is bool) &&
              (!('groupId' in data) || isValidOptionalString(data.groupId, 1, 100)) &&
+             (!('importId' in data) || isValidOptionalString(data.importId, 1, 100)) &&
              (!('sortOrder' in data) || data.sortOrder is number);
     }
 
