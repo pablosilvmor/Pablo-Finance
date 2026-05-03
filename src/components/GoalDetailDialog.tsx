@@ -91,7 +91,7 @@ export const GoalDetailDialog: React.FC<GoalDetailDialogProps> = ({ goal, open, 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] bg-[#1C1C1E] text-white border-none rounded-3xl p-6">
+      <DialogContent className="w-[95vw] sm:max-w-[900px] bg-[#1C1C1E] text-white border-none rounded-3xl p-6 max-h-[90vh] overflow-y-auto hide-scrollbar">
         <DialogHeader className="flex flex-row justify-between items-center">
           <DialogTitle className="text-2xl font-bold">{goal.name}</DialogTitle>
           <DropdownMenu>

@@ -51,30 +51,32 @@ export const GlobalSearchDialog = ({ open, onOpenChange }: GlobalSearchDialogPro
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden rounded-[2rem] border-none shadow-2xl">
         <div className="bg-white dark:bg-[#1C1C1E]">
-          <form onSubmit={handleSearch} className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-4 pr-14">
-            <Search className="w-6 h-6 text-zinc-400 shrink-0" />
-            <Input 
-              autoFocus
-              placeholder="Busque transações, metas ou tire dúvidas sobre o sistema..." 
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="border-none bg-transparent focus-visible:ring-0 text-xl px-4 h-12 flex-1"
-            />
-            {query && (
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setQuery('')}
-                className="rounded-full h-10 w-10 shrink-0"
-              >
-                <X className="w-5 h-5" />
-              </Button>
-            )}
+          <form onSubmit={handleSearch} className="p-4 sm:p-6 border-b border-zinc-100 dark:border-zinc-800 flex flex-col sm:flex-row items-center gap-3 sm:gap-4 pr-10 sm:pr-14">
+            <div className="flex items-center gap-2 sm:gap-4 w-full">
+              <Search className="w-5 h-5 sm:w-6 sm:h-6 text-zinc-400 shrink-0" />
+              <Input 
+                autoFocus
+                placeholder="Busque transações, metas ou dúvidas..." 
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="border-none bg-transparent focus-visible:ring-0 text-base sm:text-xl px-2 sm:px-4 h-10 sm:h-12 flex-1 min-w-0"
+              />
+              {query && (
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setQuery('')}
+                  className="rounded-full h-8 w-8 sm:h-10 sm:w-10 shrink-0"
+                >
+                  <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                </Button>
+              )}
+            </div>
             <Button 
               type="submit"
               disabled={isLoading || !query.trim()}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-2xl px-8 font-bold h-12 text-lg shrink-0 shadow-lg shadow-purple-500/20 active:scale-95 transition-all"
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-2xl px-6 sm:px-8 font-bold h-10 sm:h-12 text-base sm:text-lg shrink-0 w-full sm:w-auto shadow-lg shadow-purple-500/20 active:scale-95 transition-all"
             >
               {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Buscar'}
             </Button>

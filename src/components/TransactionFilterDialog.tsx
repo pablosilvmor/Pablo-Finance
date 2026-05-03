@@ -159,12 +159,12 @@ export const TransactionFilterDialog = ({
           <TooltipContent>
             <p>Filtrar Transações</p>
           </TooltipContent>
-          <DialogContent className="sm:max-w-[450px] bg-[#2C2C2E] text-white border-zinc-800 p-0 overflow-hidden gap-0">
-        <div className="p-6 pb-2">
+          <DialogContent className="w-[95vw] max-w-md sm:max-w-[450px] bg-[#2C2C2E] text-white border-zinc-800 p-0 overflow-hidden gap-0">
+        <div className="p-4 sm:p-6 pb-2 max-h-[90vh] overflow-y-auto">
           <DialogTitle className="text-xl font-bold text-white mb-4">Filtro de transações</DialogTitle>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="bg-transparent border-b border-zinc-800 rounded-none w-full justify-start p-0 h-auto gap-8 mb-6" variant="line">
+            <TabsList className="bg-transparent border-b border-zinc-800 rounded-none w-full justify-start p-0 h-auto gap-4 sm:gap-8 mb-6 overflow-x-auto hide-scrollbar" variant="line">
               <TabsTrigger 
                 value="new" 
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#50A2FF] data-[state=active]:text-[#50A2FF] bg-transparent pb-2 px-0 font-bold uppercase tracking-wider text-xs transition-none shadow-none"
@@ -181,7 +181,7 @@ export const TransactionFilterDialog = ({
 
             <TabsContent value="new" className="space-y-6 mt-2 pb-6 px-0">
               {/* Date Range */}
-              <div className="grid grid-cols-2 gap-8">
+              <div className="grid grid-cols-2 gap-4 sm:gap-8">
                 <div className="space-y-1">
                   <Label className="text-[10px] uppercase text-zinc-500 font-bold">De</Label>
                   <div className="relative border-b border-zinc-700">
@@ -251,7 +251,7 @@ export const TransactionFilterDialog = ({
                       </div>
                     } 
                   />
-                  <DropdownMenuContent className="bg-[#2C2C2E] border-zinc-800 text-white w-[380px] max-h-60 flex flex-col">
+                  <DropdownMenuContent className="bg-[#2C2C2E] border-zinc-800 text-white w-[90vw] sm:w-[380px] max-w-[calc(100vw-2rem)] max-h-60 flex flex-col">
                     <div className="p-2 border-b border-zinc-800 sticky top-0 bg-[#2C2C2E] z-10">
                       <Input
                         placeholder="Buscar categoria..."
@@ -322,7 +322,7 @@ export const TransactionFilterDialog = ({
                       </div>
                     } 
                   />
-                  <DropdownMenuContent className="bg-[#2C2C2E] border-zinc-800 text-white w-[380px] max-h-60 flex flex-col">
+                  <DropdownMenuContent className="bg-[#2C2C2E] border-zinc-800 text-white w-[90vw] sm:w-[380px] max-w-[calc(100vw-2rem)] max-h-60 flex flex-col">
                     <div className="p-2 border-b border-zinc-800 sticky top-0 bg-[#2C2C2E] z-10">
                       <Input
                         placeholder="Buscar tag..."
@@ -476,11 +476,11 @@ export const TransactionFilterDialog = ({
           </Tabs>
         </div>
 
-        <DialogFooter className="px-6 pt-4 pb-8 bg-transparent border-t border-zinc-800 flex flex-row items-center justify-between gap-2 w-full">
-          <div className="flex items-center gap-2">
+        <DialogFooter className="px-4 sm:px-6 pt-4 pb-6 sm:pb-8 bg-transparent border-t border-zinc-800 flex flex-row items-center justify-between gap-1 sm:gap-2 w-full">
+          <div className="flex items-center gap-1 sm:gap-2">
             <DialogClose 
               render={
-                <Button variant="ghost" className="text-[#50A2FF] hover:text-[#3B82F6] hover:bg-zinc-800/50 uppercase text-[10px] font-bold transition-colors h-auto px-2">
+                <Button variant="ghost" className="text-[#50A2FF] hover:text-[#3B82F6] hover:bg-zinc-800/50 uppercase text-[10px] sm:text-xs font-bold transition-colors h-auto px-1 sm:px-2">
                   CANCELAR
                 </Button>
               }
@@ -488,14 +488,14 @@ export const TransactionFilterDialog = ({
             <Button  
               variant="ghost" 
               onClick={handleClear}
-              className="text-[#50A2FF] hover:text-[#3B82F6] hover:bg-zinc-800/50 uppercase text-[10px] font-bold transition-colors h-auto px-2"
+              className="text-[#50A2FF] hover:text-[#3B82F6] hover:bg-zinc-800/50 uppercase text-[10px] sm:text-xs font-bold transition-colors h-auto px-1 sm:px-2 shrink-0"
             >
               LIMPAR FILTROS
             </Button>
           </div>
           <Button 
             onClick={handleApply}
-            className="bg-[#50A2FF] hover:bg-[#3B82F6] text-white uppercase text-xs font-bold rounded-full px-8 py-2.5 h-auto transition-colors focus:ring-2 focus:ring-[#50A2FF] focus:ring-offset-2 focus:ring-offset-[#2C2C2E]"
+            className="bg-[#50A2FF] hover:bg-[#3B82F6] text-white uppercase text-[10px] sm:text-xs font-bold rounded-full px-4 sm:px-8 py-2 md:py-2.5 h-auto transition-colors focus:ring-2 focus:ring-[#50A2FF] focus:ring-offset-2 focus:ring-offset-[#2C2C2E] shrink-0"
           >
             APLICAR FILTROS
           </Button>
