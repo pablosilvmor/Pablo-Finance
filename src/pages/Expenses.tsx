@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { NewTransactionDialog } from '@/components/NewTransactionDialog';
 import { MonthPicker } from '@/components/MonthPicker';
 import { CategoryBadge } from '@/components/CategoryBadge';
+import { AnimatedNumber } from '@/components/AnimatedNumber';
 import { iconMap } from '@/lib/icons';
 import {
   DropdownMenu,
@@ -286,8 +287,8 @@ export const Expenses = () => {
     isSameMonth(parseISO(t.date), currentDate)
   );
 
-  const totalIncome = monthlyIncomes.filter(t => !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
-  const totalExpense = monthlyExpenses.filter(t => !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
+  const totalIncome = monthlyIncomes.filter(t => t.status === 'paid' && !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
+  const totalExpense = monthlyExpenses.filter(t => t.status === 'paid' && !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
   const totalPaid = monthlyExpenses.filter(t => t.status === 'paid' && !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
   const totalPending = monthlyExpenses.filter(t => t.status === 'pending' && !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
   
@@ -347,7 +348,7 @@ export const Expenses = () => {
     
     sortedDates.forEach(date => {
        results[date] = filteredExpenses
-         .filter(t => t.date === date && !t.ignored)
+         .filter(t => t.date === date && !t.ignored && t.status === 'paid')
          .reduce((s, c) => s + c.amount, 0);
     });
     return results;
@@ -779,7 +780,7 @@ export const Expenses = () => {
                   <div>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">Receitas ({monthlyIncomes.filter(t => !t.ignored).length})</p>
                     <p className="font-bold text-zinc-900 dark:text-white">
-                      {formatCurrency(totalIncome)}
+                      <AnimatedNumber value={totalIncome} formatter={formatCurrency} />
                     </p>
                   </div>
                 </CardContent>
@@ -792,7 +793,7 @@ export const Expenses = () => {
                   <div>
                     <p className="text-sm text-[#ee5350]">Despesas ({monthlyExpenses.filter(t => !t.ignored).length})</p>
                     <p className="font-bold text-[#ee5350]">
-                      {formatCurrency(totalExpense)}
+                      <AnimatedNumber value={totalExpense} formatter={formatCurrency} />
                     </p>
                   </div>
                 </CardContent>
@@ -805,7 +806,7 @@ export const Expenses = () => {
                   <div>
                     <p className="text-sm text-[#01bfa5]">Pago ({monthlyExpenses.filter(t => t.status === 'paid' && !t.ignored).length})</p>
                     <p className="font-bold text-[#01bfa5]">
-                      {formatCurrency(totalPaid)}
+                      <AnimatedNumber value={totalPaid} formatter={formatCurrency} />
                     </p>
                   </div>
                 </CardContent>
@@ -818,7 +819,7 @@ export const Expenses = () => {
                   <div>
                     <p className="text-sm text-orange-600 dark:text-orange-400">Pendente ({monthlyExpenses.filter(t => t.status === 'pending' && !t.ignored).length})</p>
                     <p className="font-bold text-orange-600 dark:text-orange-400">
-                      {formatCurrency(totalPending)}
+                      <AnimatedNumber value={totalPending} formatter={formatCurrency} />
                     </p>
                   </div>
                 </CardContent>
@@ -831,7 +832,7 @@ export const Expenses = () => {
                     <div>
                         <p className="text-sm text-[#F456F4]">Saldo do mês</p>
                         <p className="font-bold text-[#F456F4]">
-                        {formatCurrency(monthlyBalance)}
+                        <AnimatedNumber value={monthlyBalance} formatter={formatCurrency} />
                         </p>
                     </div>
                 </CardContent>
@@ -860,7 +861,7 @@ export const Expenses = () => {
                                 {format(parseISO(t.date), "EEEE, dd", { locale: ptBR }).split('-')[0].charAt(0).toUpperCase() + format(parseISO(t.date), "EEEE, dd", { locale: ptBR }).split('-')[0].slice(1)}
                               </span>
                               <span className="text-sm font-medium text-zinc-500">
-                                {formatCurrency(dailyTotals[t.date] || 0)}
+                                <AnimatedNumber value={dailyTotals[t.date] || 0} formatter={formatCurrency} />
                               </span>
                             </h3>
                           )}
@@ -998,7 +999,7 @@ export const Expenses = () => {
                                         <div className="inline-flex items-center justify-center bg-[#3A3A3C] text-zinc-300 px-6 py-2 rounded-full text-xs font-medium">
                                           Neste dia você gastou
                                           <span className="text-[#ee5350] ml-2">
-                                            {formatCurrency(dailyTotals[t.date])}
+                                            <AnimatedNumber value={dailyTotals[t.date]} formatter={formatCurrency} />
                                           </span>
                                         </div>
                                       </td>

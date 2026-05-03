@@ -141,7 +141,7 @@ export async function parsePdfTransactions(base64Pdf: string, categories: Catego
       Extraia todas as transações financeiras e retorne-as em formato JSON array.
       
       Regras:
-      1. Extraia a data no formato YYYY-MM-DD.
+      1. Extraia a data no formato YYYY-MM-DD. Muios extratos mostram apenas DD/MM. Você OBRIGATORIAMENTE deve encontrar o ano correspondente na fatura (como data de vencimento, ou período da fatura) para preencher corretamente o YYYY. Caso não ache o ano no contexto, assuma o ano atual. (nunca coloque anos antigos como 2014, 2016 se não estiver no documento).
       2. Extraia a descrição da transação.
       3. Extraia o valor como número (se for uma saída/despesa, use valor negativo ou positivo dependendo de como você mapeia, mas no nosso sistema usamos SEMPRE valor ABSOLUTO POSITIVO e o tipo indica se é receita ou despesa. Então retorne ABSOLUTE number). Ou melhor, retorne o valor positivo e indique o "type" ("income" ou "expense"). Pagamentos de faturas, transferências de saída, compras: "expense". Recebimentos, salários: "income".
       4. Tente mapear para a categoria mais adequada (use o categoryId) com base no nome e tipo da categoria. Se nenhuma se aplicar, deixe null.

@@ -133,7 +133,7 @@ export const Header = () => {
             placeholder="Explorar..."
             onClick={() => setIsSearchOpen(true)}
             readOnly
-            className="w-full h-9 pl-9 pr-4 rounded-full bg-secondary border-none text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+            className="w-full h-9 pl-9 pr-4 rounded-full bg-secondary border border-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer transition-all duration-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:scale-[1.02]"
           />
         </div>
       </div>
@@ -146,7 +146,7 @@ export const Header = () => {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="rounded-full"
+          className="rounded-full transition-all duration-300 hover:scale-[1.1] hover:bg-zinc-100 dark:hover:bg-zinc-800"
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
         >
@@ -156,7 +156,7 @@ export const Header = () => {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="rounded-full text-purple-600 dark:text-purple-400"
+          className="rounded-full text-purple-600 dark:text-purple-400 transition-all duration-300 hover:scale-[1.1] hover:bg-zinc-100 dark:hover:bg-zinc-800"
           onClick={() => setIsTipsOpen(true)}
           title="Ideias e Dicas (IA)"
         >
@@ -166,7 +166,7 @@ export const Header = () => {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="rounded-full text-zinc-600 dark:text-zinc-400"
+          className="rounded-full text-zinc-600 dark:text-zinc-400 transition-all duration-300 hover:scale-[1.1] hover:bg-zinc-100 dark:hover:bg-zinc-800"
           onClick={handleToggleValues}
           title={userSettings.showValues ? 'Ocultar Valores' : 'Mostrar Valores'}
         >
@@ -174,7 +174,7 @@ export const Header = () => {
         </Button>
 
         <DropdownMenu>
-          <DropdownMenuTrigger className="rounded-full relative h-8 w-8 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" title="Notificações">
+          <DropdownMenuTrigger className="rounded-full relative h-8 w-8 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-300 hover:scale-[1.1]" title="Notificações">
             <Bell className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
             {notifications.length > 0 && (
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-zinc-950 animate-pulse" />
@@ -207,7 +207,7 @@ export const Header = () => {
         </DropdownMenu>
 
         <DropdownMenu>
-          <DropdownMenuTrigger className="relative h-9 w-9 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-800 hover:opacity-80 transition-opacity" title="Perfil do Usuário">
+          <DropdownMenuTrigger className="relative h-9 w-9 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-800 hover:opacity-80 transition-all duration-300 hover:scale-[1.1]" title="Perfil do Usuário">
             <Avatar className="h-full w-full">
               <AvatarImage src={user?.photoURL || "https://github.com/shadcn.png"} alt="@user" />
               <AvatarFallback>{user?.displayName?.charAt(0) || 'U'}</AvatarFallback>

@@ -21,6 +21,7 @@ import { TransactionMenuOverlay } from '@/components/TransactionMenuOverlay';
 import { ImportDataDialog } from '@/components/ImportDataDialog';
 import { useTranslation } from '@/lib/i18n';
 import { CategoryBadge } from '@/components/CategoryBadge';
+import { AnimatedNumber } from '@/components/AnimatedNumber';
 import { iconMap } from '@/lib/icons';
 import { cn } from '@/lib/utils';
 
@@ -186,8 +187,8 @@ export const Transactions = () => {
   });
 }, [transactions, filters, searchTerm, sortBy, sortOrder, categories]);
 
-  const totalIncome = filteredTransactions.filter(t => t.type === 'income' && !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
-  const totalExpense = filteredTransactions.filter(t => t.type === 'expense' && !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
+  const totalIncome = filteredTransactions.filter(t => t.type === 'income' && t.status === 'paid' && !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
+  const totalExpense = filteredTransactions.filter(t => t.type === 'expense' && t.status === 'paid' && !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
   const balance = totalIncome - totalExpense;
 
   const expensesData = useMemo(() => {
@@ -545,7 +546,7 @@ export const Transactions = () => {
     const sortedDates = [...new Set(filteredTransactions.map(t => t.date))].sort((a,b) => b.localeCompare(a));
     
     sortedDates.forEach(date => {
-       const upToDate = transactions.filter(t => !t.ignored && t.date <= date);
+       const upToDate = transactions.filter(t => !t.ignored && t.status === 'paid' && t.date <= date);
        const income = upToDate.filter(t => t.type === 'income').reduce((s, c) => s + c.amount, 0);
        const expense = upToDate.filter(t => t.type === 'expense').reduce((s, c) => s + c.amount, 0);
        results[date] = income - expense;
@@ -739,7 +740,7 @@ export const Transactions = () => {
               <div>
                 <p className="text-sm text-[#9F9FA9]">{t('monthBalance')}</p>
                 <p className="font-bold text-[#50A2FF]">
-                  {formatCurrency(balance)}
+                  <AnimatedNumber value={balance} formatter={formatCurrency} />
                 </p>
               </div>
             </div>
@@ -757,7 +758,7 @@ export const Transactions = () => {
               <div>
                 <p className="text-sm text-zinc-400">{t('incomes')}</p>
                 <p className="font-bold text-[#01bfa5]">
-                  {formatCurrency(totalIncome)}
+                  <AnimatedNumber value={totalIncome} formatter={formatCurrency} />
                 </p>
               </div>
             </div>
@@ -775,7 +776,7 @@ export const Transactions = () => {
               <div>
                 <p className="text-sm text-zinc-400">{t('expenses')}</p>
                 <p className="font-bold text-[#ee5350]">
-                  {formatCurrency(totalExpense)}
+                  <AnimatedNumber value={totalExpense} formatter={formatCurrency} />
                 </p>
               </div>
             </div>
@@ -793,7 +794,7 @@ export const Transactions = () => {
               <div>
                 <p className="text-sm text-zinc-400">{t('monthlyBalance')}</p>
                 <p className="font-bold text-purple-400">
-                  {formatCurrency(balance)}
+                  <AnimatedNumber value={balance} formatter={formatCurrency} />
                 </p>
               </div>
             </div>
@@ -819,7 +820,7 @@ export const Transactions = () => {
                       {format(parseISO(t.date), "EEEE, dd", { locale: ptBR }).split('-')[0].charAt(0).toUpperCase() + format(parseISO(t.date), "EEEE, dd", { locale: ptBR }).split('-')[0].slice(1)}
                     </span>
                     <span className="text-sm font-medium text-zinc-500">
-                      {formatCurrency(dailyBalances[t.date] || 0)}
+                      <AnimatedNumber value={dailyBalances[t.date] || 0} formatter={formatCurrency} />
                     </span>
                   </h3>
                 )}
@@ -1082,7 +1083,7 @@ export const Transactions = () => {
                           <div className="inline-flex items-center justify-center bg-[#3A3A3C] text-zinc-300 px-6 py-2 rounded-full text-xs font-medium">
                             Saldo do Final do Dia
                             <span className="text-[#50A2FF] ml-2">
-                              {formatCurrency(dailyBalances[t.date])}
+                              <AnimatedNumber value={dailyBalances[t.date]} formatter={formatCurrency} />
                             </span>
                           </div>
                         </td>

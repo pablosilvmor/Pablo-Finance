@@ -29,6 +29,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface TransactionFilterDialogProps {
   onApply: (filters: FilterConfig) => void;
@@ -139,19 +140,26 @@ export const TransactionFilterDialog = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger 
-        render={
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="rounded-full bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
-          >
-            <Filter className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-          </Button>
-        }
-      />
-      <DialogContent className="sm:max-w-[450px] bg-[#2C2C2E] text-white border-zinc-800 p-0 overflow-hidden gap-0">
+    <TooltipProvider>
+      <Tooltip>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <TooltipTrigger render={
+            <DialogTrigger 
+              render={
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="rounded-full bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+                >
+                  <Filter className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                </Button>
+              }
+            />
+          } />
+          <TooltipContent>
+            <p>Filtrar Transações</p>
+          </TooltipContent>
+          <DialogContent className="sm:max-w-[450px] bg-[#2C2C2E] text-white border-zinc-800 p-0 overflow-hidden gap-0">
         <div className="p-6 pb-2">
           <DialogTitle className="text-xl font-bold text-white mb-4">Filtro de transações</DialogTitle>
           
@@ -159,13 +167,13 @@ export const TransactionFilterDialog = ({
             <TabsList className="bg-transparent border-b border-zinc-800 rounded-none w-full justify-start p-0 h-auto gap-8 mb-6" variant="line">
               <TabsTrigger 
                 value="new" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F95F5F] data-[state=active]:text-[#F95F5F] bg-transparent pb-2 px-0 font-bold uppercase tracking-wider text-xs transition-none shadow-none"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#50A2FF] data-[state=active]:text-[#50A2FF] bg-transparent pb-2 px-0 font-bold uppercase tracking-wider text-xs transition-none shadow-none"
               >
                 Novo Filtro
               </TabsTrigger>
               <TabsTrigger 
                 value="saved" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F95F5F] data-[state=active]:text-[#F95F5F] bg-transparent pb-2 px-0 font-bold uppercase tracking-wider text-xs transition-none shadow-none"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#50A2FF] data-[state=active]:text-[#50A2FF] bg-transparent pb-2 px-0 font-bold uppercase tracking-wider text-xs transition-none shadow-none"
               >
                 Filtros Salvos
               </TabsTrigger>
@@ -215,6 +223,7 @@ export const TransactionFilterDialog = ({
                 <Label className="text-[10px] uppercase text-zinc-500 font-bold">Categorias</Label>
                 <DropdownMenu>
                   <DropdownMenuTrigger 
+                    {...({ nativeButton: false } as any)}
                     render={
                       <div className="flex flex-wrap items-center gap-2 border-b border-zinc-700 min-h-10 pb-2 cursor-pointer">
                         {localFilters.categories.length === 0 ? (
@@ -286,6 +295,7 @@ export const TransactionFilterDialog = ({
                 <Label className="text-[10px] uppercase text-zinc-500 font-bold">Tags</Label>
                 <DropdownMenu>
                   <DropdownMenuTrigger 
+                    {...({ nativeButton: false } as any)}
                     render={
                       <div className="flex items-center justify-between border-b border-zinc-700 h-10 cursor-pointer">
                         <div className="flex flex-wrap gap-2 py-1">
@@ -350,14 +360,14 @@ export const TransactionFilterDialog = ({
 
               {/* Situações */}
               <div className="space-y-2">
-                <Label className="text-[10px] uppercase text-[#F95F5F] font-bold">Situações</Label>
+                <Label className="text-[10px] uppercase text-[#50A2FF] font-bold">Situações</Label>
                 <div className="flex items-center justify-between border-b border-zinc-700 h-10">
                   <div className="flex gap-2">
                     {localFilters.statuses.length === 0 ? (
                       <span className="text-zinc-400 text-sm">Todas as situações</span>
                     ) : (
                       localFilters.statuses.map(status => (
-                        <div key={status} className="bg-zinc-800 rounded-full px-3 py-1 text-xs border border-[#F95F5F] flex items-center gap-1">
+                        <div key={status} className="bg-zinc-800 rounded-full px-3 py-1 text-xs border border-[#50A2FF] flex items-center gap-1">
                           <span>{status === 'paid' ? 'Efetuada' : 'Pendente'}</span>
                           <button onClick={() => toggleStatus(status)}>
                             <X className="w-3 h-3 text-zinc-400" />
@@ -373,7 +383,7 @@ export const TransactionFilterDialog = ({
                       </button>
                     )}
                     <DropdownMenu>
-                      <DropdownMenuTrigger render={<ChevronDown className="w-4 h-4 text-zinc-600 cursor-pointer" />} />
+                      <DropdownMenuTrigger {...({ nativeButton: false } as any)} render={<ChevronDown className="w-4 h-4 text-zinc-600 cursor-pointer" />} />
                       <DropdownMenuContent className="bg-[#2C2C2E] border-zinc-800 text-white">
                         <DropdownMenuCheckboxItem 
                           checked={localFilters.statuses.includes('paid')} 
@@ -402,7 +412,7 @@ export const TransactionFilterDialog = ({
                   <Switch 
                     checked={saveFilter} 
                     onCheckedChange={setSaveFilter}
-                    className="data-[state=checked]:bg-[#F95F5F]" 
+                    className="data-[state=checked]:bg-[#50A2FF]" 
                   />
                 </div>
                 {saveFilter && (
@@ -470,7 +480,7 @@ export const TransactionFilterDialog = ({
           <div className="flex items-center gap-2">
             <DialogClose 
               render={
-                <Button variant="ghost" className="text-[#F95F5F] hover:text-[#E54D4D] hover:bg-zinc-800/50 uppercase text-[10px] font-bold transition-colors h-auto px-2">
+                <Button variant="ghost" className="text-[#50A2FF] hover:text-[#3B82F6] hover:bg-zinc-800/50 uppercase text-[10px] font-bold transition-colors h-auto px-2">
                   CANCELAR
                 </Button>
               }
@@ -478,19 +488,21 @@ export const TransactionFilterDialog = ({
             <Button  
               variant="ghost" 
               onClick={handleClear}
-              className="text-[#F95F5F] hover:text-[#E54D4D] hover:bg-zinc-800/50 uppercase text-[10px] font-bold transition-colors h-auto px-2"
+              className="text-[#50A2FF] hover:text-[#3B82F6] hover:bg-zinc-800/50 uppercase text-[10px] font-bold transition-colors h-auto px-2"
             >
               LIMPAR FILTROS
             </Button>
           </div>
           <Button 
             onClick={handleApply}
-            className="bg-[#F95F5F] hover:bg-[#E54D4D] text-white uppercase text-xs font-bold rounded-full px-8 py-2.5 h-auto transition-colors focus:ring-2 focus:ring-[#F95F5F] focus:ring-offset-2 focus:ring-offset-[#2C2C2E]"
+            className="bg-[#50A2FF] hover:bg-[#3B82F6] text-white uppercase text-xs font-bold rounded-full px-8 py-2.5 h-auto transition-colors focus:ring-2 focus:ring-[#50A2FF] focus:ring-offset-2 focus:ring-offset-[#2C2C2E]"
           >
             APLICAR FILTROS
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </Tooltip>
+  </TooltipProvider>
   );
 };

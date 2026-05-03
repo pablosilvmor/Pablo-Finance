@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { NewTransactionDialog } from '@/components/NewTransactionDialog';
 import { MonthPicker } from '@/components/MonthPicker';
 import { CategoryBadge } from '@/components/CategoryBadge';
+import { AnimatedNumber } from '@/components/AnimatedNumber';
 import { iconMap } from '@/lib/icons';
 import { 
   DropdownMenu,
@@ -281,7 +282,7 @@ export const Incomes = () => {
     isSameMonth(parseISO(t.date), currentDate)
   );
 
-  const totalIncome = monthlyIncomes.filter(t => !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
+  const totalIncome = monthlyIncomes.filter(t => t.status === 'paid' && !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
   const totalReceived = monthlyIncomes.filter(t => t.status === 'paid' && !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
   const totalPending = monthlyIncomes.filter(t => t.status === 'pending' && !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
 
@@ -339,7 +340,7 @@ export const Incomes = () => {
     
     sortedDates.forEach(date => {
        results[date] = filteredIncomes
-         .filter(t => t.date === date && !t.ignored)
+         .filter(t => t.date === date && !t.ignored && t.status === 'paid')
          .reduce((s, c) => s + c.amount, 0);
     });
     return results;
@@ -762,9 +763,9 @@ export const Incomes = () => {
                     <TrendingUp className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">Total do mês ({monthlyIncomes.length})</p>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">Total do mês ({monthlyIncomes.filter(t => t.status === 'paid').length})</p>
                     <p className="font-bold text-zinc-900 dark:text-white">
-                      {formatCurrency(totalIncome)}
+                      <AnimatedNumber value={totalIncome} formatter={formatCurrency} />
                     </p>
                   </div>
                 </CardContent>
@@ -777,7 +778,7 @@ export const Incomes = () => {
                   <div>
                     <p className="text-sm text-[#01bfa5]">Recebido ({monthlyIncomes.filter(t => t.status === 'paid').length})</p>
                     <p className="font-bold text-[#01bfa5]">
-                      {formatCurrency(totalReceived)}
+                      <AnimatedNumber value={totalReceived} formatter={formatCurrency} />
                     </p>
                   </div>
                 </CardContent>
@@ -790,7 +791,7 @@ export const Incomes = () => {
                   <div>
                     <p className="text-sm text-orange-600 dark:text-orange-400">Pendente ({monthlyIncomes.filter(t => t.status === 'pending').length})</p>
                     <p className="font-bold text-orange-600 dark:text-orange-400">
-                      {formatCurrency(totalPending)}
+                      <AnimatedNumber value={totalPending} formatter={formatCurrency} />
                     </p>
                   </div>
                 </CardContent>
@@ -819,7 +820,7 @@ export const Incomes = () => {
                                 {format(parseISO(t.date), "EEEE, dd", { locale: ptBR }).split('-')[0].charAt(0).toUpperCase() + format(parseISO(t.date), "EEEE, dd", { locale: ptBR }).split('-')[0].slice(1)}
                               </span>
                               <span className="text-sm font-medium text-zinc-500">
-                                {formatCurrency(dailyTotals[t.date] || 0)}
+                                <AnimatedNumber value={dailyTotals[t.date] || 0} formatter={formatCurrency} />
                               </span>
                             </h3>
                           )}
@@ -947,7 +948,7 @@ export const Incomes = () => {
                                       <div className="inline-flex items-center justify-center bg-[#3A3A3C] text-zinc-300 px-6 py-2 rounded-full text-xs font-medium">
                                         Neste dia você recebeu
                                         <span className="text-[#01bfa5] ml-2">
-                                          {formatCurrency(dailyTotals[t.date])}
+                                          <AnimatedNumber value={dailyTotals[t.date]} formatter={formatCurrency} />
                                         </span>
                                       </div>
                                     </td>

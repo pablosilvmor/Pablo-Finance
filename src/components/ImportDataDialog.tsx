@@ -76,21 +76,42 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
             if (!isNaN(d.getTime())) {
               parsedDate = d;
             } else {
-               // Fallback: DD/MM/YYYY
-               const parts = t.date.split('/');
-               if (parts.length === 3) {
-                 d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T12:00:00Z`);
+               // Split por barra ou traço
+               const separator = t.date.includes('/') ? '/' : (t.date.includes('-') ? '-' : null);
+               if (separator) {
+                 const parts = t.date.split(separator);
+                 if (parts.length === 3) {
+                   let year = parts[2];
+                   if (year.length === 2) {
+                     year = '20' + year;
+                   }
+                   // Se a primeira parte tiver 4 dígitos, é YYYY-MM-DD
+                   if (parts[0].length === 4) {
+                     d = new Date(`${parts[0]}-${parts[1]}-${parts[2]}T12:00:00Z`);
+                   } else {
+                     d = new Date(`${year}-${parts[1]}-${parts[0]}T12:00:00Z`);
+                   }
+                 } else if (parts.length === 2) {
+                   // DD/MM assume o ano atual
+                   const currentYear = new Date().getFullYear();
+                   d = new Date(`${currentYear}-${parts[1]}-${parts[0]}T12:00:00Z`);
+                 }
+                 
                  if (!isNaN(d.getTime())) {
                    parsedDate = d;
                  }
                }
                
-               if (isNaN(d.getTime())) {
+               if (isNaN(parsedDate.getTime()) || parsedDate.getFullYear() < 2000 || parsedDate.getFullYear() > 2100) {
                  d = new Date(t.date);
                  if (!isNaN(d.getTime())) {
+                   if (d.getFullYear() < 2000 || d.getFullYear() > 2100) {
+                     d.setFullYear(new Date().getFullYear());
+                   }
                    parsedDate = d;
                  } else {
                    console.error("Data inválida recebida:", t.date);
+                   parsedDate = new Date(); // fallback safe
                  }
                }
             }

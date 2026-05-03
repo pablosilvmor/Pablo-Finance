@@ -1214,9 +1214,9 @@ export const Calculators = () => {
       )}
 
       <Dialog open={!!selectedCalc} onOpenChange={(open) => !open && handleClose()}>
-        <DialogContent className="sm:max-w-[425px] rounded-[2rem]">
+        <DialogContent className="sm:max-w-[425px] rounded-[2rem] bg-[#2C2C2E] text-white border-none">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-white">
               {calculators.find(c => c.id === selectedCalc)?.name}
             </DialogTitle>
             <DialogDescription>

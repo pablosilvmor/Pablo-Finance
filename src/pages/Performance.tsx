@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts';
 import { useAppStore } from '@/lib/store';
-import { format, parseISO, startOfYear, endOfYear, eachMonthOfInterval, isSameMonth, isSameYear, subMonths } from 'date-fns';
+import { format, parseISO, startOfYear, endOfYear, eachMonthOfInterval, isSameMonth, isSameYear, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MonthPicker } from '@/components/MonthPicker';
 import { useNavigate } from 'react-router';
@@ -84,15 +84,24 @@ export const Performance = () => {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Meu Desempenho</h1>
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 cursor-pointer text-foreground" onClick={() => setIsMonthPickerOpen(true)}>
-            <span className="text-lg font-bold capitalize">{format(selectedDate, 'MMMM yyyy', { locale: ptBR })}</span>
-            <ChevronDown className="w-4 h-4" />
+                  <div className="flex items-center gap-1 border border-primary rounded-full px-2 py-1 text-white">
+          <button onClick={() => setSelectedDate(subMonths(selectedDate, 1))} className="p-1 hover:bg-primary/20 rounded-full">
+            <ChevronLeft className="w-5 h-5 text-primary" />
+          </button>
+          
+          <div className="cursor-pointer text-md font-bold capitalize px-2" onClick={() => setIsMonthPickerOpen(true)}>
+            {format(selectedDate, 'MMMM yyyy', { locale: ptBR })}
           </div>
+          
+          <button onClick={() => setSelectedDate(addMonths(selectedDate, 1))} className="p-1 hover:bg-primary/20 rounded-full">
+            <ChevronRight className="w-5 h-5 text-primary" />
+          </button>
+        </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="rounded-3xl border-none shadow-sm bg-card">
+        <Card className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm bg-card cursor-pointer hover:bg-secondary transition-all" onClick={() => navigate('/incomes')}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="w-10 h-10 rounded-full bg-[#01bfa5]/10 dark:bg-[#01bfa5]/20 flex items-center justify-center text-[#01bfa5]">
@@ -100,13 +109,13 @@ export const Performance = () => {
               </div>
             </div>
             <p className="text-sm text-muted-foreground">Receitas do Mês</p>
-            <h3 className="text-2xl font-bold text-foreground">
+            <h3 className="text-2xl font-bold text-[#01bfa5]">
               {formatCurrency(stats.totalIncome)}
             </h3>
           </CardContent>
         </Card>
 
-        <Card className="rounded-3xl border-none shadow-sm bg-card">
+        <Card className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm bg-card cursor-pointer hover:bg-secondary transition-all" onClick={() => navigate('/expenses')}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="w-10 h-10 rounded-full bg-[#ee5350]/10 dark:bg-[#ee5350]/20 flex items-center justify-center text-[#ee5350]">
@@ -114,13 +123,13 @@ export const Performance = () => {
               </div>
             </div>
             <p className="text-sm text-muted-foreground">Despesas do Mês</p>
-            <h3 className="text-2xl font-bold text-foreground">
+            <h3 className="text-2xl font-bold text-[#ee5350]">
               {formatCurrency(stats.totalExpense)}
             </h3>
           </CardContent>
         </Card>
 
-        <Card className="rounded-3xl border-none shadow-sm bg-card">
+        <Card className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm bg-card cursor-pointer hover:bg-secondary transition-all" onClick={() => navigate('/reports')}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
@@ -128,7 +137,7 @@ export const Performance = () => {
               </div>
             </div>
             <p className="text-sm text-muted-foreground">Balanço do Mês</p>
-            <h3 className="text-2xl font-bold text-foreground">
+            <h3 className="text-2xl font-bold text-[#50A2FF]">
               {formatCurrency(stats.totalSavings)}
             </h3>
           </CardContent>

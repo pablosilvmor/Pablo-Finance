@@ -81,7 +81,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
       <Link
         to={item.path}
         className={cn(
-          "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all relative group",
+          "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-300 hover:scale-[1.02] relative group",
           isActive 
             ? "text-purple-600 dark:text-[#c27aff] font-medium" 
             : "text-zinc-500 hover:text-purple-600 dark:text-zinc-400 dark:hover:bg-[#3d3d3e]",
@@ -166,7 +166,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="rounded-full h-8 w-8 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                className="rounded-full h-8 w-8 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-300 hover:scale-[1.1]"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
               >
@@ -176,7 +176,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="rounded-full h-8 w-8 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-purple-600 dark:text-purple-400"
+                className="rounded-full h-8 w-8 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-300 hover:scale-[1.1] text-purple-600 dark:text-purple-400"
                 onClick={() => {
                   setIsTipsOpen(true);
                 }}
@@ -188,7 +188,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="rounded-full h-8 w-8 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-600 dark:text-zinc-400"
+                className="rounded-full h-8 w-8 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-300 hover:scale-[1.1] text-zinc-600 dark:text-zinc-400"
                 onClick={() => {
                   if (userSettings.showValues) {
                     updateUserSettings({ showValues: false });
@@ -202,7 +202,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
               </Button>
 
               <DropdownMenu>
-                <DropdownMenuTrigger className="rounded-full relative h-8 w-8 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" title="Notificações">
+                <DropdownMenuTrigger className="rounded-full relative h-8 w-8 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-300 hover:scale-[1.1]" title="Notificações">
                   <Bell className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
                   {pendingAlerts > 0 && (
                     <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
@@ -252,7 +252,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
             >
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
               <div 
-                className="w-full h-9 pl-9 pr-4 rounded-full bg-zinc-100 dark:bg-zinc-800/50 border-none text-sm flex items-center text-zinc-500 dark:text-zinc-400 select-none hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+                className="w-full h-9 pl-9 pr-4 rounded-full bg-zinc-100 dark:bg-zinc-800/50 border-none text-sm flex items-center text-zinc-500 dark:text-zinc-400 select-none hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all duration-300 hover:scale-[1.02]"
               >
                 Explorar...
               </div>
