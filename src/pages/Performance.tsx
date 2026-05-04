@@ -1,14 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { BarChart3, TrendingUp, TrendingDown, Calendar, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
+import { motion, animate } from 'motion/react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts';
 import { useAppStore } from '@/lib/store';
 import { format, parseISO, startOfYear, endOfYear, eachMonthOfInterval, isSameMonth, isSameYear, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MonthPicker } from '@/components/MonthPicker';
 import { useNavigate } from 'react-router';
+import { AnimatedNumber } from '@/components/AnimatedNumber';
 
 export const Performance = () => {
   const navigate = useNavigate();
@@ -24,6 +25,28 @@ export const Performance = () => {
       currency: userSettings.currency 
     }).format(value);
   };
+
+  const AnimatedValue = ({ value }: { value: number }) => {
+  const { userSettings } = useAppStore();
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    if (!userSettings.showValues) {
+      setDisplayValue(value);
+      return;
+    }
+    
+    // Animate from displayValue to value
+    const controls = animate(displayValue, value, {
+      duration: 1.2,
+      ease: [0.16, 1, 0.3, 1], // Custom ease out for a "natural" count feel
+      onUpdate: (latest) => setDisplayValue(latest)
+    });
+    return () => controls.stop();
+  }, [value, userSettings.showValues]);
+
+  return <span>{formatCurrency(displayValue)}</span>;
+};
 
   const performanceData = useMemo(() => {
     if (viewMode === 'monthly') {
@@ -110,7 +133,7 @@ export const Performance = () => {
             </div>
             <p className="text-sm text-muted-foreground">Receitas do Mês</p>
             <h3 className="text-2xl font-bold text-[#01bfa5]">
-              {formatCurrency(stats.totalIncome)}
+              <AnimatedValue value={stats.totalIncome} />
             </h3>
           </CardContent>
         </Card>
@@ -124,7 +147,7 @@ export const Performance = () => {
             </div>
             <p className="text-sm text-muted-foreground">Despesas do Mês</p>
             <h3 className="text-2xl font-bold text-[#ee5350]">
-              {formatCurrency(stats.totalExpense)}
+              <AnimatedValue value={stats.totalExpense} />
             </h3>
           </CardContent>
         </Card>
@@ -138,7 +161,7 @@ export const Performance = () => {
             </div>
             <p className="text-sm text-muted-foreground">Balanço do Mês</p>
             <h3 className="text-2xl font-bold text-[#50A2FF]">
-              {formatCurrency(stats.totalSavings)}
+              <AnimatedValue value={stats.totalSavings} />
             </h3>
           </CardContent>
         </Card>
@@ -249,7 +272,9 @@ export const Performance = () => {
                   <div key={categoryId} className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="font-medium text-muted-foreground">{category}</span>
-                      <span className="font-bold text-foreground">{formatCurrency(amount)}</span>
+                      <span className="font-bold text-foreground">
+                        <AnimatedNumber value={amount} formatter={formatCurrency} />
+                      </span>
                     </div>
                     <div className="h-2 bg-secondary rounded-full overflow-hidden">
                       <div className="h-full rounded-full bg-primary" style={{ width: `${percentage}%` }} />
@@ -271,7 +296,7 @@ export const Performance = () => {
                 <Calendar className="w-8 h-8" />
               </div>
               <h4 className="text-xl font-bold text-foreground mb-2">
-                {formatCurrency(useMemo(() => {
+                <AnimatedNumber value={useMemo(() => {
                   const today = new Date();
                   const last3Months = Array.from({ length: 3 }).map((_, i) => subMonths(today, i + 1));
                   
@@ -284,7 +309,7 @@ export const Performance = () => {
 
                   const avgSavings = savingsHistory.reduce((acc, s) => acc + s, 0) / savingsHistory.length;
                   return isNaN(avgSavings) ? 0 : avgSavings;
-                }, [transactions]))}
+                }, [transactions])} formatter={formatCurrency} />
               </h4>
               <p className="text-sm text-muted-foreground max-w-[250px]">
                 Baseado na média de economia dos seus últimos 3 meses.

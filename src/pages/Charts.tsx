@@ -7,6 +7,7 @@ import { ptBR } from 'date-fns/locale';
 import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, ComposedChart, Line } from 'recharts';
 import { MonthPicker } from '@/components/MonthPicker';
 import { toast } from 'sonner';
+import { AnimatedNumber } from '@/components/AnimatedNumber';
 
 export const Charts = () => {
   const { activeTransactions: transactions, categories, userSettings } = useAppStore();
@@ -38,6 +39,10 @@ export const Charts = () => {
     if (mainTab === 'bar' && barTab === 'cashflow') return format(selectedDate, 'yyyy');
     return format(selectedDate, 'MMMM', { locale: ptBR }).toUpperCase();
   }, [selectedDate, mainTab, lineTab, barTab]);
+
+  const formatCurrency = (value: number) => {
+    return userSettings.showValues ? new Intl.NumberFormat(userSettings.language || 'pt-BR', { style: 'currency', currency: userSettings.currency || 'BRL' }).format(value) : 'R$ •••••';
+  };
 
   // --- PIE CHART DATA ---
   const pieData = useMemo(() => {
@@ -256,7 +261,7 @@ export const Charts = () => {
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                 <span className={`text-sm font-medium ${pieTab === 'expense_category' ? 'text-[#ee5350]' : 'text-[#01bfa5]'}`}>
-                  {userSettings.showValues ? `R$ ${pieData.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ •••••'}
+                  <AnimatedNumber value={pieData.total} formatter={formatCurrency} />
                 </span>
                 <span className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1 mt-1">
                   Total <ChevronDown className="w-3 h-3" />
@@ -278,7 +283,7 @@ export const Charts = () => {
                   </div>
                   <div className="text-right">
                     <p className={`text-sm font-medium ${pieTab === 'expense_category' ? 'text-[#ee5350]' : 'text-[#01bfa5]'}`}>
-                      {userSettings.showValues ? `R$ ${item.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ •••••'}
+                      <AnimatedNumber value={item.value} formatter={formatCurrency} />
                     </p>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400">{userSettings.showValues ? `${item.percentage.toFixed(2)}%` : '••%'}</p>
                   </div>
@@ -334,7 +339,7 @@ export const Charts = () => {
                 </AreaChart>
               </ResponsiveContainer>
             </div>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">Total <span className="text-zinc-900 dark:text-white font-medium">{userSettings.showValues ? `R$ ${lineData.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ •••••'}</span></p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">Total <span className="text-zinc-900 dark:text-white font-medium"><AnimatedNumber value={lineData.total} formatter={formatCurrency} /></span></p>
           </div>
         )}
 
