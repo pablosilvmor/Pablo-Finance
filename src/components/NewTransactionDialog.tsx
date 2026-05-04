@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../lib/store';
-import { Transaction } from '../types';
+import { Transaction, SplitData, SplitType, SplitParticipant } from '../types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -102,6 +102,15 @@ export const NewTransactionDialog = ({
         setIsFixed(t.isFixed || false);
         setRepeatPrevious(false);
         setRepeatFuture(false);
+        if (t.split) {
+          setIsSplitEnabled(true);
+          setSplitType(t.split.type);
+          setSplitParticipants(t.split.participants);
+        } else {
+          setIsSplitEnabled(false);
+          setSplitType('equal');
+          setSplitParticipants([{ id: '1', name: 'Eu' }, { id: '2', name: '' }]);
+        }
       }
     } else if (!open) {
       // Reset for new transaction when closing
@@ -116,6 +125,9 @@ export const NewTransactionDialog = ({
       setIsFixed(false);
       setRepeatPrevious(false);
       setRepeatFuture(false);
+      setIsSplitEnabled(false);
+      setSplitType('equal');
+      setSplitParticipants([{ id: '1', name: 'Eu' }, { id: '2', name: '' }]);
     }
   }, [transactionId, transactions, initialDate, open]);
 
@@ -146,6 +158,40 @@ export const NewTransactionDialog = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [keepOpen, setKeepOpen] = useState(false);
+
+  // Split / Rateio state
+  const [isSplitEnabled, setIsSplitEnabled] = useState(false);
+  const [splitType, setSplitType] = useState<SplitType>('equal');
+  const [splitParticipants, setSplitParticipants] = useState<SplitParticipant[]>([
+    { id: '1', name: 'Eu' },
+    { id: '2', name: '' }
+  ]);
+
+  const addParticipant = () => {
+    setSplitParticipants([...splitParticipants, { id: Math.random().toString(), name: '' }]);
+  };
+
+  const removeParticipant = (id: string) => {
+    setSplitParticipants(splitParticipants.filter(p => p.id !== id));
+  };
+
+  const updateParticipant = (id: string, field: keyof SplitParticipant, value: any) => {
+    setSplitParticipants(splitParticipants.map(p => {
+      if (p.id === id) {
+        return { ...p, [field]: value };
+      }
+      return p;
+    }));
+  };
+
+  const numericTotalAmount = parseFloat(amount?.replace(',', '.') || '0');
+  const splitTotalFixed = splitParticipants.reduce((acc, p) => acc + (p.amount || 0), 0);
+  const splitTotalPercentage = splitParticipants.reduce((acc, p) => acc + (p.percentage || 0), 0);
+
+  const isSplitValid = !isSplitEnabled || 
+    splitType === 'equal' || 
+    (splitType === 'fixed' && Math.abs(numericTotalAmount - splitTotalFixed) < 0.01) ||
+    (splitType === 'percentage' && Math.abs(100 - splitTotalPercentage) < 0.01);
 
   const handleDescriptionBlur = async () => {
     if (!description || !amount || categoryId || transactionId) return;
@@ -233,6 +279,15 @@ export const NewTransactionDialog = ({
       return;
     }
 
+    if (isSplitEnabled && !isSplitValid) {
+      if (splitType === 'fixed') {
+         toast.error(`A soma do rateio (R$ ${splitTotalFixed.toLocaleString('pt-BR', {minimumFractionDigits: 2})}) difere do valor total (R$ ${numericTotalAmount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}).`);
+      } else if (splitType === 'percentage') {
+         toast.error(`A soma dos percentuais (${splitTotalPercentage}%) deve ser 100%.`);
+      }
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       const originalGroupId = transactionId ? transactions.find(t => t.id === transactionId)?.groupId : undefined;
@@ -251,6 +306,16 @@ export const NewTransactionDialog = ({
         observation: observation,
         date: new Date(date + 'T12:00:00').toISOString()
       };
+
+      if (isSplitEnabled) {
+        const validParticipants = splitParticipants.filter(p => p.name.trim() !== '');
+        if (validParticipants.length > 1) {
+          baseTransaction.split = {
+            type: splitType,
+            participants: validParticipants
+          };
+        }
+      }
 
       if (groupId) {
         baseTransaction.groupId = groupId;
@@ -387,6 +452,9 @@ export const NewTransactionDialog = ({
           setIsFixed(false);
           setRepeatPrevious(false);
           setRepeatFuture(false);
+          setIsSplitEnabled(false);
+          setSplitType('equal');
+          setSplitParticipants([{ id: '1', name: 'Eu' }, { id: '2', name: '' }]);
         } else {
           toast.success('Pronto para o próximo lançamento!');
         }
@@ -662,6 +730,130 @@ export const NewTransactionDialog = ({
               onChange={(e) => setObservation(e.target.value)}
             />
           </div>
+
+          <div className="flex items-center justify-between p-3 border border-zinc-200 dark:border-zinc-800 rounded-lg">
+            <div className="space-y-0.5">
+              <Label className="text-base text-purple-600 dark:text-purple-400">Dividir Transação</Label>
+              <p className="text-xs text-zinc-500">Ratear o valor com outras pessoas</p>
+            </div>
+            <Switch checked={isSplitEnabled} onCheckedChange={setIsSplitEnabled} />
+          </div>
+
+          {isSplitEnabled && (
+            <div className="space-y-4 p-4 border border-purple-200 dark:border-purple-900/50 rounded-lg bg-gradient-to-br from-purple-50/50 to-purple-100/30 dark:from-purple-900/10 dark:to-purple-900/5">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Forma de divisão</Label>
+                <div className="flex gap-2">
+                  <Button type="button" variant={splitType === 'equal' ? 'default' : 'outline'} className={splitType === 'equal' ? 'flex-1 bg-purple-600 dark:text-white' : 'flex-1'} onClick={() => setSplitType('equal')}>Iguais</Button>
+                  <Button type="button" variant={splitType === 'fixed' ? 'default' : 'outline'} className={splitType === 'fixed' ? 'flex-1 bg-purple-600 dark:text-white' : 'flex-1'} onClick={() => setSplitType('fixed')}>Valores</Button>
+                  <Button type="button" variant={splitType === 'percentage' ? 'default' : 'outline'} className={splitType === 'percentage' ? 'flex-1 bg-purple-600 dark:text-white' : 'flex-1'} onClick={() => setSplitType('percentage')}>%</Button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-center mb-1">
+                  <Label className="text-sm font-medium">Pessoas e Valores</Label>
+                  {splitType === 'fixed' && (
+                    <span className={`text-xs font-bold ${Math.abs(numericTotalAmount - splitTotalFixed) < 0.01 ? 'text-green-500' : 'text-red-500'}`}>
+                      {splitTotalFixed.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} / {numericTotalAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </span>
+                  )}
+                  {splitType === 'percentage' && (
+                    <span className={`text-xs font-bold ${Math.abs(100 - splitTotalPercentage) < 0.01 ? 'text-green-500' : 'text-red-500'}`}>
+                      {splitTotalPercentage}% / 100%
+                    </span>
+                  )}
+                </div>
+                {splitParticipants.map((participant, index) => {
+                  const isMe = participant.name.trim().toLowerCase() === 'eu' || participant.name.trim().toLowerCase() === 'mim';
+                  return (
+                  <div key={participant.id} className="flex flex-col gap-2 p-2 border border-black/5 dark:border-white/5 rounded-lg bg-white/50 dark:bg-black/10">
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        placeholder="Nome da pessoa"
+                        value={participant.name}
+                        onChange={(e) => updateParticipant(participant.id, 'name', e.target.value)}
+                        className="flex-1"
+                      />
+                      {splitType === 'fixed' && (
+                        <NumericFormat
+                          customInput={Input}
+                          thousandSeparator="."
+                          decimalSeparator=","
+                          prefix="R$ "
+                          decimalScale={2}
+                          fixedDecimalScale
+                          placeholder="R$ 0,00"
+                          value={participant.amount || ''}
+                          onValueChange={(values) => updateParticipant(participant.id, 'amount', values.floatValue)}
+                          className="w-28 shrink-0 text-right"
+                        />
+                      )}
+                      {splitType === 'percentage' && (
+                        <NumericFormat
+                          customInput={Input}
+                          decimalSeparator=","
+                          suffix="%"
+                          decimalScale={2}
+                          placeholder="0%"
+                          value={participant.percentage || ''}
+                          onValueChange={(values) => updateParticipant(participant.id, 'percentage', values.floatValue)}
+                          className="w-24 shrink-0 text-right"
+                        />
+                      )}
+                      {splitType === 'equal' && (
+                        <div className="w-28 shrink-0 px-3 py-2 text-sm text-right bg-black/5 dark:bg-white/5 rounded-md border border-black/10 dark:border-white/10 text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">
+                          R$ {(parseFloat(amount?.replace(',', '.') || '0') / splitParticipants.length).toFixed(2)}
+                        </div>
+                      )}
+                      <Button type="button" variant="ghost" size="icon" className="shrink-0 h-9 w-9 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" onClick={() => removeParticipant(participant.id)} disabled={splitParticipants.length <= 1}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                      </Button>
+                    </div>
+                    {!isMe && transactionId && (
+                      <div className="flex gap-2 items-center pl-1">
+                        <Label className="text-xs text-zinc-500 shrink-0 w-20">Já Pago:</Label>
+                        <NumericFormat
+                          customInput={Input}
+                          thousandSeparator="."
+                          decimalSeparator=","
+                          prefix="R$ "
+                          decimalScale={2}
+                          fixedDecimalScale
+                          placeholder="R$ 0,00"
+                          value={participant.paidAmount || ''}
+                          onValueChange={(values) => updateParticipant(participant.id, 'paidAmount', values.floatValue)}
+                          className="flex-1 h-8 text-xs"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )})}
+                
+                {splitType === 'fixed' && Math.abs(numericTotalAmount - splitTotalFixed) > 0.01 && (
+                  <p className="text-xs text-red-500 text-center font-medium opacity-90 animate-pulse mt-2">
+                    Falta: {Math.max(0, numericTotalAmount - splitTotalFixed).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </p>
+                )}
+                {splitType === 'percentage' && Math.abs(100 - splitTotalPercentage) > 0.01 && (
+                  <p className="text-xs text-red-500 text-center font-medium opacity-90 animate-pulse mt-2">
+                    Falta: {Math.max(0, 100 - splitTotalPercentage).toFixed(2)}%
+                  </p>
+                )}
+                {splitType !== 'equal' && isSplitValid && (
+                  <p className="text-xs text-green-500 text-center font-medium flex items-center justify-center gap-1 mt-2">
+                    <Check className="w-3 h-3" />
+                    Rateio fechado com sucesso!
+                  </p>
+                )}
+
+                <Button type="button" variant="ghost" size="sm" onClick={addParticipant} className="text-purple-600 hover:text-purple-700 w-full border border-dashed border-purple-300 dark:border-purple-800 bg-white/50 dark:bg-black/20 mt-2">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Pessoa
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center justify-between p-3 border border-zinc-200 dark:border-zinc-800 rounded-lg">
             <div className="space-y-0.5">

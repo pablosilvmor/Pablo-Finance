@@ -45,6 +45,7 @@ import { useAppStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { CalculationShareDialog } from '@/components/CalculationShareDialog';
+import { ServicePricingCalculator } from '@/components/ServicePricingCalculator';
 
 const calculators = [
   { id: 'juros-composto', name: 'Juros composto', icon: TrendingUp, category: 'calculator' },
@@ -65,6 +66,7 @@ const calculators = [
   { id: 'contador-dias', name: 'Contador de dias', icon: CalendarMinus, category: 'calculator' },
   { id: 'regra-tres', name: 'Regra de três simples', icon: Divide, category: 'calculator' },
   { id: 'quantos-dias', name: 'Quantos dias faltam', icon: HelpCircle, category: 'calculator' },
+  { id: 'precificacao-servico', name: 'Precificação de Serviço', icon: DollarSign, category: 'calculator' },
   { id: 'emprestimo', name: 'Empréstimo Pessoal', icon: BadgeDollarSign, category: 'calculator' },
   { id: 'financiamento', name: 'Financiamento de Veículos', icon: Car, category: 'calculator' },
   // Conversores
@@ -487,6 +489,10 @@ export const Calculators = () => {
   };
 
   const renderCalculatorContent = () => {
+    if (selectedCalc === 'precificacao-servico') {
+      return <ServicePricingCalculator />;
+    }
+
     if (selectedCalc === 'juros-composto' || selectedCalc === 'investimento' || selectedCalc === 'juros-simples') {
       const isSimples = selectedCalc === 'juros-simples';
       return (

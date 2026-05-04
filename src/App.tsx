@@ -19,6 +19,7 @@ import { Tags } from './pages/Tags';
 import { Performance } from './pages/Performance';
 import { Charts } from './pages/Charts';
 import { PiggyBankPage } from './pages/PiggyBankPage';
+import { Splits } from './pages/Splits';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from './components/ThemeProvider';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -182,6 +183,7 @@ export default function App() {
                   <Route path="performance" element={<Performance />} />
                   <Route path="charts" element={<Charts />} />
                   <Route path="piggy-bank" element={<PiggyBankPage />} />
+                  <Route path="splits" element={<Splits />} />
                 </Route>
               </Routes>
             </BrowserRouter>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router';
-import { LayoutDashboard, ArrowRightLeft, Wallet, CreditCard, PieChart, Target, Settings, LogOut, Calculator, ShieldAlert, Calendar, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Tags, Hash, TrendingUp, UploadCloud, DownloadCloud, Bookmark, Tag, BarChart3, Coins, ClipboardList, Info, Sun, Moon, Lightbulb, Eye, EyeOff, Bell, Search, User, Share2, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, ArrowRightLeft, Wallet, CreditCard, PieChart, Target, Settings, LogOut, Calculator, ShieldAlert, Calendar, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Tags, Hash, TrendingUp, UploadCloud, DownloadCloud, Bookmark, Tag, BarChart3, Coins, ClipboardList, Info, Sun, Moon, Lightbulb, Eye, EyeOff, Bell, Search, User, Share2, AlertTriangle, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { auth } from '../lib/firebase';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -43,6 +43,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
   const moreItems = [
     { icon: Bookmark, label: t('categories'), path: '/categories' },
     { icon: Tag, label: t('tags'), path: '/tags' },
+    { icon: Users, label: 'Splits', path: '/splits' },
     { icon: Calendar, label: t('calendar'), path: '/calendar' },
     { icon: Calculator, label: t('calculators'), path: '/calculators' },
   ];

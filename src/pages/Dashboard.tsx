@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAppStore } from '../lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowDownIcon, ArrowUpIcon, CreditCardIcon, WalletIcon, Sparkles, Loader2, Eye, EyeOff, Plus, ChevronLeft, ChevronRight, ChevronDown, Activity, BellRing, Trophy, Target } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, CreditCardIcon, WalletIcon, Sparkles, Loader2, Eye, EyeOff, Plus, ChevronLeft, ChevronRight, ChevronDown, Activity, BellRing, Trophy, Target, Users } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Label, LineChart, Line, CartesianGrid } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -190,6 +190,42 @@ export const Dashboard = () => {
       .filter(d => d.value > 0)
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [monthlyTransactions, categories]);
+
+  const { whoOwesMe, iOweThem } = React.useMemo(() => {
+    let whoOwesMeCalc = 0;
+    let iOweThemCalc = 0;
+
+    transactions.forEach(t => {
+      if (!t.split) return;
+      if (t.status === 'pending') return;
+
+      const getAmount = (p: any) => {
+        if (t.split!.type === 'equal') return t.amount / t.split!.participants.length;
+        if (t.split!.type === 'percentage') return (t.amount * (p.percentage || 0)) / 100;
+        return p.amount || 0;
+      };
+
+      t.split.participants.forEach(p => {
+        // Assume 'eu' or 'mim' is the user, others are the debtors/creditors
+        if (p.name.toLowerCase() === 'eu' || p.name.toLowerCase() === 'mim') return;
+
+        const amount = getAmount(p);
+        const pendingAmount = amount - (p.paidAmount || 0);
+
+        if (pendingAmount < 0.01) return;
+
+        if (t.type === 'expense') {
+          // Despesa: eu paguei, eles me devem
+          whoOwesMeCalc += pendingAmount;
+        } else if (t.type === 'income') {
+          // Receita: eu recebi, eu devo a eles
+          iOweThemCalc += pendingAmount;
+        }
+      });
+    });
+
+    return { whoOwesMe: whoOwesMeCalc, iOweThem: iOweThemCalc };
+  }, [transactions]);
 
   const handleGenerateInsights = async () => {
     if (insights) return;
@@ -708,7 +744,8 @@ export const Dashboard = () => {
         </div>
       </div>
 
-           <div className="grid grid-cols-2 gap-4">
+      {/* Balances Section */}
+      <div className="grid grid-cols-2 gap-4">
         <Card 
           className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm cursor-pointer hover:bg-secondary transition-all bg-card"
           onClick={() => navigate('/incomes')}
@@ -743,6 +780,37 @@ export const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Splits Summary */}
+      {(whoOwesMe > 0 || iOweThem > 0) && (
+        <Card 
+          className="rounded-2xl border-none shadow-sm bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/10 dark:to-indigo-900/10 cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => navigate('/splits')}
+        >
+          <CardContent className="p-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center text-purple-600">
+                <Users className="w-5 h-5" />
+              </div>
+              <div>
+                <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-400">Rateios e Dívidas</CardTitle>
+                <p className="text-xs text-purple-600/80 dark:text-purple-400/80">Acompanhe quem deve quem</p>
+              </div>
+            </div>
+            
+            <div className="flex gap-4 w-full sm:w-auto mt-2 sm:mt-0 justify-between sm:justify-end">
+              <div className="text-center sm:text-right">
+                <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">A Receber</p>
+                <p className="font-bold text-[#01bfa5]"><AnimatedValue value={whoOwesMe} userSettings={userSettings} /></p>
+              </div>
+              <div className="text-center sm:text-right">
+                <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">A Pagar</p>
+                <p className="font-bold text-[#ee5350]"><AnimatedValue value={iOweThem} userSettings={userSettings} /></p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Alertas Region */}
       {activeAlerts.length > 0 && (

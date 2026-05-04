@@ -8,6 +8,7 @@ import { TransactionMenuOverlay } from './TransactionMenuOverlay';
 import { NewTransactionDialog } from './NewTransactionDialog';
 import { TipsOverlay } from './TipsOverlay';
 import { MobileMoreMenu } from './MobileMoreMenu';
+import { OfflineIndicator } from './OfflineIndicator';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlobalSearchDialog } from './GlobalSearchDialog';
@@ -212,6 +213,7 @@ export const Layout = () => {
       />
 
       <TipsOverlay />
+      <OfflineIndicator />
     </div>
   );
 };

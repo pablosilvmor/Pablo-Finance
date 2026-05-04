@@ -1,5 +1,19 @@
 export type TransactionType = 'income' | 'expense' | 'transfer';
 export type TransactionStatus = 'paid' | 'pending';
+export type SplitType = 'equal' | 'fixed' | 'percentage';
+
+export interface SplitParticipant {
+  id: string;
+  name: string;
+  amount?: number;
+  percentage?: number;
+  paidAmount?: number;
+}
+
+export interface SplitData {
+  type: SplitType;
+  participants: SplitParticipant[];
+}
 
 export interface Transaction {
   id: string;
@@ -17,6 +31,7 @@ export interface Transaction {
   tags?: string[];
   ignored?: boolean;
   observation?: string;
+  split?: SplitData;
 }
 
 export interface Account {
