@@ -18,6 +18,7 @@ import { CalculatorDialog } from './CalculatorDialog';
 import { useLocation } from 'react-router';
 
 import { TransactionMenuOverlay } from './TransactionMenuOverlay';
+import { iconMap } from '../lib/icons';
 
 export const NewTransactionDialog = ({ 
   open: externalOpen, 
@@ -34,7 +35,7 @@ export const NewTransactionDialog = ({
   initialType?: 'expense' | 'income';
   isCollapsed?: boolean;
 }) => {
-  const { addTransaction, updateTransaction, bulkUpdateTransactions, bulkUpsertTransactions, upsertTransaction, findTransaction, transactions, categories, addCategory, tags: storeTags, addTag } = useAppStore();
+  const { addTransaction, updateTransaction, bulkUpdateTransactions, bulkUpsertTransactions, upsertTransaction, findTransaction, transactions, categories, addCategory, tags: storeTags, addTag, costCenters, addCostCenter } = useAppStore();
   const [internalOpen, setInternalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
@@ -58,6 +59,7 @@ export const NewTransactionDialog = ({
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [costCenterId, setCostCenterId] = useState('');
   const [date, setDate] = useState(initialDate || new Date().toISOString().split('T')[0]);
   const [status, setStatus] = useState<'paid' | 'pending'>('pending');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -95,6 +97,7 @@ export const NewTransactionDialog = ({
         setAmount(t.amount.toString());
         setDescription(t.description);
         setCategoryId(t.categoryId);
+        setCostCenterId(t.costCenterId || '');
         setDate(parseISO(t.date).toISOString().split('T')[0]);
         setStatus(t.status);
         setSelectedTags(t.tags || []);
@@ -118,6 +121,7 @@ export const NewTransactionDialog = ({
       setAmount('');
       setDescription('');
       setCategoryId('');
+      setCostCenterId('');
       setDate(initialDate || new Date().toISOString().split('T')[0]);
       setStatus('paid');
       setSelectedTags([]);
@@ -145,6 +149,11 @@ export const NewTransactionDialog = ({
 
   // Calculator state
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+
+  // New Cost Center state
+  const [isAddingCostCenter, setIsAddingCostCenter] = useState(false);
+  const [newCostCenterName, setNewCostCenterName] = useState('');
+  const [newCostCenterColor, setNewCostCenterColor] = useState('#8B5CF6');
 
   // New Category state
   const [isAddingCategory, setIsAddingCategory] = useState(false);
@@ -211,6 +220,25 @@ export const NewTransactionDialog = ({
         });
       }
     }
+  };
+
+  const handleQuickAddCostCenter = () => {
+    if (!newCostCenterName) return;
+    
+    const exists = costCenters.some(c => c.name.toLowerCase() === newCostCenterName.toLowerCase());
+    if (exists) {
+      toast.error(`O centro de custo "${newCostCenterName}" já existe.`);
+      return;
+    }
+
+    addCostCenter({
+      name: newCostCenterName,
+      icon: 'briefcase',
+      color: newCostCenterColor,
+    });
+    setIsAddingCostCenter(false);
+    setNewCostCenterName('');
+    toast.success('Centro de custo criado! Selecione-o na lista.');
   };
 
   const handleQuickAddCategory = () => {
@@ -300,6 +328,7 @@ export const NewTransactionDialog = ({
         amount: parseFloat(amount.replace(',', '.')),
         description,
         categoryId,
+        costCenterId: (costCenterId && costCenterId !== 'none') ? costCenterId : null,
         status,
         isFixed,
         tags: selectedTags,
@@ -613,13 +642,16 @@ export const NewTransactionDialog = ({
                 <SelectTrigger>
                   <SelectValue>
                     {categoryId ? (
-                      <div className="flex items-center gap-2">
-                        <span 
-                          className="w-2 h-2 rounded-full" 
-                          style={{ backgroundColor: categories.find(c => c.id === categoryId)?.color }} 
-                        />
-                        {categories.find(c => c.id === categoryId)?.name}
-                      </div>
+                      (() => {
+                        const cat = categories.find(c => c.id === categoryId);
+                        const Icon = cat?.icon ? iconMap[cat.icon] : null;
+                        return (
+                          <div className="flex items-center gap-2">
+                            {Icon && <Icon className="w-4 h-4" style={{ color: cat?.color }} />}
+                            {cat?.name}
+                          </div>
+                        );
+                      })()
                     ) : (
                       "Selecione uma categoria"
                     )}
@@ -629,14 +661,91 @@ export const NewTransactionDialog = ({
                   {categories
                     .filter(c => c.type === type)
                     .sort((a, b) => a.name.localeCompare(b.name))
-                    .map(c => (
-                      <SelectItem key={c.id} value={c.id}>
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: c.color }} />
-                          {c.name}
-                        </div>
-                      </SelectItem>
-                    ))}
+                    .map(c => {
+                      const Icon = c.icon ? iconMap[c.icon] : null;
+                      return (
+                        <SelectItem key={c.id} value={c.id}>
+                          <div className="flex items-center gap-2">
+                            {Icon && <Icon className="w-4 h-4" style={{ color: c.color }} />}
+                            {c.name}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="costCenter">Centro de Custo (Opcional)</Label>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 text-xs text-purple-600 hover:text-purple-700"
+                onClick={() => setIsAddingCostCenter(!isAddingCostCenter)}
+              >
+                {isAddingCostCenter ? 'Cancelar' : '+ Novo'}
+              </Button>
+            </div>
+            
+            {isAddingCostCenter ? (
+              <div className="flex gap-2 p-2 border border-dashed border-purple-300 rounded-lg bg-purple-50/50 dark:bg-purple-900/10">
+                <Input 
+                  placeholder="Nome (Ex: Viagem Paris)" 
+                  value={newCostCenterName} 
+                  onChange={(e) => setNewCostCenterName(e.target.value)}
+                  className="h-8 text-sm"
+                />
+                <Input 
+                  type="color" 
+                  value={newCostCenterColor} 
+                  onChange={(e) => setNewCostCenterColor(e.target.value)}
+                  className="w-10 h-8 p-1"
+                />
+                <Button type="button" size="sm" className="h-8" onClick={handleQuickAddCostCenter}>
+                  <Check className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <Select value={costCenterId} onValueChange={setCostCenterId}>
+                <SelectTrigger>
+                  <SelectValue>
+                    {costCenterId ? (
+                      (() => {
+                        const cc = costCenters.find(c => c.id === costCenterId);
+                        const Icon = cc?.icon ? iconMap[cc.icon] : null;
+                        return (
+                          <div className="flex items-center gap-2">
+                            {Icon && <Icon className="w-4 h-4" style={{ color: cc?.color }} />}
+                            {cc?.name}
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      "Nenhum centro de custo"
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none" className="text-zinc-500 italic">
+                    Nenhum centro de custo
+                  </SelectItem>
+                  {costCenters
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map(c => {
+                      const Icon = c.icon ? iconMap[c.icon] : null;
+                      return (
+                        <SelectItem key={c.id} value={c.id}>
+                          <div className="flex items-center gap-2">
+                            {Icon && <Icon className="w-4 h-4" style={{ color: c.color }} />}
+                            {c.name}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                 </SelectContent>
               </Select>
             )}

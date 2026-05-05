@@ -16,6 +16,7 @@ import { Expenses } from './pages/Expenses';
 import { Incomes } from './pages/Incomes';
 import { Settings } from './pages/Settings';
 import { Tags } from './pages/Tags';
+import { CostCenters } from './pages/CostCenters';
 import { Performance } from './pages/Performance';
 import { Charts } from './pages/Charts';
 import { PiggyBankPage } from './pages/PiggyBankPage';
@@ -180,6 +181,7 @@ export default function App() {
                   <Route path="incomes" element={<Incomes />} />
                   <Route path="settings" element={<Settings />} />
                   <Route path="tags" element={<Tags />} />
+                  <Route path="cost-centers" element={<CostCenters />} />
                   <Route path="performance" element={<Performance />} />
                   <Route path="charts" element={<Charts />} />
                   <Route path="piggy-bank" element={<PiggyBankPage />} />

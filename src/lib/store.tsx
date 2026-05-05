@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Account, Transaction, Category, CreditCard, Goal, MonthlyPlan, TransactionStatus, Tag } from '../types';
+import { Account, Transaction, Category, CreditCard, Goal, MonthlyPlan, TransactionStatus, Tag, CostCenter } from '../types';
 import { isSameMonth, isSameYear } from 'date-fns';
 import { db, auth } from './firebase';
 import { collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query, writeBatch, getDoc } from 'firebase/firestore';
@@ -101,6 +101,7 @@ interface AppState {
   activeTransactions: Transaction[];
   categories: Category[];
   tags: Tag[];
+  costCenters: CostCenter[];
   goals: Goal[];
   monthlyPlan: MonthlyPlan;
   piggyBank: PiggyBankEntry[];
@@ -124,6 +125,10 @@ interface AppState {
   updateTag: (id: string, t: Partial<Tag>) => Promise<void>;
   deleteTag: (id: string) => Promise<void>;
   bulkDeleteTags: (ids: string[]) => Promise<void>;
+  addCostCenter: (c: Omit<CostCenter, 'id'>) => Promise<void>;
+  updateCostCenter: (id: string, c: Partial<CostCenter>) => Promise<void>;
+  deleteCostCenter: (id: string) => Promise<void>;
+  bulkDeleteCostCenters: (ids: string[]) => Promise<void>;
   updateTransaction: (id: string, t: Partial<Transaction>) => Promise<void>;
   bulkUpdateTransactions: (updates: { id: string; data: Partial<Transaction> }[]) => Promise<void>;
   bulkDeleteTransactions: (ids: string[]) => Promise<void>;
@@ -224,6 +229,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [transactions, setTransactionsState] = useState<Transaction[]>([]);
   const [categories, setCategoriesState] = useState<Category[]>(initialCategories);
   const [tags, setTagsState] = useState<Tag[]>([]);
+  const [costCenters, setCostCentersState] = useState<CostCenter[]>([]);
   const [goals, setGoalsState] = useState<Goal[]>([]);
   const [monthlyPlan, setMonthlyPlanState] = useState<MonthlyPlan>(initialMonthlyPlan);
   const [piggyBank, setPiggyBankState] = useState<PiggyBankEntry[]>(initialPiggyBank);
@@ -249,6 +255,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTransactionsState([]);
     setCategoriesState(initialCategories);
     setTagsState([]);
+    setCostCentersState([]);
     setGoalsState([]);
     setMonthlyPlanState(initialMonthlyPlan);
     setPiggyBankState(initialPiggyBank);
@@ -286,6 +293,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setTagsState(data);
     });
 
+    const unsubCostCenters = onSnapshot(collection(db, `users/${userId}/costCenters`), (snapshot) => {
+      const data = snapshot.docs.map(doc => doc.data() as CostCenter);
+      setCostCentersState(data);
+    });
+
     const unsubUserData = onSnapshot(doc(db, `users/${userId}`), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -313,6 +325,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       unsubCategories();
       unsubGoals();
       unsubTags();
+      unsubCostCenters();
       unsubUserData();
     };
   }, [userId]);
@@ -330,23 +343,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const cleanData = (data: any) => JSON.parse(JSON.stringify(data, (_, v) => v === undefined ? null : v));
+
   const addTransaction = async (t: Omit<Transaction, 'id'>) => {
     if (!userId || !db) return;
     const id = Math.random().toString(36).substr(2, 9);
-    const newTransaction = { ...t, id };
+    const newTransaction = cleanData({ ...t, id });
     await setDoc(doc(db, `users/${userId}/transactions`, id), newTransaction);
   };
 
   const updateTransaction = async (id: string, t: Partial<Transaction>) => {
     if (!userId || !db) return;
-    await updateDoc(doc(db, `users/${userId}/transactions`, id), t);
+    await updateDoc(doc(db, `users/${userId}/transactions`, id), cleanData(t));
   };
 
   const bulkUpdateTransactions = async (updates: { id: string; data: Partial<Transaction> }[]) => {
     if (!userId || !db || updates.length === 0) return;
     const batch = writeBatch(db);
     updates.forEach(update => {
-      batch.update(doc(db, `users/${userId}/transactions`, update.id), update.data);
+      batch.update(doc(db, `users/${userId}/transactions`, update.id), cleanData(update.data));
     });
     await batch.commit();
   };
@@ -373,7 +388,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const batchRef = writeBatch(db);
       
       currentBatch.forEach(t => {
-        batchRef.set(doc(db, `users/${userId}/transactions`, t.id), t);
+        batchRef.set(doc(db, `users/${userId}/transactions`, t.id), cleanData(t));
       });
       
       batches.push(batchRef.commit());
@@ -388,7 +403,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const upsertTransaction = async (t: Transaction) => {
     if (!userId || !db) return;
-    await setDoc(doc(db, `users/${userId}/transactions`, t.id), t);
+    await setDoc(doc(db, `users/${userId}/transactions`, t.id), cleanData(t));
   };
 
   const deleteTransaction = async (id: string) => {
@@ -472,6 +487,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const batch = writeBatch(db);
     ids.forEach(id => {
       const docRef = doc(db, `users/${userId}/tags`, id);
+      batch.delete(docRef);
+    });
+    await batch.commit();
+  };
+
+  const addCostCenter = async (c: Omit<CostCenter, 'id'>) => {
+    if (!userId || !db) return;
+    const id = Math.random().toString(36).substr(2, 9);
+    const newCostCenter = { ...c, id };
+    await setDoc(doc(db, `users/${userId}/costCenters`, id), newCostCenter);
+  };
+
+  const updateCostCenter = async (id: string, c: Partial<CostCenter>) => {
+    if (!userId || !db) return;
+    await updateDoc(doc(db, `users/${userId}/costCenters`, id), c);
+  };
+
+  const deleteCostCenter = async (id: string) => {
+    if (!userId || !db) return;
+    await deleteDoc(doc(db, `users/${userId}/costCenters`, id));
+  };
+
+  const bulkDeleteCostCenters = async (ids: string[]) => {
+    if (!userId || !db) return;
+    const batch = writeBatch(db);
+    ids.forEach(id => {
+      const docRef = doc(db, `users/${userId}/costCenters`, id);
       batch.delete(docRef);
     });
     await batch.commit();
@@ -593,11 +635,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider value={{ 
       transactions,
       activeTransactions: transactions.filter(t => !t.ignored),
-      categories, tags, goals, monthlyPlan, piggyBank, piggyBankHistory, userSettings,
+      categories, tags, costCenters, goals, monthlyPlan, piggyBank, piggyBankHistory, userSettings,
       viewDate, setViewDate,
       isTipsOpen, setIsTipsOpen, isDataLoaded,
       addTransaction, addGoal, updateGoal, deleteGoal, bulkDeleteGoals, addCategory,
-      updateCategory, deleteCategory, bulkDeleteCategories, addTag, updateTag, deleteTag, bulkDeleteTags, updateTransaction, bulkUpdateTransactions, bulkDeleteTransactions, bulkUpsertTransactions, upsertTransaction, findTransaction, removeDuplicateTransactions, deleteTransaction,
+      updateCategory, deleteCategory, bulkDeleteCategories, addTag, updateTag, deleteTag, bulkDeleteTags, addCostCenter, updateCostCenter, deleteCostCenter, bulkDeleteCostCenters, updateTransaction, bulkUpdateTransactions, bulkDeleteTransactions, bulkUpsertTransactions, upsertTransaction, findTransaction, removeDuplicateTransactions, deleteTransaction,
       setTransactions, setCategories, setGoals, updateMonthlyPlan,
       updatePiggyBank, bulkUpdatePiggyBank, addPiggyBank, deletePiggyBank, resetPiggyBankBalance, addPiggyBankTransaction, updatePiggyBankDeposit, deletePiggyBankDeposit,
       updateUserSettings

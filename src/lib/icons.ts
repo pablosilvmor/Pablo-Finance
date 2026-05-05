@@ -1,4 +1,4 @@
-import { createLucideIcon, Utensils, DollarSign, Home, Book, Monitor, Wifi, Umbrella, Shield, ShoppingCart, Car, Zap, Briefcase, FileText, Coffee, Gift, Heart, Music, Camera, Plane, Smartphone, Gamepad, ShoppingBag, CreditCard, Landmark, PiggyBank, Receipt, Settings, Activity, Anchor, Aperture, Award, Battery, Bell, Box, Calendar, Clipboard, Cloud, Compass, Cpu, Crosshair, Droplet, Feather, Flag, Folder, Globe, Hash, Headphones, Key, Layers, Leaf, Link, MapPin, Mic, Moon, Package, Paperclip, PenTool, Printer, Radio, Scissors, Server, Speaker, Sun, Target, Thermometer, Truck, Tv, Unlock, User, Video, Watch, Wind, Tag, Shirt, Fuel, Bike, Palmtree, Tent, Guitar, Sofa, Armchair, Pizza, Pill, Hospital, Luggage, UtensilsCrossed, HeartPulse, Flame, Trees } from 'lucide-react';
+import { createLucideIcon, Utensils, DollarSign, Home, Book, Monitor, Wifi, Umbrella, Shield, ShoppingCart, Car, Zap, Briefcase, FileText, Coffee, Gift, Heart, Music, Camera, Plane, Smartphone, Gamepad, ShoppingBag, CreditCard, Landmark, PiggyBank, Receipt, Settings, Activity, Anchor, Aperture, Award, Battery, Bell, Box, Calendar, Clipboard, Cloud, Compass, Cpu, Crosshair, Droplet, Feather, Flag, Folder, Globe, Hash, Headphones, Key, Layers, Leaf, Link, MapPin, Mic, Moon, Package, Paperclip, PenTool, Printer, Radio, Scissors, Server, Speaker, Sun, Target, Thermometer, Truck, Tv, Unlock, User, Video, Watch, Wind, Tag, Shirt, Fuel, Bike, Palmtree, Tent, Guitar, Sofa, Armchair, Pizza, Pill, Hospital, Luggage, UtensilsCrossed, HeartPulse, Flame, Trees, Hammer, Wrench, Baby, Hotel, Dumbbell, UserRound } from 'lucide-react';
 import React from 'react';
 
 export const MotorcycleIcon = createLucideIcon('Motorcycle', [
@@ -8,6 +8,12 @@ export const MotorcycleIcon = createLucideIcon('Motorcycle', [
 ]);
 
 export const iconMap: Record<string, React.ElementType> = {
+  'hammer': Hammer,
+  'wrench': Wrench,
+  'baby': Baby,
+  'hotel': Hotel,
+  'dumbbell': Dumbbell,
+  'user-round': UserRound,
   'motorcycle': MotorcycleIcon,
   'tag': Tag,
   'shirt': Shirt,

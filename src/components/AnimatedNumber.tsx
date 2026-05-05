@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
+import { motion, useMotionValue, useTransform, animate } from 'motion/react';
 
 export function AnimatedNumber({ 
   value, 
@@ -7,35 +8,14 @@ export function AnimatedNumber({
   value: number; 
   formatter: (v: number) => string;
 }) {
-  const [displayValue, setDisplayValue] = useState(value);
+  const displayValue = useMotionValue(0);
+  const display = useTransform(displayValue, (current) => formatter(current));
 
   useEffect(() => {
-    let startTime: number;
-    const duration = 800; // ms
-    const initialValue = displayValue;
-    const distance = value - initialValue;
+    displayValue.set(0); // Start from 0 on every change explicitly
+    const controls = animate(displayValue, value, { duration: 0.8, ease: "easeOut" });
+    return () => controls.stop();
+  }, [displayValue, value]);
 
-    if (distance === 0) return;
-
-    const step = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-      
-      // easeOutQuart
-      const ease = 1 - Math.pow(1 - progress, 4);
-      
-      setDisplayValue(initialValue + distance * ease);
-
-      if (progress < 1) {
-        requestAnimationFrame(step);
-      } else {
-        setDisplayValue(value);
-      }
-    };
-
-    const animation = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(animation);
-  }, [value]);
-
-  return <span>{formatter(displayValue)}</span>;
+  return <motion.span>{display}</motion.span>;
 }

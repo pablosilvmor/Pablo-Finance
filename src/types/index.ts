@@ -23,6 +23,7 @@ export interface Transaction {
   description: string;
   categoryId: string;
   accountId?: string;
+  costCenterId?: string;
   status: TransactionStatus;
   isFixed?: boolean;
   groupId?: string;
@@ -82,6 +83,14 @@ export interface Tag {
 export interface CategoryBudget {
   categoryId: string;
   limit: number;
+}
+
+export interface CostCenter {
+  id: string;
+  name: string;
+  description?: string;
+  color: string;
+  icon: string;
 }
 
 export interface MonthlyPlan {

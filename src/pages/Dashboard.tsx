@@ -5,6 +5,7 @@ import { ArrowDownIcon, ArrowUpIcon, CreditCardIcon, WalletIcon, Sparkles, Loade
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Label, LineChart, Line, CartesianGrid } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getSpendingInsights } from '../lib/gemini';
 import Markdown from 'react-markdown';
 import { useNavigate } from 'react-router';
@@ -46,12 +47,18 @@ const AnimatedValue = ({ value, userSettings }: { value: number, userSettings: a
 };
 
 export const Dashboard = () => {
-  const { activeTransactions: transactions, categories, tags, userSettings, monthlyPlan, viewDate: currentDate, setViewDate: setCurrentDate } = useAppStore();
+  const { activeTransactions: allTransactions, costCenters, categories, tags, userSettings, monthlyPlan, viewDate: currentDate, setViewDate: setCurrentDate } = useAppStore();
   const { t } = useTranslation(userSettings.language);
   const [insights, setInsights] = useState<string>('');
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
+  const [selectedCostCenterId, setSelectedCostCenterId] = useState<string>('all');
   const navigate = useNavigate();
+
+  const transactions = useMemo(() => {
+    if (selectedCostCenterId === 'all') return allTransactions;
+    return allTransactions.filter(t => t.costCenterId === selectedCostCenterId);
+  }, [allTransactions, selectedCostCenterId]);
 
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
@@ -68,15 +75,18 @@ export const Dashboard = () => {
   const totalIncome = incomesMonth.reduce((acc, curr) => acc + curr.amount, 0);
   const totalExpense = expensesMonth.reduce((acc, curr) => acc + curr.amount, 0);
 
-  const totalBalance = transactions
+  const totalBalance = allTransactions
     .filter(t => {
       if (t.ignored) return false;
       const d = parseISO(t.date);
       const tYear = d.getFullYear();
       const tMonth = d.getMonth();
       
-      if (tYear < currentYear) return true;
-      if (tYear === currentYear && tMonth <= currentMonth) return true;
+      const cYear = currentDate.getFullYear();
+      const cMonth = currentDate.getMonth();
+
+      if (tYear < cYear) return true;
+      if (tYear === cYear && tMonth <= cMonth) return true;
       return false;
     })
     .reduce((acc, curr) => {
@@ -704,6 +714,35 @@ export const Dashboard = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Global Filter */}
+      <div className="flex justify-end mb-2 items-center gap-2">
+        {selectedCostCenterId !== 'all' && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setSelectedCostCenterId('all')}
+            className="text-muted-foreground hover:text-foreground h-8"
+          >
+            Limpar filtro
+          </Button>
+        )}
+        <Select value={selectedCostCenterId} onValueChange={setSelectedCostCenterId}>
+          <SelectTrigger className="w-[250px]">
+            <SelectValue>
+              {selectedCostCenterId === 'all' 
+                ? "Todos os Centros de Custos" 
+                : costCenters.find(c => c.id === selectedCostCenterId)?.name || "Todos os Centros de Custos"}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os Centros de Custos</SelectItem>
+            {costCenters.map(cc => (
+              <SelectItem key={cc.id} value={cc.id}>{cc.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Header Section */}
       <div 
         className="flex flex-col items-center justify-center py-6 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/50 rounded-2xl transition-colors md:sticky top-0 z-20 bg-background/80 backdrop-blur-md -mx-4 md:-mx-6 px-4 md:px-6"

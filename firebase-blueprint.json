@@ -59,6 +59,19 @@
       },
       "required": ["id", "name", "targetAmount", "currentAmount", "deadline", "color", "icon"]
     },
+    "CostCenter": {
+      "title": "CostCenter",
+      "description": "A cost center for transactions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "color": { "type": "string" },
+        "icon": { "type": "string" }
+      },
+      "required": ["id", "name", "color", "icon"]
+    },
     "UserData": {
       "title": "UserData",
       "description": "User specific data like monthly plan and piggy bank",
@@ -152,6 +165,10 @@
     "/users/{userId}/tags/{tagId}": {
       "schema": { "$ref": "#/entities/Tag" },
       "description": "User's tags"
+    },
+    "/users/{userId}/costCenters/{costCenterId}": {
+      "schema": { "$ref": "#/entities/CostCenter" },
+      "description": "User's cost centers"
     }
   }
 }

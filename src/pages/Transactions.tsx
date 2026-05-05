@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils';
 import { TransactionFilterDialog, FilterConfig } from '@/components/TransactionFilterDialog';
 
 export const Transactions = () => {
-  const { transactions, activeTransactions, categories, deleteTransaction, bulkDeleteTransactions, bulkUpsertTransactions, updateTransaction, userSettings, tags, piggyBank, viewDate: selectedDate, setViewDate: setSelectedDate } = useAppStore();
+  const { transactions, activeTransactions, categories, costCenters, deleteTransaction, bulkDeleteTransactions, bulkUpsertTransactions, updateTransaction, userSettings, tags, piggyBank, viewDate: selectedDate, setViewDate: setSelectedDate } = useAppStore();
   const getCategory = (id: string) => categories.find(c => c.id === id);
   const getTag = (id: string) => tags.find(t => t.id === id);
   const { t } = useTranslation(userSettings.language);
@@ -50,6 +50,7 @@ export const Transactions = () => {
     categories: [],
     tags: [],
     accounts: [],
+    costCenters: [],
     statuses: [],
     type: 'all'
   });
@@ -153,6 +154,10 @@ export const Transactions = () => {
       // Account Filter
       const matchesAccount = filters.accounts.length === 0 || (t.accountId && filters.accounts.includes(t.accountId));
       if (!matchesAccount) return false;
+
+      // Cost Center Filter
+      const matchesCostCenter = filters.costCenters.length === 0 || (t.costCenterId && filters.costCenters.includes(t.costCenterId));
+      if (!matchesCostCenter) return false;
 
       // Status Filter
       const matchesStatus = filters.statuses.length === 0 || filters.statuses.includes(t.status);
@@ -639,6 +644,7 @@ export const Transactions = () => {
               <TransactionFilterDialog 
                 categories={categories}
                 tags={tags}
+                costCenters={costCenters}
                 accounts={piggyBank}
                 currentFilters={filters}
                 onApply={(newFilters) => setFilters(newFilters)}

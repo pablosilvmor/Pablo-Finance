@@ -35,6 +35,7 @@ interface TransactionFilterDialogProps {
   onApply: (filters: FilterConfig) => void;
   categories: Category[];
   tags: Tag[];
+  costCenters: { id: string; name: string }[];
   accounts: PiggyBankEntry[];
   currentFilters: FilterConfig;
 }
@@ -45,12 +46,14 @@ export interface FilterConfig {
   categories: string[];
   tags: string[];
   accounts: string[];
+  costCenters: string[];
   statuses: string[];
   type: 'all' | 'income' | 'expense';
 }
 
 export const TransactionFilterDialog = ({ 
   onApply, 
+  costCenters,
   categories, 
   tags, 
   accounts,
@@ -59,17 +62,24 @@ export const TransactionFilterDialog = ({
   const { userSettings, updateUserSettings } = useAppStore();
   const savedFilters = userSettings.savedFilters || [];
   
-  const [localFilters, setLocalFilters] = useState<FilterConfig>({ ...currentFilters });
+  const [localFilters, setLocalFilters] = useState<FilterConfig>({ 
+    ...currentFilters,
+    costCenters: currentFilters.costCenters || []
+  });
   const [saveFilter, setSaveFilter] = useState(false);
   const [filterName, setFilterName] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('new');
   const [catSearch, setCatSearch] = useState('');
   const [tagSearch, setTagSearch] = useState('');
+  const [ccSearch, setCcSearch] = useState('');
 
   useEffect(() => {
     if (isOpen) {
-      setLocalFilters({ ...currentFilters });
+      setLocalFilters({ 
+        ...currentFilters,
+        costCenters: currentFilters.costCenters || []
+      });
       setSaveFilter(false);
       setFilterName('');
       setActiveTab('new');
@@ -83,6 +93,7 @@ export const TransactionFilterDialog = ({
       categories: [],
       tags: [],
       accounts: [],
+      costCenters: [],
       statuses: [],
       type: 'all'
     });
@@ -136,6 +147,15 @@ export const TransactionFilterDialog = ({
       accounts: prev.accounts.includes(id) 
         ? prev.accounts.filter(a => a !== id) 
         : [...prev.accounts, id]
+    }));
+  };
+
+  const toggleCostCenter = (id: string) => {
+    setLocalFilters(prev => ({
+      ...prev,
+      costCenters: prev.costCenters.includes(id) 
+        ? prev.costCenters.filter(c => c !== id) 
+        : [...prev.costCenters, id]
     }));
   };
 
@@ -226,7 +246,7 @@ export const TransactionFilterDialog = ({
                     {...({ nativeButton: false } as any)}
                     render={
                       <div className="flex flex-wrap items-center gap-2 border-b border-zinc-700 min-h-10 pb-2 cursor-pointer">
-                        {localFilters.categories.length === 0 ? (
+                        {(localFilters.categories || []).length === 0 ? (
                           <span className="text-zinc-400 text-sm">Todas as categorias</span>
                         ) : (
                           localFilters.categories.map(catId => {
@@ -299,7 +319,7 @@ export const TransactionFilterDialog = ({
                     render={
                       <div className="flex items-center justify-between border-b border-zinc-700 h-10 cursor-pointer">
                         <div className="flex flex-wrap gap-2 py-1">
-                          {localFilters.tags.length === 0 ? (
+                          {(localFilters.tags || []).length === 0 ? (
                             <span className="text-zinc-400 text-sm">Todas as tags</span>
                           ) : (
                             localFilters.tags.map(tagId => {
@@ -360,10 +380,71 @@ export const TransactionFilterDialog = ({
 
               {/* Situações */}
               <div className="space-y-2">
+                <Label className="text-[10px] uppercase text-[#50A2FF] font-bold">Centros de Custo</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger 
+                    {...({ nativeButton: false } as any)}
+                    render={
+                      <div className="flex flex-wrap items-center gap-2 border-b border-zinc-700 min-h-10 pb-2 cursor-pointer">
+                        {(localFilters.costCenters || []).length === 0 ? (
+                          <span className="text-zinc-400 text-sm">Todos os centros</span>
+                        ) : (
+                          localFilters.costCenters.map(ccId => {
+                            const cc = costCenters.find(c => c.id === ccId);
+                            if (!cc) return null;
+                            return (
+                              <div 
+                                key={ccId}
+                                className="flex items-center gap-2 bg-zinc-800 rounded-full px-3 py-1 text-xs border border-zinc-700"
+                              >
+                                <span>{cc.name}</span>
+                                <button onClick={(e) => { e.stopPropagation(); toggleCostCenter(ccId); }}>
+                                  <X className="w-3 h-3 text-red-500 ml-1" />
+                                </button>
+                              </div>
+                            );
+                          })
+                        )}
+                        <ChevronDown className="w-4 h-4 ml-auto text-zinc-600" />
+                      </div>
+                    } 
+                  />
+                  <DropdownMenuContent className="bg-[#2C2C2E] border-zinc-800 text-white w-[90vw] sm:w-[380px] max-w-[calc(100vw-2rem)] max-h-60 flex flex-col">
+                    <div className="p-2 border-b border-zinc-800 sticky top-0 bg-[#2C2C2E] z-10">
+                      <Input
+                        placeholder="Buscar centro de custo..."
+                        value={ccSearch}
+                        onChange={(e) => setCcSearch(e.target.value)}
+                        className="h-8 bg-zinc-800 border-zinc-700 text-xs focus-visible:ring-1 focus-visible:ring-zinc-600"
+                        onKeyDown={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    <div className="overflow-y-auto overflow-x-hidden">
+                      {costCenters
+                        .slice()
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .filter(c => c.name.toLowerCase().includes(ccSearch.toLowerCase()))
+                        .map(cc => (
+                          <DropdownMenuCheckboxItem
+                            key={cc.id}
+                            checked={localFilters.costCenters.includes(cc.id)}
+                            onCheckedChange={() => toggleCostCenter(cc.id)}
+                            className="focus:bg-zinc-800 focus:text-white"
+                          >
+                            <span>{cc.name}</span>
+                          </DropdownMenuCheckboxItem>
+                        ))}
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Situações */}
+              <div className="space-y-2">
                 <Label className="text-[10px] uppercase text-[#50A2FF] font-bold">Situações</Label>
                 <div className="flex items-center justify-between border-b border-zinc-700 h-10">
                   <div className="flex gap-2">
-                    {localFilters.statuses.length === 0 ? (
+                    {(localFilters.statuses || []).length === 0 ? (
                       <span className="text-zinc-400 text-sm">Todas as situações</span>
                     ) : (
                       localFilters.statuses.map(status => (
@@ -446,6 +527,11 @@ export const TransactionFilterDialog = ({
                           onClick={() => {
                             const parsedConfig = {
                                 ...sf.config,
+                                categories: sf.config.categories || [],
+                                tags: sf.config.tags || [],
+                                accounts: sf.config.accounts || [],
+                                costCenters: sf.config.costCenters || [],
+                                statuses: sf.config.statuses || [],
                                 startDate: sf.config.startDate ? new Date(sf.config.startDate) : startOfMonth(new Date()),
                                 endDate: sf.config.endDate ? new Date(sf.config.endDate) : endOfMonth(new Date())
                             };

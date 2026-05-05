@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router';
-import { LayoutDashboard, ArrowRightLeft, Wallet, CreditCard, PieChart, Target, Settings, LogOut, Calculator, ShieldAlert, Calendar, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Tags, Hash, TrendingUp, UploadCloud, DownloadCloud, Bookmark, Tag, BarChart3, Coins, ClipboardList, Info, Sun, Moon, Lightbulb, Eye, EyeOff, Bell, Search, User, Share2, AlertTriangle, Users } from 'lucide-react';
+import { LayoutDashboard, ArrowRightLeft, Wallet, CreditCard, PieChart, Target, Settings, LogOut, Calculator, ShieldAlert, Calendar, MoreHorizontal, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Tags, Hash, TrendingUp, UploadCloud, DownloadCloud, Bookmark, Tag, BarChart3, Coins, ClipboardList, Info, Sun, Moon, Lightbulb, Eye, EyeOff, Bell, Search, User, Share2, AlertTriangle, Users, Briefcase } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { auth } from '../lib/firebase';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -40,13 +40,14 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
     { icon: ClipboardList, label: t('planning'), path: '/planning' },
   ];
 
-  const moreItems = [
+  const moreItems = useMemo(() => [
     { icon: Bookmark, label: t('categories'), path: '/categories' },
     { icon: Tag, label: t('tags'), path: '/tags' },
+    { icon: Briefcase, label: 'Centros de Custo', path: '/cost-centers' },
     { icon: Users, label: 'Splits', path: '/splits' },
     { icon: Calendar, label: t('calendar'), path: '/calendar' },
     { icon: Calculator, label: t('calculators'), path: '/calculators' },
-  ];
+  ].sort((a, b) => a.label.localeCompare(b.label)), [t]);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {

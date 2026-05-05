@@ -130,6 +130,15 @@ service cloud.firestore {
              isValidString(data.icon, 1, 50);
     }
 
+    function isValidCostCenter(data) {
+      return data.keys().hasAll(['id', 'name', 'color', 'icon']) &&
+             isValidString(data.id, 1, 100) &&
+             isValidString(data.name, 1, 100) &&
+             isValidString(data.color, 1, 50) &&
+             isValidString(data.icon, 1, 50) &&
+             (!('description' in data) || isValidOptionalString(data.description, 1, 300));
+    }
+
     function isValidUserData(data) {
       return (!('monthlyPlan' in data) || data.monthlyPlan is map) &&
              (!('piggyBank' in data) || data.piggyBank is list) &&
@@ -188,6 +197,13 @@ service cloud.firestore {
         allow read: if isOwner(userId);
         allow create: if isOwner(userId) && isValidGoal(request.resource.data);
         allow update: if isOwner(userId) && isValidGoal(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /costCenters/{costCenterId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidCostCenter(request.resource.data);
+        allow update: if isOwner(userId) && isValidCostCenter(request.resource.data);
         allow delete: if isOwner(userId);
       }
     }

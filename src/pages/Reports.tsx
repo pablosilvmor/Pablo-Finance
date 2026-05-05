@@ -13,7 +13,7 @@ import { CategoryBadge } from '@/components/CategoryBadge';
 
 export const Reports = () => {
   const location = useLocation();
-  const { activeTransactions: transactions, categories, tags, userSettings, viewDate: currentDate, setViewDate: setCurrentDate } = useAppStore();
+  const { activeTransactions: allTransactions, costCenters, categories, tags, userSettings, viewDate: currentDate, setViewDate: setCurrentDate } = useAppStore();
   
   const initialData = location.state as { tab?: string } | null;
   const initialReportType = initialData?.tab === 'tags' ? 'tags_expense' : 'expenses';
@@ -23,6 +23,12 @@ export const Reports = () => {
     return (localStorage.getItem('preferredChartType') as 'distribution' | 'line' | 'bar' | 'pie') || 'distribution';
   });
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
+  const [selectedCostCenterId, setSelectedCostCenterId] = useState<string>('all');
+
+  const transactions = useMemo(() => {
+    if (selectedCostCenterId === 'all') return allTransactions;
+    return allTransactions.filter(t => t.costCenterId === selectedCostCenterId);
+  }, [allTransactions, selectedCostCenterId]);
 
   useEffect(() => {
     localStorage.setItem('preferredChartType', chartType);
@@ -289,8 +295,35 @@ export const Reports = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-20 md:pb-0">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Relatórios</h1>
+        <div className="flex items-center gap-2">
+          {selectedCostCenterId !== 'all' && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setSelectedCostCenterId('all')}
+              className="text-muted-foreground hover:text-foreground h-8"
+            >
+              Limpar filtro
+            </Button>
+          )}
+          <Select value={selectedCostCenterId} onValueChange={setSelectedCostCenterId}>
+            <SelectTrigger className="w-[250px]">
+              <SelectValue>
+                {selectedCostCenterId === 'all' 
+                  ? "Todos os Centros de Custos" 
+                  : costCenters.find(c => c.id === selectedCostCenterId)?.name || "Todos os Centros de Custos"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os Centros de Custos</SelectItem>
+              {costCenters.map(cc => (
+                <SelectItem key={cc.id} value={cc.id}>{cc.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
