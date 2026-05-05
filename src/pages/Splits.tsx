@@ -53,14 +53,14 @@ export const Splits = () => {
   const filteredSplits = useMemo(() => {
     return transactions.filter(t => {
       const dateStr = t.date.substring(0, 7);
-      if (dateStr !== selectedMonth || !t.split || t.status === 'pending') return false;
+      if (dateStr !== selectedMonth || t.ignored || !t.split) return false;
       
       // Check if all participants (excluding 'Eu') are fully paid
       let isFullyPaid = true;
       let hasOthers = false;
       t.split.participants.forEach(p => {
         const name = p.name.trim().toLowerCase();
-        if (name === 'eu' || name === 'mim') return;
+        if (name === 'eu' || name === 'mim' || name === '') return;
         hasOthers = true;
         const pAmt = getParticipantAmount(t, p);
         if (pAmt - (p.paidAmount || 0) > 0.01) {
@@ -70,6 +70,7 @@ export const Splits = () => {
 
       if (!hasOthers) return false;
 
+      // Only show if not fully paid (as requested: once settled they disappear)
       return !isFullyPaid;
     }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [transactions, selectedMonth]);
@@ -203,22 +204,22 @@ export const Splits = () => {
         <div className="w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center text-purple-600 mb-4 shadow-sm border border-purple-200/50 dark:border-purple-800/50">
           <Users className="w-8 h-8" />
         </div>
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Rateios do Mês</h1>
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Rateios de {formattedMonth}</h1>
         <p className="text-zinc-500 dark:text-zinc-400 mt-2 max-w-sm">
-          Acompanhe os valores divididos neste período para saber quem deve e para quem você deve.
+          Acompanhe os valores divididos em {formattedMonth} que ainda não foram totalmente quitados.
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <Card className="rounded-2xl border-none shadow-sm">
           <CardContent className="p-4 flex flex-col items-center text-center">
-            <p className="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-1">Total a Receber</p>
+            <p className="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-1">A Receber no Mês</p>
             <p className="text-2xl font-bold text-[#01bfa5]">{formatCurrency(totalToReceive)}</p>
           </CardContent>
         </Card>
         <Card className="rounded-2xl border-none shadow-sm">
           <CardContent className="p-4 flex flex-col items-center text-center">
-            <p className="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-1">Total a Pagar</p>
+            <p className="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-1">A Pagar no Mês</p>
             <p className="text-2xl font-bold text-[#ee5350]">{formatCurrency(totalToPay)}</p>
           </CardContent>
         </Card>
@@ -226,8 +227,8 @@ export const Splits = () => {
 
       <Card className="rounded-2xl border-none shadow-sm mt-6">
         <CardHeader>
-          <CardTitle>Saldos por Pessoa</CardTitle>
-          <CardDescription>Resumo de dívidas neste mês</CardDescription>
+          <CardTitle>Saldos por Pessoa (Mês)</CardTitle>
+          <CardDescription>Resumo de dívidas neste período</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -274,10 +275,10 @@ export const Splits = () => {
       </Card>
 
       <div className="mt-8">
-        <h2 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">Transações Rateadas</h2>
+        <h2 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">Detalhamento de {formattedMonth}</h2>
         {filteredSplits.length === 0 ? (
           <div className="text-center py-8 text-zinc-500 text-sm bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-100 dark:border-zinc-800">
-            Nenhuma transação rateada neste mês.
+            Nenhum rateio pendente em {formattedMonth}.
           </div>
         ) : (
           <div className="space-y-4">

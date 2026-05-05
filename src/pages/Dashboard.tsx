@@ -196,9 +196,8 @@ export const Dashboard = () => {
     let iOweThemCalc = 0;
 
     transactions.forEach(t => {
-      if (!t.split) return;
-      if (t.status === 'pending') return;
-
+      if (!t.split || t.ignored) return;
+      
       const getAmount = (p: any) => {
         if (t.split!.type === 'equal') return t.amount / t.split!.participants.length;
         if (t.split!.type === 'percentage') return (t.amount * (p.percentage || 0)) / 100;
@@ -206,8 +205,8 @@ export const Dashboard = () => {
       };
 
       t.split.participants.forEach(p => {
-        // Assume 'eu' or 'mim' is the user, others are the debtors/creditors
-        if (p.name.toLowerCase() === 'eu' || p.name.toLowerCase() === 'mim') return;
+        const name = p.name.trim().toLowerCase();
+        if (name === 'eu' || name === 'mim' || name === '') return;
 
         const amount = getAmount(p);
         const pendingAmount = amount - (p.paidAmount || 0);
@@ -215,10 +214,8 @@ export const Dashboard = () => {
         if (pendingAmount < 0.01) return;
 
         if (t.type === 'expense') {
-          // Despesa: eu paguei, eles me devem
           whoOwesMeCalc += pendingAmount;
         } else if (t.type === 'income') {
-          // Receita: eu recebi, eu devo a eles
           iOweThemCalc += pendingAmount;
         }
       });

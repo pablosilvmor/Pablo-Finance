@@ -304,18 +304,12 @@ export const NewTransactionDialog = ({
         isFixed,
         tags: selectedTags,
         observation: observation,
-        date: new Date(date + 'T12:00:00').toISOString()
+        date: new Date(date + 'T12:00:00').toISOString(),
+        split: isSplitEnabled ? {
+          type: splitType,
+          participants: splitParticipants.filter(p => p.name.trim() !== '')
+        } : null
       };
-
-      if (isSplitEnabled) {
-        const validParticipants = splitParticipants.filter(p => p.name.trim() !== '');
-        if (validParticipants.length > 1) {
-          baseTransaction.split = {
-            type: splitType,
-            participants: validParticipants
-          };
-        }
-      }
 
       if (groupId) {
         baseTransaction.groupId = groupId;
