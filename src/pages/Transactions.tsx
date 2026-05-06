@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Plus, MoreVertical, Search, Filter, ArrowUpRight, ArrowDownRight, CheckCircle2, Circle, X, Trash2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Tag, FileX, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { format, parseISO, isSameMonth, endOfMonth, startOfMonth, isWithinInterval } from 'date-fns';
+import { format, parseISO, isSameMonth, endOfMonth, startOfMonth, isWithinInterval, subMonths, eachMonthOfInterval } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
 import { useNavigate, useLocation } from 'react-router';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -1195,11 +1195,27 @@ export const Transactions = () => {
                   const historyForList = [...fullHistory].reverse().filter(t => t.id !== selectedTransaction.id).slice(0, 3);
                   
                   if (fullHistory.length > 1) {
-                    const chartData = fullHistory.map(h => ({
-                      date: format(parseISO(h.date), 'MMM', { locale: ptBR }),
-                      amount: h.amount,
-                      fullDate: h.date
-                    })).slice(-6); // Last 6 occurrences
+                    // Gera o intervalo dos últimos 12 meses (11 anteriores + atual)
+                    const endRange = new Date();
+                    const startRange = subMonths(endRange, 11);
+                    const monthsInterval = eachMonthOfInterval({ start: startRange, end: endRange });
+
+                    // Agrupa transações por mês/ano
+                    const monthlyGroups = fullHistory.reduce((acc, h) => {
+                      const monthKey = format(parseISO(h.date), 'yyyy-MM');
+                      acc[monthKey] = (acc[monthKey] || 0) + h.amount;
+                      return acc;
+                    }, {} as Record<string, number>);
+
+                    // Mapeia o intervalo fixo para os dados do gráfico, garantindo continuidade e zeros
+                    const chartData = monthsInterval.map(monthDate => {
+                      const monthKey = format(monthDate, 'yyyy-MM');
+                      return {
+                        date: format(monthDate, 'MMM', { locale: ptBR }),
+                        amount: monthlyGroups[monthKey] || 0,
+                        fullMonth: monthKey
+                      };
+                    });
 
                     return (
                       <div className="space-y-4">
