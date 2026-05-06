@@ -35,7 +35,7 @@ interface MobileMoreMenuProps {
 }
 
 export const MobileMoreMenu = ({ isOpen, onClose }: MobileMoreMenuProps) => {
-  const [activeTab, setActiveTab] = useState<'GERENCIAR' | 'GERAL' | 'SOBRE'>('GERENCIAR');
+  const [activeTab, setActiveTab] = useState<'GERAL' | 'GERENCIAR' | 'SOBRE'>('GERAL');
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isShareOpen, setIsShareOpen] = useState(false);
 
@@ -49,25 +49,27 @@ export const MobileMoreMenu = ({ isOpen, onClose }: MobileMoreMenuProps) => {
   const manageItems = [
     { icon: Calculator, label: 'Calculadoras', path: '/calculators' },
     { icon: Layout, label: 'Categorias', path: '/categories' },
-    { icon: Flag, label: 'Objetivos', path: '/goals' },
+    { icon: LayoutDashboard, label: 'Centro de Custos', path: '/cost-centers' },
+    { icon: Settings, label: 'Configurações', path: '/settings' },
     { icon: Tag, label: 'Tags', path: '/tags' },
   ];
 
   if (userEmail === 'pablo.silvmor@gmail.com') {
     manageItems.push({ icon: ShieldAlert, label: 'Painel Admin', path: '/admin' });
-    manageItems.sort((a, b) => a.label.localeCompare(b.label));
-  } else {
-    manageItems.sort((a, b) => a.label.localeCompare(b.label));
   }
+  
+  // Sort alphabetically
+  manageItems.sort((a, b) => a.label.localeCompare(b.label));
 
   const generalItems = [
     { icon: Scale, label: 'Balanço mensal', path: '/reports' },
     { icon: Calendar, label: 'Calendário', path: '/calendar' },
+    { icon: PiggyBank, label: 'Cofrinho', path: '/piggy-bank' },
     { icon: PieChart, label: 'Gráficos', path: '/charts' },
     { icon: Activity, label: 'Meu Desempenho', path: '/performance' },
+    { icon: Flag, label: 'Objetivos', path: '/goals' },
     { icon: Target, label: 'Planejamento', path: '/planning' },
-    { icon: PiggyBank, label: 'Cofrinho', path: '/piggy-bank' },
-    { icon: Settings, label: 'Configurações', path: '/settings' },
+    { icon: ArrowRightLeft, label: 'Splits', path: '/splits' },
   ].sort((a, b) => a.label.localeCompare(b.label));
 
   return (
@@ -97,7 +99,7 @@ export const MobileMoreMenu = ({ isOpen, onClose }: MobileMoreMenuProps) => {
           {/* Tabs */}
           <div className="px-6 mb-6">
             <div className="bg-zinc-800/50 p-1 rounded-2xl flex">
-              {(['GERENCIAR', 'GERAL', 'SOBRE'] as const).map(tab => (
+              {(['GERAL', 'GERENCIAR', 'SOBRE'] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}

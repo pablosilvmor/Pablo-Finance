@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router';
 import { MonthPicker } from '../components/MonthPicker';
 import { NewTransactionDialog } from '../components/NewTransactionDialog';
 import { AnimatedNumber } from '../components/AnimatedNumber';
-import { toPng } from 'html-to-image';
+import { SplitsShareDialog } from '../components/SplitsShareDialog';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { toast } from 'sonner';
@@ -119,59 +119,8 @@ export const Splits = () => {
     }).format(Math.abs(val));
   };
 
-  const handleShare = async () => {
-    if (!shareRef.current) return;
-    try {
-      setIsSharing(true);
-      window.focus(); // Ensure document is focused for clipboard
-      
-      // Give it a tiny bit of time to ensure layout is ready
-      await new Promise(r => setTimeout(r, 100));
-      
-      const dataUrl = await toPng(shareRef.current, { 
-        backgroundColor: '#ffffff',
-        width: 450,
-        pixelRatio: 2,
-        cacheBust: true,
-      });
-      
-      const response = await fetch(dataUrl);
-      const blob = await response.blob();
-      
-      if (navigator.share && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        const file = new File([blob], `rateios-${selectedMonth}.png`, { type: 'image/png' });
-        await navigator.share({
-          title: `Resumo de Rateios - ${formattedMonth}`,
-          files: [file]
-        });
-      } else {
-        await navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': blob })
-        ]);
-        toast.success('Imagem detalhada copiada para a área de transferência!');
-      }
-    } catch (err) {
-      console.error('Share/Clipboard error, falling back to download:', err);
-      try {
-        if (!shareRef.current) return;
-        const dataUrl = await toPng(shareRef.current, { backgroundColor: '#ffffff', width: 450, pixelRatio: 2 });
-        const response = await fetch(dataUrl);
-        const blob = await response.blob();
-        
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.download = `Rateios-${formattedMonth}.png`;
-        link.href = url;
-        link.click();
-        URL.revokeObjectURL(url);
-        toast.success('Imagem gerada e baixada com sucesso!');
-      } catch (fallbackErr) {
-        console.error('Fallback error:', fallbackErr);
-        toast.error('Erro ao gerar imagem. Tente novamente.');
-      }
-    } finally {
-      setIsSharing(false);
-    }
+  const handleShare = () => {
+    setIsSharing(true);
   };
 
   const handleExportPDF = () => {
@@ -219,9 +168,9 @@ export const Splits = () => {
         <MonthPicker open={isMonthPickerOpen} onOpenChange={setIsMonthPickerOpen} selectedDate={selectedDateObj} onSelect={(d) => handleMonthChange(d.toISOString().substring(0, 7))} />
         
         <div className="flex items-center gap-2 no-export">
-          <Button variant="outline" size="sm" onClick={handleShare} disabled={isSharing}>
+          <Button variant="outline" size="sm" onClick={handleShare}>
             <Share2 className="w-4 h-4 mr-2" />
-            {isSharing ? 'Compartilhando...' : 'Compartilhar'}
+            Compartilhar
           </Button>
           <Button variant="outline" size="sm" onClick={handleExportPDF}>
             <FileText className="w-4 h-4 mr-2" />
@@ -420,109 +369,18 @@ export const Splits = () => {
         transactionId={editingTransactionId} 
       />
 
-      {/* Stylized Share Template (Hidden from view but ready for capture) */}
-      <div className="fixed top-0 left-0 -z-50 pointer-events-none w-full h-full overflow-hidden opacity-0">
-        <div 
-          ref={shareRef}
-          className="bg-white text-zinc-900 p-8 space-y-6 w-[450px]"
-          style={{ fontFamily: 'Inter, sans-serif' }}
-        >
-          <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
-            <div className="flex items-center gap-2">
-              <img src="https://i.imgur.com/rltsQSg.png" alt="Logo" className="w-8 h-8" crossOrigin="anonymous" referrerPolicy="no-referrer" />
-              <img src="https://i.imgur.com/6n9cYhs.png" alt="Dindin" className="h-6 object-contain" crossOrigin="anonymous" referrerPolicy="no-referrer" />
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold text-zinc-800">Rateios de {formattedMonth} {currentYear}</h3>
-            
-            <div className="p-5 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-3">
-               <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">RESUMO DE SALDOS</p>
-               <div className="space-y-2">
-                  {balances.length === 0 ? (
-                    <p className="text-sm text-zinc-500">Nenhum saldo pendente para este mês.</p>
-                  ) : (
-                    balances.slice(0, 10).map(([name, balance]) => (
-                      <div key={name} className="flex justify-between items-center text-sm border-b border-dashed border-zinc-200 pb-1 last:border-0 last:pb-0">
-                        <span className="text-zinc-600">{name}</span>
-                        <span className={`font-bold ${balance > 0 ? 'text-[#01bfa5]' : 'text-[#ee5350]'}`}>
-                          {balance > 0 ? 'A Receber' : 'A Pagar'}: {formatCurrency(balance)}
-                        </span>
-                      </div>
-                    ))
-                  )}
-                  {balances.length > 10 && (
-                    <p className="text-[10px] text-zinc-400 text-center">e mais {balances.length - 10} pessoas...</p>
-                  )}
-               </div>
-            </div>
-
-            {filteredSplits.length > 0 && (
-              <div className="p-5 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-3 mt-4">
-                 <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">DETALHAMENTO DO MÊS</p>
-                 <div className="space-y-4">
-                    {filteredSplits.map((t, idx) => (
-                      <div key={idx} className="border-b border-dashed border-zinc-200 pb-3 last:border-0 last:pb-0">
-                         <div className="flex justify-between items-start mb-2">
-                           <div>
-                              <p className="font-bold text-sm text-zinc-800">{t.description}</p>
-                              <p className="text-[10px] text-zinc-500">{new Date(t.date).toLocaleDateString()}</p>
-                           </div>
-                           <p className={`font-bold text-sm ${t.type === 'expense' ? 'text-[#ee5350]' : 'text-[#01bfa5]'}`}>
-                             {t.type === 'expense' ? '-' : '+'}{formatCurrency(t.amount)}
-                           </p>
-                         </div>
-                         <div className="space-y-1">
-                            {t.split!.participants.map((p, pIdx) => {
-                               const pName = p.name.trim() || 'Desconhecido';
-                               const pAmt = getParticipantAmount(t, p);
-                               const isMe = pName.toLowerCase() === 'eu' || pName.toLowerCase() === 'mim';
-                               const paidAmt = p.paidAmount || 0;
-                               const pendingAmt = pAmt - paidAmt;
-                               const isFullyPaid = !isMe && pendingAmt < 0.01;
-                               
-                               return (
-                                 <div key={pIdx} className="flex justify-between items-center text-[11px]">
-                                    <span className={isMe ? "font-semibold text-purple-600" : "text-zinc-600"}>
-                                      {pName} {isMe && "(Você)"} {isFullyPaid && "- Quitado"}
-                                    </span>
-                                    <span className={isFullyPaid ? 'text-zinc-400 line-through' : 'font-medium text-zinc-800'}>
-                                      {formatCurrency(pAmt)}
-                                      {!isMe && !isFullyPaid && (
-                                        <span className="text-red-500 font-bold ml-1">
-                                          (Pendente: {formatCurrency(pendingAmt)})
-                                        </span>
-                                      )}
-                                    </span>
-                                 </div>
-                               )
-                            })}
-                         </div>
-                      </div>
-                    ))}
-                 </div>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-emerald-50 p-4 rounded-xl text-center border border-emerald-100">
-              <p className="text-[10px] text-emerald-600 font-bold uppercase mb-1">Total a Receber</p>
-              <p className="text-xl font-black text-emerald-700">{formatCurrency(totalToReceive)}</p>
-            </div>
-            <div className="bg-rose-50 p-4 rounded-xl text-center border border-rose-100">
-              <p className="text-[10px] text-rose-600 font-bold uppercase mb-1">Total a Pagar</p>
-              <p className="text-xl font-black text-rose-700">{formatCurrency(totalToPay)}</p>
-            </div>
-          </div>
-
-          <div className="text-center pt-4 opacity-50 space-y-1">
-            <p className="text-[10px] text-zinc-400 font-medium">Gerado em dindin-finance.vercel.app</p>
-            <p className="text-[10px] text-zinc-400 font-medium">Desenvolvido por Pablo Moreira</p>
-          </div>
-        </div>
-      </div>
+      <SplitsShareDialog
+        open={isSharing}
+        onOpenChange={setIsSharing}
+        formattedMonth={formattedMonth}
+        currentYear={currentYear}
+        balances={balances}
+        filteredSplits={filteredSplits}
+        totalToReceive={totalToReceive}
+        totalToPay={totalToPay}
+        formatCurrency={formatCurrency}
+        getParticipantAmount={getParticipantAmount}
+      />
     </div>
   );
 };

@@ -37,12 +37,12 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
     { icon: PieChart, label: t('charts'), path: '/charts' },
     { icon: Coins, label: t('piggyBank'), path: '/piggy-bank' },
     { icon: Target, label: t('goals'), path: '/goals' },
-    { icon: ClipboardList, label: t('planning'), path: '/planning' },
   ];
 
   const moreItems = useMemo(() => [
     { icon: Bookmark, label: t('categories'), path: '/categories' },
     { icon: Tag, label: t('tags'), path: '/tags' },
+    { icon: ClipboardList, label: t('planning'), path: '/planning' },
     { icon: Briefcase, label: 'Centros de Custo', path: '/cost-centers' },
     { icon: Users, label: 'Splits', path: '/splits' },
     { icon: Calendar, label: t('calendar'), path: '/calendar' },
