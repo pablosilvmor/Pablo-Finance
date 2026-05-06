@@ -39,15 +39,18 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
     { icon: Target, label: t('goals'), path: '/goals' },
   ];
 
-  const moreItems = useMemo(() => [
-    { icon: Bookmark, label: t('categories'), path: '/categories' },
-    { icon: Tag, label: t('tags'), path: '/tags' },
-    { icon: ClipboardList, label: t('planning'), path: '/planning' },
-    { icon: Briefcase, label: 'Centros de Custo', path: '/cost-centers' },
-    { icon: Users, label: 'Splits', path: '/splits' },
-    { icon: Calendar, label: t('calendar'), path: '/calendar' },
+  const moreItemsGroup1 = useMemo(() => [
     { icon: Calculator, label: t('calculators'), path: '/calculators' },
-  ].sort((a, b) => a.label.localeCompare(b.label)), [t]);
+    { icon: Calendar, label: t('calendar'), path: '/calendar' },
+    { icon: ClipboardList, label: t('planning'), path: '/planning' },
+    { icon: Users, label: 'Splits', path: '/splits' },
+  ], [t]);
+
+  const moreItemsGroup2 = useMemo(() => [
+    { icon: Bookmark, label: t('categories'), path: '/categories' },
+    { icon: Briefcase, label: 'Centros de Custo', path: '/cost-centers' },
+    { icon: Tag, label: t('tags'), path: '/tags' },
+  ], [t]);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -293,7 +296,19 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
                 }
               />
               <DropdownMenuContent side="right" align="start" className="w-56 rounded-2xl p-2 bg-white dark:bg-[#2C2C2E] border-zinc-200 dark:border-zinc-800">
-                {moreItems.map((item) => (
+                {moreItemsGroup1.map((item) => (
+                  <DropdownMenuItem key={item.path} render={
+                    <Link
+                      to={item.path}
+                      className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-[#3d3d3e] transition-colors cursor-pointer"
+                    >
+                      <item.icon className="w-4 h-4 shrink-0" />
+                      <span>{item.label}</span>
+                    </Link>
+                  } />
+                ))}
+                <DropdownMenuSeparator />
+                {moreItemsGroup2.map((item) => (
                   <DropdownMenuItem key={item.path} render={
                     <Link
                       to={item.path}
