@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Upload, AlertCircle, FileSpreadsheet, FileText, Trash2, ArrowLeft, History } from 'lucide-react';
 import { useAppStore } from '../lib/store';
 import { toast } from 'sonner';
-import { parsePdfTransactions } from '../lib/gemini';
+import { parsePdfTransactions, deduplicateTransactions } from '../lib/gemini';
 
 interface ImportDataDialogProps {
   open: boolean;
@@ -313,29 +313,22 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
         }).filter(Boolean) as any[];
       }
 
-      setProgressText('Verificando duplicidades...');
+      setProgressText('Analisando duplicidades com IA...');
       setProgress(95);
 
-      const normalize = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const newDates = new Set(newTransactions.map(t => new Date(t.date).toDateString()));
+      
+      // Select only required fields to avoid blowing up context window
+      const relevantExisting = transactions
+          .filter(t => newDates.has(new Date(t.date).toDateString()))
+          .map(t => ({ id: t.id, date: t.date, amount: t.amount, description: t.description }));
+          
+      const relevantNew = newTransactions.map(t => ({ id: t.id, date: t.date, amount: t.amount, description: t.description }));
 
-      const uniqueTransactions = newTransactions.filter(newTrans => {
-        const isDuplicate = transactions.some(existingTrans => {
-          const newDate = new Date(newTrans.date).toDateString();
-          const existDate = new Date(existingTrans.date).toDateString();
-          
-          // Se data e valor batem exatamente
-          if (newDate === existDate && Math.abs(newTrans.amount - existingTrans.amount) < 0.001) {
-            const desc1 = normalize(newTrans.description);
-            const desc2 = normalize(existingTrans.description);
-            
-            // Se as descrições normalizadas são iguais ou uma contém a outra (comum entre OFX e CSV)
-            return desc1 === desc2 || desc1.includes(desc2) || desc2.includes(desc1);
-          }
-          
-          return false;
-        });
-        return !isDuplicate;
-      });
+      const nonDuplicateNewItems = await deduplicateTransactions(relevantNew, relevantExisting);
+      const nonDuplicateNewIds = new Set(nonDuplicateNewItems.map((t: any) => t.id));
+      
+      const uniqueTransactions = newTransactions.filter(t => nonDuplicateNewIds.has(t.id));
 
       if (uniqueTransactions.length === 0) {
         toast.info('Todas as transações do arquivo já foram importadas anteriormente.');

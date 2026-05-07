@@ -191,6 +191,78 @@ export async function parsePdfTransactions(base64Pdf: string, categories: Catego
   }
 }
 
+export async function deduplicateTransactions(newTransactions: any[], existingTransactions: any[]): Promise<any[]> {
+  const localFallback = () => {
+    const normalize = (text: string) => (text || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    return newTransactions.filter(newTrans => {
+      const isDuplicate = existingTransactions.some(existingTrans => {
+        const newDate = new Date(newTrans.date).toDateString();
+        const existDate = new Date(existingTrans.date).toDateString();
+        if (newDate === existDate && Math.abs(newTrans.amount - existingTrans.amount) < 0.001) {
+          const desc1 = normalize(newTrans.description);
+          const desc2 = normalize(existingTrans.description);
+          return desc1 === desc2 || desc1.includes(desc2) || desc2.includes(desc1);
+        }
+        return false;
+      });
+      return !isDuplicate;
+    });
+  };
+
+  try {
+    const ai = getAI();
+    if (!ai) return localFallback();
+    if (newTransactions.length === 0) return [];
+    if (existingTransactions.length === 0) return newTransactions;
+
+    const prompt = `
+      Você receberá uma lista de "Novas Transações" e uma lista de "Transações Existentes".
+      Seu objetivo é identificar e remover as "Novas Transações" que já estão presentes (são duplicadas) nas "Transações Existentes".
+      
+      Regras para identificar uma transação duplicada:
+      1. A data cronológica deve ser a mesma (mesmo dia).
+      2. O valor (amount) deve ser idêntico ou extremamente próximo.
+      3. A descrição pode não ser idêntica, mas deve ser semelhante semanticamente (por exemplo: "Criarte Laser" e "Criarte Laser</MEMO>" ou "PAGAMENTO XYZ" e "PAGAMENTO XYZ 01").
+
+      Retorne APENAS um array de "Novas Transações" que NÃO SÃO duplicadas (ou seja, apenas as transações realmente novas).
+      
+      Novas Transações (apenas os IDs serão retornados por você):
+      ${JSON.stringify(newTransactions)}
+
+      Transações Existentes para comparação:
+      ${JSON.stringify(existingTransactions)}
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-pro-preview',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              id: { type: Type.STRING }
+            }
+          }
+        }
+      }
+    });
+
+    try {
+      const result = JSON.parse(response.text || "[]");
+      const nonDuplicateIds = new Set(result.map((t: any) => t.id));
+      return newTransactions.filter(t => nonDuplicateIds.has(t.id));
+    } catch {
+      return localFallback();
+    }
+  } catch (error) {
+    console.error("Error deduplicating transactions:", error);
+    return localFallback();
+  }
+}
+
 export async function detectGender(name: string): Promise<'male' | 'female' | 'neutral'> {
   try {
     const ai = getAI();
