@@ -587,26 +587,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const removeDuplicateTransactions = async () => {
     if (!userId || !db) return;
-    const uniqueTransactions: Transaction[] = [];
-    const seen = new Set<string>();
+    
+    const normalize = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, '');
+    
+    const seen = new Map<string, string>(); // key -> id
     const toDelete: string[] = [];
     
-    transactions.forEach(t => {
-      const key = `${t.description}-${t.categoryId}-${t.type}-${t.date}`;
-      if (!seen.has(key)) {
-        uniqueTransactions.push(t);
-        seen.add(key);
-      } else {
+    // Sort by date to keep the oldest or specifically defined ones if needed
+    const sortedTransactions = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    sortedTransactions.forEach(t => {
+      const dateStr = new Date(t.date).toDateString();
+      const normDesc = normalize(t.description);
+      const amount = Math.abs(t.amount).toFixed(2);
+      
+      // Chave: Data + Valor + Descrição Normalizada
+      const key = `${dateStr}-${amount}-${normDesc}`;
+      
+      if (seen.has(key)) {
         toDelete.push(t.id);
+      } else {
+        seen.set(key, t.id);
       }
     });
 
     if (toDelete.length > 0) {
-      const batch = writeBatch(db);
-      toDelete.forEach(id => {
-        batch.delete(doc(db, `users/${userId}/transactions`, id));
-      });
-      await batch.commit();
+      const BATCH_LIMIT = 450;
+      for (let i = 0; i < toDelete.length; i += BATCH_LIMIT) {
+        const batch = writeBatch(db);
+        toDelete.slice(i, i + BATCH_LIMIT).forEach(id => {
+          batch.delete(doc(db, `users/${userId}/transactions`, id));
+        });
+        await batch.commit();
+      }
     }
   };
 

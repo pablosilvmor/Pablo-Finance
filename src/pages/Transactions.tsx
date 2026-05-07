@@ -28,7 +28,21 @@ import { cn } from '@/lib/utils';
 import { TransactionFilterDialog, FilterConfig } from '@/components/TransactionFilterDialog';
 
 export const Transactions = () => {
-  const { transactions, activeTransactions, categories, costCenters, deleteTransaction, bulkDeleteTransactions, bulkUpsertTransactions, updateTransaction, userSettings, tags, piggyBank, viewDate: selectedDate, setViewDate: setSelectedDate } = useAppStore();
+  const { transactions, activeTransactions, categories, costCenters, deleteTransaction, bulkDeleteTransactions, bulkUpsertTransactions, updateTransaction, userSettings, tags, piggyBank, viewDate: selectedDate, setViewDate: setSelectedDate, removeDuplicateTransactions } = useAppStore();
+  const [isCleaning, setIsCleaning] = useState(false);
+
+  const handleCleanDuplicates = async () => {
+    setIsCleaning(true);
+    try {
+      await removeDuplicateTransactions();
+      toast.success('Transações duplicadas removidas com sucesso!');
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao remover duplicados.');
+    } finally {
+      setIsCleaning(false);
+    }
+  };
   const getCategory = (id: string) => categories.find(c => c.id === id);
   const getTag = (id: string) => tags.find(t => t.id === id);
   const { t } = useTranslation(userSettings.language);
@@ -127,11 +141,14 @@ export const Transactions = () => {
       // Search Term Filter
       const searchLower = searchTerm.toLowerCase();
       const category = categories.find(c => c.id === t.categoryId);
+      const formattedAmount = t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+      
       const matchesSearch = searchTerm === '' || (
         t.description.toLowerCase().includes(searchLower) ||
         (t.observation && t.observation.toLowerCase().includes(searchLower)) ||
         (category && category.name.toLowerCase().includes(searchLower)) ||
         t.amount.toString().includes(searchLower) ||
+        formattedAmount.includes(searchLower) ||
         (t.tags && t.tags.some(tagId => {
           const tag = tags.find(tg => tg.id === tagId);
           return tag && tag.name.toLowerCase().includes(searchLower);
@@ -675,6 +692,17 @@ export const Transactions = () => {
               <div className="flex items-center gap-2">
                 <ImportDataDialog open={isImportCsvOpen} onOpenChange={setIsImportCsvOpen} />
                 
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="rounded-full gap-2 border-zinc-200 dark:border-zinc-800 h-9"
+                  onClick={handleCleanDuplicates}
+                  disabled={isCleaning}
+                >
+                  <Filter className={cn("w-4 h-4", isCleaning && "animate-spin")} />
+                  <span className="hidden sm:inline">Limpar Duplicados</span>
+                </Button>
+
                 <Button 
                   variant="outline" 
                   size="sm" 

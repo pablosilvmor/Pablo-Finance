@@ -53,7 +53,8 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
     let progressInterval: NodeJS.Timeout;
 
     try {
-      const importId = `imp-${Date.now()}`;
+      const fileExt = file.name.split('.').pop()?.toUpperCase() || 'DATA';
+      const importId = `imp-${fileExt}-${Date.now()}`;
       let newTransactions: any[] = [];
 
       if (file.name.toLowerCase().endsWith('.pdf')) {
@@ -177,11 +178,16 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
         const defaultCategory = categories[0]?.id || '';
         
         newTransactions = transactionsMatch.map((match, index) => {
-          const type = match.match(/<TRNTYPE>(.*)/)?.[1]?.trim().toLowerCase();
-          const dateStr = match.match(/<DTPOSTED>(.*)/)?.[1]?.trim();
-          const amountStr = match.match(/<TRNAMT>(.*)/)?.[1]?.trim();
-          const memo = match.match(/<MEMO>(.*)/)?.[1]?.trim();
-          const name = match.match(/<NAME>(.*)/)?.[1]?.trim();
+          const type = match.match(/<TRNTYPE>(.*?)<\/TRNTYPE>|<TRNTYPE>(.*)/)?.[1]?.trim().toLowerCase() || 
+                       match.match(/<TRNTYPE>(.*)/)?.[1]?.trim().toLowerCase();
+          const dateStr = match.match(/<DTPOSTED>(.*?)<\/DTPOSTED>|<DTPOSTED>(.*)/)?.[1]?.trim() || 
+                          match.match(/<DTPOSTED>(.*)/)?.[1]?.trim();
+          const amountStr = match.match(/<TRNAMT>(.*?)<\/TRNAMT>|<TRNAMT>(.*)/)?.[1]?.trim() || 
+                            match.match(/<TRNAMT>(.*)/)?.[1]?.trim();
+          const memo = match.match(/<MEMO>(.*?)<\/MEMO>|<MEMO>(.*)/)?.[1]?.trim() || 
+                       match.match(/<MEMO>(.*)/)?.[1]?.trim();
+          const name = match.match(/<NAME>(.*?)<\/NAME>|<NAME>(.*)/)?.[1]?.trim() || 
+                       match.match(/<NAME>(.*)/)?.[1]?.trim();
 
           if (!dateStr || !amountStr) return null;
 
@@ -310,16 +316,23 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
       setProgressText('Verificando duplicidades...');
       setProgress(95);
 
+      const normalize = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, '');
+
       const uniqueTransactions = newTransactions.filter(newTrans => {
         const isDuplicate = transactions.some(existingTrans => {
           const newDate = new Date(newTrans.date).toDateString();
           const existDate = new Date(existingTrans.date).toDateString();
           
-          return (
-            newDate === existDate &&
-            newTrans.description.trim().toLowerCase().replace(/\s+/g, ' ') === existingTrans.description.trim().toLowerCase().replace(/\s+/g, ' ') &&
-            Math.abs(newTrans.amount - existingTrans.amount) < 0.001 
-          );
+          // Se data e valor batem exatamente
+          if (newDate === existDate && Math.abs(newTrans.amount - existingTrans.amount) < 0.001) {
+            const desc1 = normalize(newTrans.description);
+            const desc2 = normalize(existingTrans.description);
+            
+            // Se as descrições normalizadas são iguais ou uma contém a outra (comum entre OFX e CSV)
+            return desc1 === desc2 || desc1.includes(desc2) || desc2.includes(desc1);
+          }
+          
+          return false;
         });
         return !isDuplicate;
       });
@@ -362,10 +375,14 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
     transactions.forEach(t => {
       if (t.importId) {
         if (!historyMap.has(t.importId)) {
-          const timestamp = parseInt(t.importId.split('-')[1]) || Date.now();
-          let type = 'CSV';
-          if (t.description.includes('PDF')) type = 'PDF';
-          if (t.description.includes('OFX')) type = 'OFX';
+          const parts = t.importId.split('-');
+          // Format expected: imp-[TYPE]-[TIMESTAMP]
+          let type = parts.length >= 3 ? parts[1] : (t.description.includes('PDF') ? 'PDF' : (t.description.includes('OFX') ? 'OFX' : 'CSV'));
+          
+          // Force OFX type if importId contains OFX
+          if (t.importId.includes('OFX')) type = 'OFX';
+          
+          const timestamp = parseInt(parts[parts.length - 1]) || Date.now();
           
           historyMap.set(t.importId, { 
             importId: t.importId, 

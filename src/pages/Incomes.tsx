@@ -294,6 +294,7 @@ export const Incomes = () => {
       (t.observation && t.observation.toLowerCase().includes(searchLower)) ||
       (category && category.name.toLowerCase().includes(searchLower)) ||
       t.amount.toString().includes(searchLower) ||
+      t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 }).includes(searchLower) ||
       (t.tags && t.tags.some(tagId => {
         const tag = tags.find(tg => tg.id === tagId);
         return tag && tag.name.toLowerCase().includes(searchLower);
