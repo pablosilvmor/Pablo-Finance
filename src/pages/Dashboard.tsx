@@ -201,6 +201,29 @@ export const Dashboard = () => {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [monthlyTransactions, categories]);
 
+  // Data for Chart (Cost Centers - Expenses)
+  const pieDataCostCentersExpenses = React.useMemo(() => {
+    const costCenterTotals = monthlyTransactions
+      .filter(t => t.type === 'expense')
+      .reduce((acc, curr) => {
+        if (!curr.costCenterId) return acc;
+        acc[curr.costCenterId] = (acc[curr.costCenterId] || 0) + curr.amount;
+        return acc;
+      }, {} as Record<string, number>);
+
+    return Object.entries(costCenterTotals)
+      .map(([costCenterId, amount]) => {
+        const costCenter = costCenters.find(cc => cc.id === costCenterId);
+        return {
+          name: costCenter?.name || 'Desconhecido',
+          value: amount,
+          color: costCenter?.color || '#ccc',
+        };
+      })
+      .filter(d => d.value > 0)
+      .sort((a, b) => b.value - a.value); // Usually sorted by value descending is better for these charts
+  }, [monthlyTransactions, costCenters]);
+
   const { whoOwesMe, iOweThem } = React.useMemo(() => {
     let whoOwesMeCalc = 0;
     let iOweThemCalc = 0;
@@ -887,27 +910,146 @@ export const Dashboard = () => {
           {renderCard('pending-transactions')}
         </div>
         <div className="space-y-6">
-          {achievements.length > 0 && (
-            <Card className="rounded-2xl border-none shadow-sm bg-card h-full">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-3 text-[#01bfa5] font-semibold">
-                  <Trophy className="w-4 h-4 text-yellow-500" />
-                  <span>Suas Conquistas</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {achievements.map((ach) => (
-                    <div key={ach.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${ach.bg} shadow-sm border border-black/5 dark:border-white/5`}>
-                      <Target className="w-3 h-3" />
-                      <div>
-                        <p className="text-xs font-bold leading-none">{ach.title}</p>
-                        <p className="text-[10px] opacity-80 mt-0.5">{ach.desc}</p>
-                      </div>
+          <Card className="rounded-2xl border border-transparent hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 shadow-sm bg-card transition-all">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle className="text-sm font-medium text-zinc-600 dark:text-zinc-300">Despesas por Centro de Custo</CardTitle>
+                {pieDataCostCentersExpenses.length > 5 && (
+                  <div className="text-sm text-[#ee5350] font-bold mt-1">
+                    {formatCurrency(pieDataCostCentersExpenses.reduce((acc, cur) => acc + cur.value, 0))}
+                  </div>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80 w-full min-h-[320px] min-w-0 flex flex-col justify-center">
+                {pieDataCostCentersExpenses.length > 5 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={pieDataCostCentersExpenses} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
+                      <XAxis type="number" hide />
+                      <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
+                      <Tooltip 
+                        trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
+                        cursor={{ fill: 'transparent' }}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            const value = payload[0].value as number;
+                            const total = pieDataCostCentersExpenses.reduce((acc, cur) => acc + cur.value, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                            return (
+                              <div style={{ 
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                                borderRadius: '12px', 
+                                border: '1px solid #333',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                padding: '12px'
+                              }}>
+                                <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
+                                <p style={{ color: data.color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
+                                  {formatCurrency(value)} {userSettings.showValues ? `(${percentage}%)` : ''}
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                        {pieDataCostCentersExpenses.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : pieDataCostCentersExpenses.length > 0 ? (
+                  <div className="relative w-full h-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieDataCostCentersExpenses}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={80}
+                          outerRadius={110}
+                          paddingAngle={5}
+                          dataKey="value"
+                          stroke="none"
+                        >
+                          {pieDataCostCentersExpenses.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          offset={10}
+                          allowEscapeViewBox={{ x: true, y: true }}
+                          trigger={typeof window !== 'undefined' && window.innerWidth < 768 ? 'click' : 'hover'}
+                          content={(props: any) => { const { active, payload, coordinate, viewBox } = props;
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              const value = payload[0].value as number;
+                              const total = pieDataCostCentersExpenses.reduce((acc, cur) => acc + cur.value, 0);
+                              const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                              
+                              const vw = viewBox?.width || 300;
+                              const vh = viewBox?.height || 280;
+                              const cx = viewBox?.cx ?? vw / 2;
+                              const cy = viewBox?.cy ?? vh / 2;
+                              const coordX = coordinate?.x ?? cx;
+                              const coordY = coordinate?.y ?? cy;
+                              
+                              const isLeft = coordX < cx;
+                              const isTop = coordY < cy;
+                              
+                              const translateX = isLeft 
+                                ? `max(calc(-100% - 20px), -${Math.max(0, coordX - 10)}px)` 
+                                : `min(0px, calc(${Math.max(0, vw - 20 - coordX)}px - 100%))`;
+                                
+                              const translateY = isTop 
+                                ? `max(calc(-100% - 20px), -${Math.max(0, coordY - 10)}px)` 
+                                : `min(0px, calc(${Math.max(0, vh - 20 - coordY)}px - 100%))`;
+
+                              return (
+                                <div style={{
+                                  transform: `translate(${translateX}, ${translateY})`,
+                                  backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                                  borderRadius: '12px', 
+                                  border: '1px solid #333',
+                                  boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                  padding: '12px',
+                                  width: 'max-content',
+                                  pointerEvents: 'none',
+                                  zIndex: 1000
+                                }}>
+                                  <p style={{ color: '#fff', fontWeight: 'bold', margin: '0 0 4px 0', fontSize: '14px' }}>{data.name}</p>
+                                  <p style={{ color: data.color || (payload[0] as any).color, fontWeight: '500', margin: 0, fontSize: '14px' }}>
+                                    {formatCurrency(value)} {userSettings.showValues ? `(${percentage}%)` : ''}
+                                  </p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-lg font-bold text-[#ee5350]">
+                        {formatCurrency(pieDataCostCentersExpenses.reduce((acc, cur) => acc + cur.value, 0))}
+                      </span>
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 mt-1">
+                        Total <ChevronDown className="w-3 h-3 inline-block" />
+                      </span>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-zinc-400 text-sm font-medium">
+                    {t('noTransactionsFound')}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
