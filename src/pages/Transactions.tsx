@@ -540,16 +540,27 @@ export const Transactions = () => {
 
   const toggleSelection = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setSelectedTransactionIds(prev => 
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
+    const isSelected = selectedTransactionIds.includes(id);
+    const newSelection = isSelected 
+      ? selectedTransactionIds.filter(item => item !== id)
+      : [...selectedTransactionIds, id];
+      
+    setSelectedTransactionIds(newSelection);
+    
+    if (newSelection.length === 0) {
+      setIsSelectionMode(false);
+    } else {
+      setIsSelectionMode(true);
+    }
   };
 
   const toggleAllSelection = () => {
-    if (selectedTransactionIds.length === filteredTransactions.length) {
+    if (selectedTransactionIds.length === filteredTransactions.length && filteredTransactions.length > 0) {
       setSelectedTransactionIds([]);
-    } else {
+      setIsSelectionMode(false);
+    } else if (filteredTransactions.length > 0) {
       setSelectedTransactionIds(filteredTransactions.map(t => t.id));
+      setIsSelectionMode(true);
     }
   };
 
@@ -690,6 +701,22 @@ export const Transactions = () => {
               </div>
               
               <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                   size="sm" 
+                   className={cn(
+                     "rounded-full gap-2 border-zinc-200 dark:border-zinc-800 h-9",
+                     isSelectionMode && "bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-600"
+                   )}
+                   onClick={() => {
+                     setIsSelectionMode(!isSelectionMode);
+                     if (isSelectionMode) setSelectedTransactionIds([]);
+                   }}
+                 >
+                   <CheckCircle2 className="w-4 h-4" />
+                   <span className="hidden sm:inline">{isSelectionMode ? 'Cancelar Seleção' : 'Selecionar'}</span>
+                 </Button>
+
                 <ImportDataDialog open={isImportCsvOpen} onOpenChange={setIsImportCsvOpen} />
                 
                 <Button 
@@ -859,9 +886,32 @@ export const Transactions = () => {
                   </h3>
                 )}
                 <div 
-                  className="flex items-center gap-4 p-4 bg-white dark:bg-[#2C2C2E] rounded-2xl border border-zinc-100 dark:border-[#2C2C2E] mb-4"
-                  onClick={() => setSelectedTransaction({ ...t, category })}
+                  className={cn(
+                    "flex items-center gap-4 p-4 bg-white dark:bg-[#2C2C2E] rounded-2xl border mb-4 transition-all",
+                    selectedTransactionIds.includes(t.id) ? "border-purple-500 bg-purple-50 dark:bg-purple-900/10" : "border-zinc-100 dark:border-[#2C2C2E]"
+                  )}
+                  onClick={() => {
+                    if (isSelectionMode) {
+                      toggleSelection(t.id, { stopPropagation: () => {} } as any);
+                    } else {
+                      setSelectedTransaction({ ...t, category });
+                    }
+                  }}
                 >
+                  {isSelectionMode && (
+                    <div className="flex items-center justify-center shrink-0">
+                      <input 
+                        type="checkbox" 
+                        className="rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-purple-600 focus:ring-purple-500 w-5 h-5"
+                        checked={selectedTransactionIds.includes(t.id)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          toggleSelection(t.id, e as any);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  )}
                   <div className={cn("w-12 h-12 rounded-full flex items-center justify-center shrink-0", t.type === 'income' ? 'bg-[#01bfa5]/10 text-[#01bfa5]' : 'bg-[#ee5350]/10 text-[#ee5350]')}>
                     <Icon className="w-6 h-6" />
                   </div>
@@ -882,6 +932,14 @@ export const Transactions = () => {
                           </Button>
                         } />
                         <DropdownMenuContent align="end" className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            setIsSelectionMode(true);
+                            setSelectedTransactionIds([t.id]);
+                          }} className="gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-purple-500" />
+                            Selecionar para excluir
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleStatus(t.id, t.status, e); }} className="gap-2">
                             {t.status === 'paid' ? <Circle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
                             Marcar como {t.status === 'paid' ? 'Pendente' : 'Pago'}
@@ -1085,6 +1143,14 @@ export const Transactions = () => {
                             <MoreVertical className="w-4 h-4 text-zinc-400" />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation();
+                              setIsSelectionMode(true);
+                              setSelectedTransactionIds([t.id]);
+                            }} className="flex items-center gap-2 cursor-pointer">
+                              <CheckCircle2 className="w-4 h-4 text-purple-500" />
+                              Selecionar para excluir
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={(e) => {
                               e.stopPropagation();
                               setEditingTransactionId(t.id);

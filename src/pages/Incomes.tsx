@@ -183,6 +183,18 @@ const SortableRow = ({
       </td>
       <td className="px-4 py-4 text-center">
         <div className="flex items-center justify-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8" 
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect?.(transaction.id, e);
+            }}
+            title="Selecionar para excluir"
+          >
+            <CheckCircle2 className="w-4 h-4 text-purple-400" />
+          </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => onEdit(transaction.id, e)}>
             <Edit2 className="w-4 h-4 text-zinc-400" />
           </Button>
@@ -322,16 +334,27 @@ export const Incomes = () => {
 
   const toggleSelection = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setSelectedTransactionIds(prev => 
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
+    const isSelected = selectedTransactionIds.includes(id);
+    const newSelection = isSelected 
+      ? selectedTransactionIds.filter(item => item !== id)
+      : [...selectedTransactionIds, id];
+      
+    setSelectedTransactionIds(newSelection);
+    
+    if (newSelection.length === 0) {
+      setIsSelectionMode(false);
+    } else {
+      setIsSelectionMode(true);
+    }
   };
 
   const toggleAllSelection = () => {
-    if (selectedTransactionIds.length === filteredIncomes.length) {
+    if (selectedTransactionIds.length === filteredIncomes.length && filteredIncomes.length > 0) {
       setSelectedTransactionIds([]);
-    } else {
+      setIsSelectionMode(false);
+    } else if (filteredIncomes.length > 0) {
       setSelectedTransactionIds(filteredIncomes.map(t => t.id));
+      setIsSelectionMode(true);
     }
   };
 
@@ -716,6 +739,23 @@ export const Incomes = () => {
               <Button 
                 variant="outline" 
                 size="sm" 
+                className={cn(
+                  "rounded-full shrink-0 gap-2 border-zinc-200 dark:border-zinc-800 h-9",
+                  isSelectionMode && "bg-[#01BFA5]/10 border-[#01BFA5] text-[#01BFA5]"
+                )}
+                onClick={() => {
+                  setIsSelectionMode(!isSelectionMode);
+                  if (isSelectionMode) setSelectedTransactionIds([]);
+                }}
+                title="Selecionar transações"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                <span className="hidden sm:inline">{isSelectionMode ? 'Cancelar' : 'Selecionar'}</span>
+              </Button>
+
+              <Button 
+                variant="outline" 
+                size="sm" 
                 className="rounded-full shrink-0 gap-2 border-zinc-200 dark:border-zinc-800 h-9"
                 onClick={handleExportCSV}
                 title="Exportar CSV"
@@ -825,7 +865,33 @@ export const Incomes = () => {
                               </span>
                             </h3>
                           )}
-                          <div className="flex items-center gap-4 p-4 bg-white dark:bg-[#2C2C2E] rounded-2xl border border-zinc-100 dark:border-[#2C2C2E] mb-4" onClick={(e) => handleEdit(t.id, e)}>
+                          <div 
+                            className={cn(
+                              "flex items-center gap-4 p-4 bg-white dark:bg-[#2C2C2E] rounded-2xl border mb-4 transition-all",
+                              selectedTransactionIds.includes(t.id) ? "border-[#01BFA5] bg-[#01BFA5]/10" : "border-zinc-100 dark:border-[#2C2C2E]"
+                            )}
+                            onClick={(e) => {
+                              if (isSelectionMode) {
+                                toggleSelection(t.id, e);
+                              } else {
+                                handleEdit(t.id, e);
+                              }
+                            }}
+                          >
+                            {isSelectionMode && (
+                              <div className="flex items-center justify-center shrink-0">
+                                <input 
+                                  type="checkbox" 
+                                  className="rounded border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-purple-600 focus:ring-purple-500 w-5 h-5"
+                                  checked={selectedTransactionIds.includes(t.id)}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    toggleSelection(t.id, e as any);
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                              </div>
+                            )}
                             <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#01BFA5]/10 text-[#01BFA5] shrink-0">
                                <Icon className="w-6 h-6" />
                             </div>
@@ -844,6 +910,14 @@ export const Incomes = () => {
                                      </Button>
                                    } />
                                    <DropdownMenuContent align="end" className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+                                     <DropdownMenuItem onClick={(e) => {
+                                       e.stopPropagation();
+                                       setIsSelectionMode(true);
+                                       setSelectedTransactionIds([t.id]);
+                                     }} className="gap-2">
+                                       <CheckCircle2 className="w-4 h-4 text-purple-500" />
+                                       Selecionar para excluir
+                                     </DropdownMenuItem>
                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleStatus(t.id, t.status, e); }} className="gap-2">
                                        {t.status === 'paid' ? <Circle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
                                        Marcar como {t.status === 'paid' ? 'Pendente' : 'Pago'}
