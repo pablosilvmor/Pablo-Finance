@@ -47,7 +47,6 @@ export const MobileMoreMenu = ({ isOpen, onClose }: MobileMoreMenuProps) => {
   }, []);
 
   const manageItems = [
-    { icon: Calculator, label: 'Calculadoras', path: '/calculators' },
     { icon: Layout, label: 'Categorias', path: '/categories' },
     { icon: LayoutDashboard, label: 'Centro de Custos', path: '/cost-centers' },
     { icon: Settings, label: 'Configurações', path: '/settings' },
