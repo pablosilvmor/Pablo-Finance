@@ -15,6 +15,7 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
   const { bulkUpsertTransactions, bulkDeleteTransactions, categories, transactions, setViewDate } = useAppStore();
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressText, setProgressText] = useState('');
   const [view, setView] = useState<'import' | 'history'>('import');
@@ -22,6 +23,24 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setFile(e.dataTransfer.files[0]);
     }
   };
 
@@ -143,6 +162,57 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
           };
         });
 
+      } else if (file.name.toLowerCase().endsWith('.ofx')) {
+        setProgressText('Processando OFX...');
+        setProgress(40);
+        const text = await file.text();
+        
+        // Simple OFX Parser using Regex
+        const transactionsMatch = text.match(/<STMTTRN>([\s\S]*?)<\/STMTTRN>/g);
+        
+        if (!transactionsMatch || transactionsMatch.length === 0) {
+          throw new Error('Nenhuma transação encontrada no arquivo OFX.');
+        }
+
+        const defaultCategory = categories[0]?.id || '';
+        
+        newTransactions = transactionsMatch.map((match, index) => {
+          const type = match.match(/<TRNTYPE>(.*)/)?.[1]?.trim().toLowerCase();
+          const dateStr = match.match(/<DTPOSTED>(.*)/)?.[1]?.trim();
+          const amountStr = match.match(/<TRNAMT>(.*)/)?.[1]?.trim();
+          const memo = match.match(/<MEMO>(.*)/)?.[1]?.trim();
+          const name = match.match(/<NAME>(.*)/)?.[1]?.trim();
+
+          if (!dateStr || !amountStr) return null;
+
+          // Parse Date (Format: YYYYMMDD...)
+          let isoDate = new Date().toISOString();
+          if (dateStr.length >= 8) {
+            const year = dateStr.substring(0, 4);
+            const month = dateStr.substring(4, 6);
+            const day = dateStr.substring(6, 8);
+            isoDate = new Date(`${year}-${month}-${day}T12:00:00Z`).toISOString();
+          }
+
+          let amount = parseFloat(amountStr.replace(',', '.')) || 0;
+          const transType: 'income' | 'expense' = amount > 0 ? 'income' : 'expense';
+          amount = Math.abs(amount);
+
+          const description = name || memo || `Importação OFX ${index + 1}`;
+
+          return {
+            id: `${importId}-${index}`,
+            date: isoDate,
+            description,
+            amount,
+            type: transType,
+            categoryId: defaultCategory,
+            status: 'paid' as const,
+            importId
+          };
+        }).filter(Boolean) as any[];
+
+        setProgress(70);
       } else {
         setProgressText('Processando CSV...');
         setProgress(40);
@@ -293,11 +363,15 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
       if (t.importId) {
         if (!historyMap.has(t.importId)) {
           const timestamp = parseInt(t.importId.split('-')[1]) || Date.now();
+          let type = 'CSV';
+          if (t.description.includes('PDF')) type = 'PDF';
+          if (t.description.includes('OFX')) type = 'OFX';
+          
           historyMap.set(t.importId, { 
             importId: t.importId, 
             count: 1, 
             timestamp,
-            type: t.description.includes('PDF') ? 'PDF' : 'CSV'
+            type
           });
         } else {
           historyMap.get(t.importId)!.count++;
@@ -339,11 +413,20 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
             </DialogHeader>
 
             <div className="space-y-6 pt-4">
-              <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-zinc-900/50">
+              <div 
+                className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl transition-colors ${
+                  isDragging 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50'
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
                 <input 
                   type="file" 
                   id="data-upload" 
-                  accept=".csv,.pdf,application/pdf,text/csv"
+                  accept=".csv,.pdf,.ofx,application/pdf,text/csv"
                   className="hidden" 
                   onChange={handleFileChange}
                 />
@@ -355,8 +438,10 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
                   </div>
                 ) : (
                   <label htmlFor="data-upload" className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
-                    <Upload className="w-8 h-8 text-zinc-400" />
-                    <span className="font-medium text-sm text-center text-zinc-600 dark:text-zinc-400">Clique para selecionar um arquivo PDF ou CSV</span>
+                    <Upload className={`w-8 h-8 ${isDragging ? 'text-primary' : 'text-zinc-400'}`} />
+                    <span className="font-medium text-sm text-center text-zinc-600 dark:text-zinc-400">
+                      {isDragging ? 'Solte o arquivo aqui' : 'Clique ou arraste um arquivo PDF, CSV ou OFX'}
+                    </span>
                     <span className="text-xs text-zinc-400 text-center">PDFs usam IA para identificar transações automaticamente.</span>
                   </label>
                 )}
@@ -414,7 +499,9 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
                   <div key={history.importId} className="flex items-center justify-between p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                     <div>
                       <div className="font-medium text-sm flex items-center gap-2">
-                        {history.type === 'PDF' ? <FileText className="w-4 h-4 text-primary" /> : <FileSpreadsheet className="w-4 h-4 text-green-500" />}
+                        {history.type === 'PDF' && <FileText className="w-4 h-4 text-primary" />}
+                        {history.type === 'CSV' && <FileSpreadsheet className="w-4 h-4 text-green-500" />}
+                        {history.type === 'OFX' && <FileText className="w-4 h-4 text-blue-500" />}
                         Importação {history.type}
                       </div>
                       <div className="text-xs text-zinc-500 mt-0.5">
