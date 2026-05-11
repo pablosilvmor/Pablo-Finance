@@ -118,6 +118,16 @@ export const Header = () => {
   return (
     <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6 sticky top-0 z-30">
       <div className="flex items-center gap-4 flex-1">
+        {/* Mobile Logo */}
+        <div className="flex items-center py-1">
+          <img 
+            src={theme === 'light' ? "https://i.imgur.com/6n9cYhs.png" : "https://i.imgur.com/kJHoB4m.png"} 
+            alt="Dindin" 
+            className="h-7 object-contain"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+        
         {userSettings.userName && (
           <div className="hidden lg:flex items-center gap-2 px-4 py-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-full border border-purple-100 dark:border-purple-800 animate-in fade-in slide-in-from-left-4 duration-500">
             <span className="text-xs font-bold text-purple-600 uppercase tracking-wider">
