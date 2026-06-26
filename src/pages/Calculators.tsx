@@ -275,8 +275,10 @@ export const Calculators = () => {
 
   const handleCalculateContadorDias = () => {
     if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
+      const [sYear, sMonth, sDay] = startDate.split('-').map(Number);
+      const start = new Date(sYear, sMonth - 1, sDay);
+      const [eYear, eMonth, eDay] = endDate.split('-').map(Number);
+      const end = new Date(eYear, eMonth - 1, eDay);
       const diffTime = Math.abs(end.getTime() - start.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
       setResult(diffDays);
@@ -289,7 +291,8 @@ export const Calculators = () => {
     if (endDate) {
       const start = new Date();
       start.setHours(0, 0, 0, 0);
-      const end = new Date(endDate);
+      const [eYear, eMonth, eDay] = endDate.split('-').map(Number);
+      const end = new Date(eYear, eMonth - 1, eDay);
       const diffTime = end.getTime() - start.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
       setResult(diffDays);
