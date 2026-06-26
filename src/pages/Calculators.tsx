@@ -39,6 +39,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { NumericFormat } from 'react-number-format';
 import { useAppStore } from '@/lib/store';
@@ -171,6 +172,7 @@ export const Calculators = () => {
   // States for Dates
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [includeStartDay, setIncludeStartDay] = useState(false);
 
   // States for new calculators
   const [days, setDays] = useState('');
@@ -280,10 +282,15 @@ export const Calculators = () => {
       const [eYear, eMonth, eDay] = endDate.split('-').map(Number);
       const end = new Date(eYear, eMonth - 1, eDay);
       const diffTime = Math.abs(end.getTime() - start.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+      let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+      
+      if (includeStartDay) {
+        diffDays += 1;
+      }
+
       setResult(diffDays);
       setResultText(`${diffDays} dias`);
-      setCalculationMemory(`Data Inicial: ${start.toLocaleDateString('pt-BR')}\nData Final: ${end.toLocaleDateString('pt-BR')}\nDiferença: ${diffDays} dias`);
+      setCalculationMemory(`Data Inicial: ${start.toLocaleDateString('pt-BR')}\nData Final: ${end.toLocaleDateString('pt-BR')}\nDiferença: ${diffDays} dias${includeStartDay ? ' (incluindo o dia inicial)' : ''}`);
     }
   };
 
@@ -294,16 +301,22 @@ export const Calculators = () => {
       const [eYear, eMonth, eDay] = endDate.split('-').map(Number);
       const end = new Date(eYear, eMonth - 1, eDay);
       const diffTime = end.getTime() - start.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-      setResult(diffDays);
-      if (diffDays < 0) {
-        setResultText(`Já se passaram ${Math.abs(diffDays)} dias`);
-      } else if (diffDays === 0) {
-        setResultText('É hoje!');
-      } else {
-        setResultText(`Faltam ${diffDays} dias`);
+      const rawDiffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+      
+      let absDiffDays = Math.abs(rawDiffDays);
+      if (includeStartDay && rawDiffDays !== 0) {
+        absDiffDays += 1;
       }
-      setCalculationMemory(`Hoje: ${start.toLocaleDateString('pt-BR')}\nData Alvo: ${end.toLocaleDateString('pt-BR')}\nDiferença: ${Math.abs(diffDays)} dias`);
+
+      setResult(absDiffDays);
+      if (rawDiffDays < 0) {
+        setResultText(`Já se passaram ${absDiffDays} dias`);
+      } else if (rawDiffDays === 0) {
+        setResultText(includeStartDay ? 'É hoje! (1 dia)' : 'É hoje!');
+      } else {
+        setResultText(`Faltam ${absDiffDays} dias`);
+      }
+      setCalculationMemory(`Hoje: ${start.toLocaleDateString('pt-BR')}\nData Alvo: ${end.toLocaleDateString('pt-BR')}\nDiferença: ${absDiffDays} dias${includeStartDay && rawDiffDays !== 0 ? ' (incluindo o dia inicial)' : ''}`);
     }
   };
 
@@ -670,6 +683,10 @@ export const Calculators = () => {
             <Label>Data Final</Label>
             <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
           </div>
+          <div className="flex items-center space-x-2 pt-2">
+            <Checkbox id="includeStartDay" checked={includeStartDay} onCheckedChange={(checked) => setIncludeStartDay(!!checked)} />
+            <Label htmlFor="includeStartDay" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Incluir dia de início na contagem</Label>
+          </div>
           <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleCalculateContadorDias}>Calcular</Button>
           {resultText !== null && (
             <div className="mt-4 p-4 bg-primary/10 rounded-lg text-center">
@@ -689,6 +706,10 @@ export const Calculators = () => {
           <div className="space-y-2">
             <Label>Data Alvo</Label>
             <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+          </div>
+          <div className="flex items-center space-x-2 pt-2">
+            <Checkbox id="includeStartDay2" checked={includeStartDay} onCheckedChange={(checked) => setIncludeStartDay(!!checked)} />
+            <Label htmlFor="includeStartDay2" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Incluir dia de hoje na contagem</Label>
           </div>
           <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleCalculateQuantosDias}>Calcular</Button>
           {resultText !== null && (
