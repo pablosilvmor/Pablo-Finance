@@ -119,7 +119,13 @@ export const Header = () => {
     <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6 sticky top-0 z-30">
       <div className="flex items-center gap-4 flex-1">
         {/* Mobile Logo */}
-        <div className="flex items-center py-1">
+        <div className="lg:hidden flex items-center gap-2 py-1">
+          <img 
+            src="https://i.imgur.com/rltsQSg.png" 
+            alt="Dindin Ícone" 
+            className="h-7 w-7 object-contain"
+            referrerPolicy="no-referrer"
+          />
           <img 
             src={theme === 'light' ? "https://i.imgur.com/6n9cYhs.png" : "https://i.imgur.com/kJHoB4m.png"} 
             alt="Dindin" 
