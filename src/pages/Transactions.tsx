@@ -26,6 +26,7 @@ import { iconMap } from '@/lib/icons';
 import { cn } from '@/lib/utils';
 
 import { TransactionFilterDialog, FilterConfig } from '@/components/TransactionFilterDialog';
+import { auth } from '@/lib/firebase';
 
 export const Transactions = () => {
   const { transactions, activeTransactions, categories, costCenters, deleteTransaction, bulkDeleteTransactions, bulkUpsertTransactions, updateTransaction, userSettings, tags, piggyBank, viewDate: selectedDate, setViewDate: setSelectedDate } = useAppStore();
@@ -230,7 +231,7 @@ export const Transactions = () => {
   };
 
   const handleExportCSV = () => {
-    const headers = ['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor', 'Status'];
+    const headers = ['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor', 'Status', 'Observação'];
     const rows = filteredTransactions.map(t => {
       const cat = getCategory(t.categoryId);
       const type = t.type === 'income' ? 'Receita' : (t.type === 'expense' ? 'Despesa' : 'Transferência');
@@ -241,7 +242,8 @@ export const Transactions = () => {
         `"${cat?.name || ''}"`,
         type,
         t.amount.toString().replace('.', ','),
-        status
+        status,
+        `"${(t.observation || '').replace(/"/g, '""')}"`
       ].join(';');
     });
 
@@ -286,7 +288,7 @@ export const Transactions = () => {
     }
 
     const doc = new jsPDF();
-    const headers = [['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor', 'Status']];
+    const headers = [['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor', 'Status', 'Observações']];
     
     const currencyFormatter = new Intl.NumberFormat(userSettings.language, { 
       style: 'currency', 
@@ -296,6 +298,12 @@ export const Transactions = () => {
     const cumulativeIncome = activeTransactions.filter(t => t.type === 'income' && t.status === 'paid' && new Date(t.date) <= filters.endDate).reduce((acc, curr) => acc + curr.amount, 0);
     const cumulativeExpense = activeTransactions.filter(t => t.type === 'expense' && t.status === 'paid' && new Date(t.date) <= filters.endDate).reduce((acc, curr) => acc + curr.amount, 0);
     const saldoDoMes = cumulativeIncome - cumulativeExpense;
+
+    const reportIncome = filteredTransactions.filter(t => t.type === 'income' && !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
+    const reportExpense = filteredTransactions.filter(t => t.type === 'expense' && !t.ignored).reduce((acc, curr) => acc + curr.amount, 0);
+    const reportBalance = reportIncome - reportExpense;
+
+    const profileName = userSettings.userName?.trim() || auth.currentUser?.displayName || 'Dindin User';
 
     const rows = filteredTransactions.map(t => {
       const cat = getCategory(t.categoryId);
@@ -308,7 +316,8 @@ export const Transactions = () => {
         cat?.name || '',
         type,
         currencyFormatter.format(t.amount),
-        status
+        status,
+        t.observation || '-'
       ];
     });
 
@@ -319,17 +328,15 @@ export const Transactions = () => {
       : `${format(filters.startDate, 'dd/MM/yyyy', { locale: dateLocale })} a ${format(filters.endDate, 'dd/MM/yyyy', { locale: dateLocale })}`;
     const generatedAt = format(new Date(), 'dd/MM/yyyy HH:mm');
 
-    const totalPagesExp = '{total_pages_count_string}';
-
     autoTable(doc, {
       head: headers,
       body: rows,
       startY: 75,
-      margin: { top: 48 }, // Increased from 42 to avoid overlap with headers naturally on page 2+
+      margin: { top: 48 }, // Increased to avoid overlap with headers on page 2+
       theme: 'grid',
       styles: {
-        fontSize: 9,
-        cellPadding: 4,
+        fontSize: 8,
+        cellPadding: 3,
         overflow: 'linebreak',
         fontStyle: 'normal',
       },
@@ -341,8 +348,33 @@ export const Transactions = () => {
       alternateRowStyles: {
         fillColor: [248, 250, 252], // Zebrado (slate-50)
       },
+      didParseCell: (data) => {
+        if (data.section === 'body') {
+          const rawRow = filteredTransactions[data.row.index];
+          if (rawRow) {
+            // Column 'Valor' (index 4)
+            if (data.column.index === 4) {
+              if (rawRow.type === 'expense') {
+                data.cell.styles.textColor = [239, 68, 68]; // Red
+              } else if (rawRow.type === 'income') {
+                data.cell.styles.textColor = [34, 197, 94]; // Green
+              }
+            }
+            // Column 'Status' (index 5)
+            if (data.column.index === 5) {
+              if (rawRow.status === 'pending') {
+                data.cell.styles.textColor = [239, 68, 68]; // Red
+              } else if (rawRow.status === 'paid') {
+                data.cell.styles.textColor = [34, 197, 94]; // Green
+              }
+            }
+          }
+        }
+      },
       didDrawPage: (data) => {
-        // Logo / Title - Header
+        const pageWidth = doc.internal.pageSize.getWidth();
+
+        // Logo / Title - Header Left
         if (logoBase64 && logoWidth > 0 && logoHeight > 0) {
           doc.addImage(logoBase64, 'PNG', data.settings.margin.left, 10, logoWidth, logoHeight);
         } else {
@@ -351,8 +383,14 @@ export const Transactions = () => {
           doc.setFont('helvetica', 'bold');
           doc.text('DINDIN', data.settings.margin.left, 20);
         }
+
+        // Profile / User Name - Header Right
+        doc.setFontSize(11);
+        doc.setTextColor(100, 116, 139); // slate-500
+        doc.setFont('helvetica', 'bold');
+        doc.text(profileName, pageWidth - data.settings.margin.right, 20, { align: 'right' });
         
-        doc.setFontSize(14);
+        doc.setFontSize(13);
         doc.setTextColor(50, 50, 50);
         doc.setFont('helvetica', 'normal');
         doc.text(`Relatório de Transações - ${currentMonthLabel.charAt(0).toUpperCase() + currentMonthLabel.slice(1)}`, data.settings.margin.left, 34);
@@ -360,7 +398,7 @@ export const Transactions = () => {
         if (data.pageNumber === 1) {
            doc.setDrawColor(226, 232, 240); // zinc-200
            doc.setFillColor(248, 250, 252); // slate-50
-           const w = doc.internal.pageSize.getWidth() - data.settings.margin.left - data.settings.margin.right;
+           const w = pageWidth - data.settings.margin.left - data.settings.margin.right;
            doc.roundedRect(data.settings.margin.left, 42, w, 20, 2, 2, 'FD');
            
            const totalsY = 49;
@@ -379,13 +417,13 @@ export const Transactions = () => {
            doc.text(currencyFormatter.format(saldoDoMes), data.settings.margin.left + 5, valY);
            
            doc.setTextColor(34, 197, 94); // green-500
-           doc.text(currencyFormatter.format(totalIncome), data.settings.margin.left + w * 0.25 + 5, valY);
+           doc.text(currencyFormatter.format(reportIncome), data.settings.margin.left + w * 0.25 + 5, valY);
            
            doc.setTextColor(239, 68, 68); // red-500
-           doc.text(currencyFormatter.format(totalExpense), data.settings.margin.left + w * 0.5 + 5, valY);
+           doc.text(currencyFormatter.format(reportExpense), data.settings.margin.left + w * 0.5 + 5, valY);
            
-           doc.setTextColor(balance >= 0 ? 34 : 239, balance >= 0 ? 197 : 68, balance >= 0 ? 94 : 68);
-           doc.text(currencyFormatter.format(balance), data.settings.margin.left + w * 0.75 + 5, valY);
+           doc.setTextColor(reportBalance >= 0 ? 34 : 239, reportBalance >= 0 ? 197 : 68, reportBalance >= 0 ? 94 : 68);
+           doc.text(currencyFormatter.format(reportBalance), data.settings.margin.left + w * 0.75 + 5, valY);
            
            doc.setFont('helvetica', 'normal');
         }
