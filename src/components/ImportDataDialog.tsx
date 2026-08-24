@@ -11,6 +11,109 @@ interface ImportDataDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Helper to clean column headers for resilient matching
+const normalizeHeader = (h: string) => 
+  (h || '')
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+
+// Helper to safely parse dates from various bank CSV formats
+const parseCSVDate = (dateStr: string): string | null => {
+  if (!dateStr) return null;
+  const str = dateStr.trim();
+
+  // Ignore invalid / summary row placeholder dates
+  if (str === '00/00/0000' || str.startsWith('00/00') || str.includes('0000-00-00')) {
+    return null;
+  }
+
+  if (str.includes('/') || str.includes('-') || str.includes('.')) {
+    const sep = str.includes('/') ? '/' : (str.includes('-') ? '-' : '.');
+    const parts = str.split(sep).map(p => p.trim());
+
+    if (parts.length === 3) {
+      let day = 0, month = 0, year = 0;
+      
+      if (parts[0].length === 4) {
+        // YYYY-MM-DD
+        year = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10);
+        day = parseInt(parts[2], 10);
+      } else {
+        // DD/MM/YYYY
+        day = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10);
+        year = parseInt(parts[2], 10);
+        if (year < 100) year += 2000;
+      }
+
+      if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900 && year <= 2100) {
+        const d = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+        if (!isNaN(d.getTime())) {
+          return d.toISOString();
+        }
+      }
+    }
+  }
+
+  const fallbackDate = new Date(str);
+  if (!isNaN(fallbackDate.getTime()) && fallbackDate.getFullYear() >= 1900 && fallbackDate.getFullYear() <= 2100) {
+    return fallbackDate.toISOString();
+  }
+
+  return null;
+};
+
+// Helper to parse amount and detect negative sign
+const parseAmountAndSign = (rawVal: string): { amount: number; isNegative: boolean } => {
+  if (!rawVal) return { amount: 0, isNegative: false };
+  let str = rawVal.trim().replace(/[R$\s]/g, '');
+  const isNegative = str.includes('-') || str.startsWith('(');
+  str = str.replace(/[-()]/g, '').trim();
+
+  if (str.includes(',') && str.includes('.')) {
+    // Brazilian format: 1.649,36 -> 1649.36
+    str = str.replace(/\./g, '').replace(',', '.');
+  } else if (str.includes(',')) {
+    // Brazilian format: 56,92 -> 56.92
+    str = str.replace(',', '.');
+  }
+
+  const num = parseFloat(str) || 0;
+  return { amount: Math.abs(num), isNegative: isNegative || num < 0 };
+};
+
+// Helper to filter out account summary / balance info lines
+const isSummaryOrInvalidRow = (description: string, rawDateStr: string, amount: number): boolean => {
+  if (!rawDateStr || rawDateStr.trim() === '00/00/0000' || rawDateStr.trim().startsWith('00/00')) {
+    return true;
+  }
+
+  const norm = (description || '')
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z]/g, "");
+
+  if (
+    norm === 'saldo' ||
+    norm.includes('saldododia') ||
+    norm.includes('saldoanterior') ||
+    norm.includes('saldoatual') ||
+    norm.includes('saldofinal') ||
+    norm.includes('saldoparcial') ||
+    norm.includes('resumododia') ||
+    norm === 'saldoinforma'
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
 export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) => {
   const { bulkUpsertTransactions, bulkDeleteTransactions, categories, transactions, setViewDate } = useAppStore();
   const [file, setFile] = useState<File | null>(null);
@@ -242,63 +345,79 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
           throw new Error('O arquivo CSV está vazio ou possui apenas o cabeçalho.');
         }
 
-        const headers = lines[0].map(h => h.trim().toLowerCase());
-        const isNubankCreditCard = headers.includes('date') && headers.includes('title') && headers.includes('amount');
-        
-        const dateIdx = headers.findIndex(h => h.includes('data') || h.includes('date'));
-        const descIdx = headers.findIndex(h => h.includes('descri') || h.includes('memo') || h.includes('title'));
-        const catIdx = headers.findIndex(h => h.includes('categoria') || h.includes('category'));
-        const typeIdx = headers.findIndex(h => h.includes('tipo') || h.includes('type'));
-        const valIdx = headers.findIndex(h => h.includes('valor') || h.includes('amount'));
+        const headers = lines[0];
+        const cleanedHeaders = headers.map(normalizeHeader);
+
+        const isNubankCreditCard = cleanedHeaders.includes('date') && cleanedHeaders.includes('title') && cleanedHeaders.includes('amount');
+
+        let dateIdx = cleanedHeaders.findIndex(h => h.includes('data') || h.includes('date'));
+        let descIdx = cleanedHeaders.findIndex(h => h.includes('lancamento') || h.includes('descri') || h.includes('memo') || h.includes('title') || h.includes('historico'));
+        let detailsIdx = cleanedHeaders.findIndex(h => h.includes('detalhe') || h.includes('complemento') || h.includes('obs'));
+        let catIdx = cleanedHeaders.findIndex(h => h.includes('categoria') || h.includes('category'));
+        let typeIdx = cleanedHeaders.findIndex(h => h.includes('tipolancamento') || h.includes('tipo') || h.includes('type') || h.includes('natureza'));
+        let valIdx = cleanedHeaders.findIndex(h => h.includes('valor') || h.includes('amount') || h.includes('val'));
+
+        // Fallbacks if indices are missing
+        if (dateIdx === -1) dateIdx = 0;
+        if (valIdx === -1) {
+          valIdx = cleanedHeaders.findIndex((_, i) => lines[1]?.[i] && !isNaN(parseFloat(lines[1][i].replace(/[R$\s,.]/g, ''))));
+        }
 
         if (dateIdx === -1 || valIdx === -1) {
-          throw new Error('Colunas obrigatórias não encontradas no CSV. O arquivo deve ter pelo menos Date e Amount/Valor.');
+          throw new Error('Colunas obrigatórias de data e valor não foram encontradas no CSV.');
         }
 
         const defaultCategory = categories[0]?.id || '';
-        
-        newTransactions = lines.slice(1).map((columns, index) => {
-          if (columns.length < 2) return null;
 
-          const dateStr = columns[dateIdx];
-          let isoDate = new Date().toISOString();
-          if (dateStr && dateStr.includes('/')) {
-              const parts = dateStr.split('/');
-              if (parts[2]?.length === 4) { // DD/MM/YYYY
-                  isoDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T12:00:00Z`).toISOString();
-              }
-          } else if (dateStr) {
-              const d = new Date(dateStr);
-              if (!isNaN(d.getTime())) isoDate = d.toISOString();
+        newTransactions = lines.slice(1).map((columns, index) => {
+          if (!columns || columns.length < 2) return null;
+
+          const rawDateStr = columns[dateIdx] || '';
+          const isoDate = parseCSVDate(rawDateStr);
+          if (!isoDate) return null; // Invalid date or summary row date like 00/00/0000
+
+          const rawDesc = descIdx !== -1 && columns[descIdx] ? columns[descIdx].trim() : '';
+          const rawDetails = detailsIdx !== -1 && columns[detailsIdx] ? columns[detailsIdx].trim() : '';
+
+          let description = '';
+          if (rawDesc && rawDetails) {
+            description = `${rawDesc} - ${rawDetails}`;
+          } else {
+            description = rawDesc || rawDetails || `Importação linha ${index + 1}`;
           }
 
           const rawAmount = columns[valIdx] || '0';
-          let amountStr = rawAmount.replace(/[R$\sA-Za-z]/g, '');
-          if (amountStr.includes(',')) {
-            amountStr = amountStr.replace(/\./g, '').replace(',', '.');
-          }
-          let amount = parseFloat(amountStr) || 0;
+          const { amount, isNegative } = parseAmountAndSign(rawAmount);
 
+          if (isSummaryOrInvalidRow(description, rawDateStr, amount)) {
+            return null;
+          }
+
+          // Determine transaction type
           let type: 'income' | 'expense' = 'expense';
-          if (typeIdx !== -1 && columns[typeIdx]) {
-              type = columns[typeIdx].toLowerCase().includes('receita') || columns[typeIdx].toLowerCase().includes('income') ? 'income' : 'expense';
-          } else if (isNubankCreditCard) {
-              type = amount > 0 ? 'expense' : 'income';
-              amount = Math.abs(amount);
-          } else if (amount < 0) {
+          const rawType = typeIdx !== -1 && columns[typeIdx] ? columns[typeIdx].trim().toLowerCase() : '';
+
+          if (rawType) {
+            if (rawType.includes('sada') || rawType.includes('saida') || rawType.includes('saída') || rawType.includes('débito') || rawType.includes('debito') || (rawType.startsWith('s') || rawType.startsWith('d')) && !rawType.includes('entrada') && !rawType.includes('receita') && !rawType.includes('income')) {
               type = 'expense';
-              amount = Math.abs(amount);
-          } else {
+            } else if (rawType.includes('entrada') || rawType.includes('receita') || rawType.includes('income') || rawType.includes('crédito') || rawType.includes('credito') || rawType.startsWith('e') || rawType.startsWith('c')) {
               type = 'income';
+            } else {
+              type = isNegative ? 'expense' : 'income';
+            }
+          } else if (isNubankCreditCard) {
+            type = amount > 0 ? 'expense' : 'income';
+          } else if (isNegative) {
+            type = 'expense';
+          } else {
+            type = 'income';
           }
 
           let categoryId = defaultCategory;
           if (catIdx !== -1 && columns[catIdx]) {
-              const found = categories.find(c => c.name.toLowerCase() === columns[catIdx].toLowerCase());
-              if (found) categoryId = found.id;
+            const found = categories.find(c => c.name.toLowerCase() === columns[catIdx].toLowerCase());
+            if (found) categoryId = found.id;
           }
-
-          const description = descIdx !== -1 ? columns[descIdx] : `Importação linha ${index + 1}`;
 
           return {
             id: `${importId}-${index}`,
