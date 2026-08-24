@@ -172,6 +172,17 @@ export const MobileMoreMenu = ({ isOpen, onClose }: MobileMoreMenuProps) => {
                   <p className="text-zinc-400 text-sm leading-relaxed">
                     Seu assistente financeiro pessoal completo para gestão de gastos, metas e investimentos.
                   </p>
+                  <p className="text-sm text-zinc-400 pt-2">
+                    Desenvolvido por{" "}
+                    <a 
+                      href="https://pablosilvmor.github.io/site/1" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-purple-400 hover:underline font-medium"
+                    >
+                      Pablo Moreira
+                    </a>
+                  </p>
                 </div>
               )}
             </div>
