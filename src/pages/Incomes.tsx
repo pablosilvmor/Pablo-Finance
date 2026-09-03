@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { NewTransactionDialog } from '@/components/NewTransactionDialog';
 import { MonthPicker } from '@/components/MonthPicker';
 import { CategoryBadge } from '@/components/CategoryBadge';
+import { InlineCategorySelect } from '@/components/InlineCategorySelect';
 import { AnimatedNumber } from '@/components/AnimatedNumber';
 import { iconMap } from '@/lib/icons';
 import { 
@@ -175,8 +176,12 @@ const SortableRow = ({
           )}
         </div>
       </td>
-      <td className="px-4 py-4">
-        <CategoryBadge category={category} />
+      <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+        <InlineCategorySelect
+          transactionId={transaction.id}
+          categoryId={transaction.categoryId}
+          type="income"
+        />
       </td>
       <td className="px-4 py-4 text-right text-[#01bfa5] whitespace-nowrap">
         {formatCurrency(transaction.amount)}

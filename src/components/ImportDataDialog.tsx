@@ -5,6 +5,7 @@ import { Upload, AlertCircle, FileSpreadsheet, FileText, Trash2, ArrowLeft, Hist
 import { useAppStore } from '../lib/store';
 import { toast } from 'sonner';
 import { parsePdfTransactions, deduplicateTransactions } from '../lib/gemini';
+import { determineCategoryForTransaction } from '../lib/categorizer';
 
 interface ImportDataDialogProps {
   open: boolean;
@@ -240,8 +241,14 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
             }
           }
           
-          let finalCategoryId = defaultCategory;
-          if (t.categoryId) {
+          let finalCategoryId = determineCategoryForTransaction(
+            t.description || '',
+            type,
+            categories,
+            transactions
+          );
+
+          if (t.categoryId && !finalCategoryId) {
              const found = categories.find(c => 
                c.id === t.categoryId || 
                c.name.toLowerCase() === String(t.categoryId).toLowerCase() ||
@@ -308,6 +315,12 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
           amount = Math.abs(amount);
 
           const description = name || memo || `Importação OFX ${index + 1}`;
+          const categoryId = determineCategoryForTransaction(
+            description,
+            transType,
+            categories,
+            transactions
+          );
 
           return {
             id: `${importId}-${index}`,
@@ -315,7 +328,7 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
             description,
             amount,
             type: transType,
-            categoryId: defaultCategory,
+            categoryId,
             status: 'paid' as const,
             importId
           };
@@ -413,10 +426,19 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
             type = 'income';
           }
 
-          let categoryId = defaultCategory;
+          let categoryId = '';
           if (catIdx !== -1 && columns[catIdx]) {
             const found = categories.find(c => c.name.toLowerCase() === columns[catIdx].toLowerCase());
             if (found) categoryId = found.id;
+          }
+
+          if (!categoryId) {
+            categoryId = determineCategoryForTransaction(
+              description,
+              type,
+              categories,
+              transactions
+            );
           }
 
           return {

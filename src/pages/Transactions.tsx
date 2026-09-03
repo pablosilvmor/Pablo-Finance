@@ -21,6 +21,7 @@ import { TransactionMenuOverlay } from '@/components/TransactionMenuOverlay';
 import { ImportDataDialog } from '@/components/ImportDataDialog';
 import { useTranslation } from '@/lib/i18n';
 import { CategoryBadge } from '@/components/CategoryBadge';
+import { InlineCategorySelect } from '@/components/InlineCategorySelect';
 import { AnimatedNumber } from '@/components/AnimatedNumber';
 import { iconMap } from '@/lib/icons';
 import { cn } from '@/lib/utils';
@@ -1144,8 +1145,12 @@ export const Transactions = () => {
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4">
-                        <CategoryBadge category={category} />
+                      <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                        <InlineCategorySelect
+                          transactionId={t.id}
+                          categoryId={t.categoryId}
+                          type={t.type}
+                        />
                       </td>
                       <td className={`px-6 py-4 text-right font-medium whitespace-nowrap ${t.type === 'income' ? 'text-[#01bfa5]' : 'text-[#ee5350]'}`}>
                         {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
