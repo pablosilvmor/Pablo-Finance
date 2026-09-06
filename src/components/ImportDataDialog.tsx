@@ -6,6 +6,7 @@ import { useAppStore } from '../lib/store';
 import { toast } from 'sonner';
 import { parsePdfTransactions, deduplicateTransactions } from '../lib/gemini';
 import { determineCategoryForTransaction } from '../lib/categorizer';
+import * as XLSX from 'xlsx';
 
 interface ImportDataDialogProps {
   open: boolean;
@@ -343,26 +344,45 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
       } else {
         setProgressText('Processando arquivo...');
         setProgress(40);
-        const text = await file.text();
-        const Papa = await import('papaparse');
         
-        const parsed = Papa.parse(text, {
-          header: false,
-          skipEmptyLines: 'greedy',
-          delimiter: "", // auto-detect delimiter (comma, semicolon, tab)
-        });
+        let lines: string[][] = [];
+        const fileNameLower = file.name.toLowerCase();
+        
+        if (fileNameLower.endsWith('.xlsx') || fileNameLower.endsWith('.xls') || fileNameLower.endsWith('.ods')) {
+          setProgressText('Lendo planilha Excel (Sicoob/Bancos)...');
+          const buffer = await file.arrayBuffer();
+          const workbook = XLSX.read(buffer, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as any[][];
+          lines = jsonData.map(row => row.map(cell => String(cell !== undefined && cell !== null ? cell : '')));
+        } else {
+          setProgressText('Lendo arquivo CSV/Texto...');
+          const text = await file.text();
+          const Papa = await import('papaparse');
+          
+          const parsed = Papa.parse(text, {
+            header: false,
+            skipEmptyLines: 'greedy',
+            delimiter: "", // auto-detect delimiter (comma, semicolon, tab)
+          });
+
+          if (parsed.errors.length > 0) {
+            console.warn('PapaParse errors:', parsed.errors);
+          }
+
+          lines = parsed.data as string[][];
+        }
 
         setProgress(70);
 
-        if (parsed.errors.length > 0) {
-          console.warn('PapaParse errors:', parsed.errors);
-        }
+        const filteredLines = lines.filter(row => row && row.some(cell => cell && String(cell).trim() !== ''));
 
-        const lines = (parsed.data as string[][]).filter(row => row && row.some(cell => cell && cell.trim() !== ''));
-
-        if (lines.length === 0) {
+        if (filteredLines.length === 0) {
           throw new Error('O arquivo está vazio.');
         }
+
+        const linesToUse = filteredLines;
 
         // Intelligent header search in the first 15 lines (handles Sicoob, Banco do Brasil, etc., with metadata headers at top)
         let headerRowIndex = 0;
@@ -373,8 +393,8 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
         let typeIdx = -1;
         let valIdx = -1;
 
-        for (let i = 0; i < Math.min(lines.length, 15); i++) {
-          const row = lines[i];
+        for (let i = 0; i < Math.min(linesToUse.length, 15); i++) {
+          const row = linesToUse[i];
           const cleanedRow = row.map(normalizeHeader);
           const hasDate = cleanedRow.some(h => h.includes('data') || h.includes('date') || h === 'dt');
           const hasValueOrDesc = cleanedRow.some(h => h.includes('valor') || h.includes('amount') || h.includes('val') || h.includes('vlr') || h.includes('historico') || h.includes('hist') || h.includes('lancamento') || h.includes('descricao') || h.includes('documento') || h.includes('doc'));
@@ -385,7 +405,7 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
           }
         }
 
-        const headers = lines[headerRowIndex] || lines[0];
+        const headers = linesToUse[headerRowIndex] || linesToUse[0];
         const cleanedHeaders = headers.map(normalizeHeader);
 
         const isNubankCreditCard = cleanedHeaders.includes('date') && cleanedHeaders.includes('title') && cleanedHeaders.includes('amount');
@@ -402,8 +422,8 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
         if (valIdx === -1) {
           for (let col = 0; col < headers.length; col++) {
             let numericCount = 0;
-            for (let r = headerRowIndex + 1; r < Math.min(lines.length, headerRowIndex + 10); r++) {
-              const val = lines[r]?.[col];
+            for (let r = headerRowIndex + 1; r < Math.min(linesToUse.length, headerRowIndex + 10); r++) {
+              const val = linesToUse[r]?.[col];
               if (val && /[0-9]+[,\.][0-9]+/.test(val)) {
                 numericCount++;
               }
@@ -419,7 +439,7 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
           throw new Error('Colunas obrigatórias de data e valor não foram encontradas no arquivo.');
         }
 
-        const dataRows = lines.slice(headerRowIndex + 1);
+        const dataRows = linesToUse.slice(headerRowIndex + 1);
         const defaultCategory = categories[0]?.id || '';
 
         newTransactions = dataRows.map((columns, index) => {
