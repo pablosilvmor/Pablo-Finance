@@ -94,28 +94,95 @@ const parseAmountAndSign = (rawVal: string): { amount: number; isNegative: boole
 };
 
 // Helper to filter out account summary / balance info lines
-const isSummaryOrInvalidRow = (description: string, rawDateStr: string, amount: number): boolean => {
+const isSummaryOrInvalidRow = (
+  description: string, 
+  rawDateStr: string, 
+  amount: number,
+  allColumns?: string[]
+): boolean => {
   if (!rawDateStr || rawDateStr.trim() === '00/00/0000' || rawDateStr.trim().startsWith('00/00')) {
     return true;
   }
 
-  const norm = (description || '')
+  // Combine description and all cell values from the row to check
+  const textsToCheck = [description, ...(allColumns || [])];
+
+  for (const text of textsToCheck) {
+    if (!text || typeof text !== 'string') continue;
+    const clean = text.trim();
+    if (!clean) continue;
+
+    const norm = clean
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "");
+
+    if (
+      norm === 'saldo' ||
+      norm === 'saldos' ||
+      norm === 'resumo' ||
+      norm === 'saldoinforma' ||
+      norm.includes('saldododia') ||
+      norm.includes('saldoanterior') ||
+      norm.includes('saldoatual') ||
+      norm.includes('saldofinal') ||
+      norm.includes('saldoparcial') ||
+      norm.includes('saldobloqueado') ||
+      norm.includes('saldobloqueadoanterior') ||
+      norm.includes('saldoprovisorio') ||
+      norm.includes('saldofim') ||
+      norm.includes('saldoconta') ||
+      norm.includes('saldodisponivel') ||
+      norm.includes('saldodevedor') ||
+      norm.includes('saldocredor') ||
+      norm.includes('saldocc') ||
+      norm.includes('saldofinaldia') ||
+      norm.includes('saldodofinal') ||
+      norm.includes('saldonofinal') ||
+      norm.includes('resumododia') ||
+      norm.includes('resumoconta') ||
+      norm.includes('totalentradas') ||
+      norm.includes('totalsaidas') ||
+      norm.includes('totaldodia') ||
+      norm.includes('totallancamentos') ||
+      norm.includes('posicaoconsolidada')
+    ) {
+      return true;
+    }
+  }
+
+  // Also check normalized words in description
+  const lowerDesc = (description || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (
+    lowerDesc.includes('saldo do dia') ||
+    lowerDesc.includes('saldo do final do dia') ||
+    lowerDesc.includes('saldo anterior') ||
+    lowerDesc.includes('saldo bloqueado') ||
+    lowerDesc.includes('saldo final') ||
+    lowerDesc.includes('saldo atual') ||
+    lowerDesc.includes('saldo em c/c') ||
+    lowerDesc.includes('saldo c/c') ||
+    lowerDesc.includes('saldo conta') ||
+    lowerDesc.includes('saldo credor') ||
+    lowerDesc.includes('saldo devedor') ||
+    lowerDesc.includes('resumo do dia')
+  ) {
+    return true;
+  }
+
+  // If description fell back to generic "Importação linha X" and row contains saldo
+  const descNorm = (description || '')
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z]/g, "");
+    .replace(/[^a-z0-9]/g, "");
 
-  if (
-    norm === 'saldo' ||
-    norm.includes('saldododia') ||
-    norm.includes('saldoanterior') ||
-    norm.includes('saldoatual') ||
-    norm.includes('saldofinal') ||
-    norm.includes('saldoparcial') ||
-    norm.includes('resumododia') ||
-    norm === 'saldoinforma'
-  ) {
-    return true;
+  if (descNorm.startsWith('importacaolinha')) {
+    const rowStr = (allColumns || []).join(' ').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (rowStr.includes('saldo')) {
+      return true;
+    }
   }
 
   return false;
@@ -265,7 +332,9 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
              }
           }
           
-          console.log("Importando PDF transaction:", t.description, "Data original:", t.date, "Data parseada:", parsedDate.toISOString(), "CategoryId:", finalCategoryId);
+          if (isSummaryOrInvalidRow(t.description || '', parsedDate.toISOString(), amount)) {
+            return null;
+          }
 
           return {
             id: `${importId}-${index}`,
@@ -277,7 +346,7 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
             status: 'paid' as const,
             importId
           };
-        });
+        }).filter(Boolean);
 
       } else if (file.name.toLowerCase().endsWith('.ofx')) {
         setProgressText('Processando OFX...');
@@ -411,8 +480,36 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
         const isNubankCreditCard = cleanedHeaders.includes('date') && cleanedHeaders.includes('title') && cleanedHeaders.includes('amount');
 
         dateIdx = cleanedHeaders.findIndex(h => h.includes('data') || h.includes('date') || h === 'dt');
-        descIdx = cleanedHeaders.findIndex(h => h.includes('lancamento') || h.includes('descri') || h.includes('memo') || h.includes('title') || h.includes('historico') || h.includes('hist') || h.includes('documento'));
-        detailsIdx = cleanedHeaders.findIndex(h => h.includes('detalhe') || h.includes('complemento') || h.includes('obs'));
+        
+        // Prioritize actual transaction description/history columns over document number
+        descIdx = cleanedHeaders.findIndex(h => 
+          h.includes('historico') || 
+          h.includes('hist') || 
+          h.includes('descricao') || 
+          h.includes('descri') || 
+          h.includes('lancamento') || 
+          h.includes('discriminacao') || 
+          h.includes('memo') || 
+          h.includes('title')
+        );
+
+        const docIdx = cleanedHeaders.findIndex(h => 
+          h.includes('documento') || 
+          h.includes('doc') || 
+          h.includes('ndoc') || 
+          h.includes('numdoc')
+        );
+
+        if (descIdx === -1 && docIdx !== -1) {
+          descIdx = docIdx;
+        }
+
+        detailsIdx = cleanedHeaders.findIndex(h => 
+          h.includes('informacoes') || 
+          h.includes('complement') || 
+          h.includes('detalhe') || 
+          h.includes('obs')
+        );
         catIdx = cleanedHeaders.findIndex(h => h.includes('categoria') || h.includes('category'));
         typeIdx = cleanedHeaders.findIndex(h => h.includes('tipolancamento') || h.includes('tipo') || h.includes('type') || h.includes('natureza'));
         valIdx = cleanedHeaders.findIndex(h => h.includes('valor') || h.includes('amount') || h.includes('val') || h.includes('vlr'));
@@ -451,18 +548,19 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
 
           const rawDesc = descIdx !== -1 && columns[descIdx] ? columns[descIdx].trim() : '';
           const rawDetails = detailsIdx !== -1 && columns[detailsIdx] ? columns[detailsIdx].trim() : '';
+          const rawDoc = docIdx !== -1 && docIdx !== descIdx && columns[docIdx] ? columns[docIdx].trim() : '';
 
           let description = '';
           if (rawDesc && rawDetails && rawDesc !== rawDetails) {
             description = `${rawDesc} - ${rawDetails}`;
           } else {
-            description = rawDesc || rawDetails || `Importação linha ${index + 1}`;
+            description = rawDesc || rawDetails || (rawDoc && rawDoc.toLowerCase() !== 'pix' ? rawDoc : '') || `Importação linha ${index + 1}`;
           }
 
           const rawAmount = columns[valIdx] || '0';
           const { amount, isNegative } = parseAmountAndSign(rawAmount);
 
-          if (isSummaryOrInvalidRow(description, rawDateStr, amount)) {
+          if (isSummaryOrInvalidRow(description, rawDateStr, amount, columns)) {
             return null;
           }
 
@@ -593,6 +691,33 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
     return Array.from(historyMap.values()).sort((a, b) => b.timestamp - a.timestamp);
   }, [transactions]);
 
+  const invalidSaldoTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      const desc = (t.description || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return (
+        desc.includes('saldo do dia') ||
+        desc.includes('saldo anterior') ||
+        desc.includes('saldo bloqueado') ||
+        desc.includes('saldo final') ||
+        desc.includes('saldo atual') ||
+        desc.includes('saldo parcial') ||
+        desc.includes('resumo do dia') ||
+        /^importacao linha \d+$/i.test(desc)
+      );
+    });
+  }, [transactions]);
+
+  const handleDeleteInvalidSaldos = async () => {
+    const ids = invalidSaldoTransactions.map(t => t.id);
+    if (ids.length === 0) return;
+    try {
+      await bulkDeleteTransactions(ids);
+      toast.success(`${ids.length} lançamentos indevidos de saldo foram removidos!`);
+    } catch (e) {
+      toast.error('Erro ao remover lançamentos de saldo.');
+    }
+  };
+
   const handleDeleteImport = async (importId: string) => {
     const idsToDelete = transactions.filter(t => t.importId === importId).map(t => t.id);
     if (idsToDelete.length === 0) return;
@@ -673,6 +798,23 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
                 </div>
               )}
 
+              {invalidSaldoTransactions.length > 0 && (
+                <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl flex items-center justify-between text-xs text-amber-500">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-amber-500" />
+                    <span>{invalidSaldoTransactions.length} lançamentos de saldo indevidos ("Saldo do dia") detectados.</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDeleteInvalidSaldos}
+                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-7 text-xs px-2 shrink-0"
+                  >
+                    Excluir ({invalidSaldoTransactions.length})
+                  </Button>
+                </div>
+              )}
+
               <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg flex gap-3 text-sm text-amber-800 dark:text-amber-500">
                 <AlertCircle className="w-5 h-5 shrink-0" />
                 <p>O sistema tentará categorizar automaticamente. Se for um PDF, usaremos inteligência artificial para entender seu extrato.</p>
@@ -701,6 +843,28 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
             </DialogHeader>
 
             <div className="space-y-4 pt-4 max-h-[60vh] overflow-y-auto pr-2">
+              {invalidSaldoTransactions.length > 0 && (
+                <div className="p-3 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-sm text-amber-900 dark:text-amber-300">
+                      Lançamentos indevidos de saldo
+                    </div>
+                    <div className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                      {invalidSaldoTransactions.length} itens ("Saldo do dia" / "Importação linha X")
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={handleDeleteInvalidSaldos}
+                    className="h-8 px-2.5 text-xs gap-1.5"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Excluir todos ({invalidSaldoTransactions.length})
+                  </Button>
+                </div>
+              )}
+
               {importHistory.length === 0 ? (
                 <div className="text-center py-8 text-zinc-500 text-sm">
                   Nenhuma importação recente encontrada.
