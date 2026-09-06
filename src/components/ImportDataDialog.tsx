@@ -21,13 +21,13 @@ const normalizeHeader = (h: string) =>
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]/g, "");
 
-// Helper to safely parse dates from various bank CSV formats
+// Helper to safely parse dates from various bank CSV/XLS formats
 const parseCSVDate = (dateStr: string): string | null => {
   if (!dateStr) return null;
   const str = dateStr.trim();
 
   // Ignore invalid / summary row placeholder dates
-  if (str === '00/00/0000' || str.startsWith('00/00') || str.includes('0000-00-00')) {
+  if (!str || str === '00/00/0000' || str.startsWith('00/00') || str.includes('0000-00-00')) {
     return null;
   }
 
@@ -60,9 +60,14 @@ const parseCSVDate = (dateStr: string): string | null => {
     }
   }
 
-  const fallbackDate = new Date(str);
-  if (!isNaN(fallbackDate.getTime()) && fallbackDate.getFullYear() >= 1900 && fallbackDate.getFullYear() <= 2100) {
-    return fallbackDate.toISOString();
+  const num = parseFloat(str);
+  if (!isNaN(num) && num > 30000 && num < 60000) {
+    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+    const millis = num * 24 * 60 * 60 * 1000;
+    const d = new Date(excelEpoch.getTime() + millis);
+    if (!isNaN(d.getTime())) {
+      return d.toISOString();
+    }
   }
 
   return null;
@@ -336,14 +341,15 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
 
         setProgress(70);
       } else {
-        setProgressText('Processando CSV...');
+        setProgressText('Processando arquivo...');
         setProgress(40);
         const text = await file.text();
         const Papa = await import('papaparse');
         
         const parsed = Papa.parse(text, {
           header: false,
-          skipEmptyLines: true,
+          skipEmptyLines: 'greedy',
+          delimiter: "", // auto-detect delimiter (comma, semicolon, tab)
         });
 
         setProgress(70);
@@ -352,48 +358,82 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
           console.warn('PapaParse errors:', parsed.errors);
         }
 
-        const lines = parsed.data as string[][];
+        const lines = (parsed.data as string[][]).filter(row => row && row.some(cell => cell && cell.trim() !== ''));
 
-        if (lines.length <= 1) {
-          throw new Error('O arquivo CSV está vazio ou possui apenas o cabeçalho.');
+        if (lines.length === 0) {
+          throw new Error('O arquivo está vazio.');
         }
 
-        const headers = lines[0];
+        // Intelligent header search in the first 15 lines (handles Sicoob, Banco do Brasil, etc., with metadata headers at top)
+        let headerRowIndex = 0;
+        let dateIdx = -1;
+        let descIdx = -1;
+        let detailsIdx = -1;
+        let catIdx = -1;
+        let typeIdx = -1;
+        let valIdx = -1;
+
+        for (let i = 0; i < Math.min(lines.length, 15); i++) {
+          const row = lines[i];
+          const cleanedRow = row.map(normalizeHeader);
+          const hasDate = cleanedRow.some(h => h.includes('data') || h.includes('date') || h === 'dt');
+          const hasValueOrDesc = cleanedRow.some(h => h.includes('valor') || h.includes('amount') || h.includes('val') || h.includes('vlr') || h.includes('historico') || h.includes('hist') || h.includes('lancamento') || h.includes('descricao') || h.includes('documento') || h.includes('doc'));
+
+          if (hasDate && hasValueOrDesc) {
+            headerRowIndex = i;
+            break;
+          }
+        }
+
+        const headers = lines[headerRowIndex] || lines[0];
         const cleanedHeaders = headers.map(normalizeHeader);
 
         const isNubankCreditCard = cleanedHeaders.includes('date') && cleanedHeaders.includes('title') && cleanedHeaders.includes('amount');
 
-        let dateIdx = cleanedHeaders.findIndex(h => h.includes('data') || h.includes('date'));
-        let descIdx = cleanedHeaders.findIndex(h => h.includes('lancamento') || h.includes('descri') || h.includes('memo') || h.includes('title') || h.includes('historico'));
-        let detailsIdx = cleanedHeaders.findIndex(h => h.includes('detalhe') || h.includes('complemento') || h.includes('obs'));
-        let catIdx = cleanedHeaders.findIndex(h => h.includes('categoria') || h.includes('category'));
-        let typeIdx = cleanedHeaders.findIndex(h => h.includes('tipolancamento') || h.includes('tipo') || h.includes('type') || h.includes('natureza'));
-        let valIdx = cleanedHeaders.findIndex(h => h.includes('valor') || h.includes('amount') || h.includes('val'));
+        dateIdx = cleanedHeaders.findIndex(h => h.includes('data') || h.includes('date') || h === 'dt');
+        descIdx = cleanedHeaders.findIndex(h => h.includes('lancamento') || h.includes('descri') || h.includes('memo') || h.includes('title') || h.includes('historico') || h.includes('hist') || h.includes('documento'));
+        detailsIdx = cleanedHeaders.findIndex(h => h.includes('detalhe') || h.includes('complemento') || h.includes('obs'));
+        catIdx = cleanedHeaders.findIndex(h => h.includes('categoria') || h.includes('category'));
+        typeIdx = cleanedHeaders.findIndex(h => h.includes('tipolancamento') || h.includes('tipo') || h.includes('type') || h.includes('natureza'));
+        valIdx = cleanedHeaders.findIndex(h => h.includes('valor') || h.includes('amount') || h.includes('val') || h.includes('vlr'));
 
         // Fallbacks if indices are missing
         if (dateIdx === -1) dateIdx = 0;
         if (valIdx === -1) {
-          valIdx = cleanedHeaders.findIndex((_, i) => lines[1]?.[i] && !isNaN(parseFloat(lines[1][i].replace(/[R$\s,.]/g, ''))));
+          for (let col = 0; col < headers.length; col++) {
+            let numericCount = 0;
+            for (let r = headerRowIndex + 1; r < Math.min(lines.length, headerRowIndex + 10); r++) {
+              const val = lines[r]?.[col];
+              if (val && /[0-9]+[,\.][0-9]+/.test(val)) {
+                numericCount++;
+              }
+            }
+            if (numericCount >= 1) {
+              valIdx = col;
+              break;
+            }
+          }
         }
 
         if (dateIdx === -1 || valIdx === -1) {
-          throw new Error('Colunas obrigatórias de data e valor não foram encontradas no CSV.');
+          throw new Error('Colunas obrigatórias de data e valor não foram encontradas no arquivo.');
         }
 
+        const dataRows = lines.slice(headerRowIndex + 1);
         const defaultCategory = categories[0]?.id || '';
 
-        newTransactions = lines.slice(1).map((columns, index) => {
+        newTransactions = dataRows.map((columns, index) => {
           if (!columns || columns.length < 2) return null;
 
           const rawDateStr = columns[dateIdx] || '';
           const isoDate = parseCSVDate(rawDateStr);
-          if (!isoDate) return null; // Invalid date or summary row date like 00/00/0000
+          if (!isoDate) return null; // Invalid date or summary row date
 
           const rawDesc = descIdx !== -1 && columns[descIdx] ? columns[descIdx].trim() : '';
           const rawDetails = detailsIdx !== -1 && columns[detailsIdx] ? columns[detailsIdx].trim() : '';
 
           let description = '';
-          if (rawDesc && rawDetails) {
+          if (rawDesc && rawDetails && rawDesc !== rawDetails) {
             description = `${rawDesc} - ${rawDetails}`;
           } else {
             description = rawDesc || rawDetails || `Importação linha ${index + 1}`;
@@ -577,7 +617,7 @@ export const ImportDataDialog = ({ open, onOpenChange }: ImportDataDialogProps) 
                 <input 
                   type="file" 
                   id="data-upload" 
-                  accept=".csv,.pdf,.ofx,application/pdf,text/csv"
+                  accept=".csv,.xls,.xlsx,.ods,.txt,.pdf,.ofx,application/pdf,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                   className="hidden" 
                   onChange={handleFileChange}
                 />
